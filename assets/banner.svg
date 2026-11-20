@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080C16" />
+      <stop offset="45%" stop-color="#0E172A" />
+      <stop offset="80%" stop-color="#141E38" />
+      <stop offset="100%" stop-color="#0A0F1F" />
+    </linearGradient>
+
+    <!-- Glowing Accent Gradient for Logo / Curves -->
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="35%" stop-color="#38BDF8" />
+      <stop offset="70%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#A855F7" />
+    </linearGradient>
+
+    <!-- Subtle Wave Layer 1 -->
+    <linearGradient id="wave1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#6366F1" stop-opacity="0.30" />
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.15" />
+    </linearGradient>
+
+    <!-- Subtle Wave Layer 2 -->
+    <linearGradient id="wave2" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.18" />
+      <stop offset="60%" stop-color="#4F46E5" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#00F2FE" stop-opacity="0.10" />
+    </linearGradient>
+
+    <!-- Tech Grid Pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1E293B" stroke-width="0.7" opacity="0.6" />
+    </pattern>
+
+    <!-- Radial Glow Behind Title -->
+    <radialGradient id="centerGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.18" />
+      <stop offset="60%" stop-color="#6366F1" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#0E172A" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Base Canvas Background -->
+  <rect width="1200" height="280" rx="16" fill="url(#bgGrad)" />
+
+  <!-- Background Tech Grid -->
+  <rect width="1200" height="280" rx="16" fill="url(#grid)" />
+
+  <!-- Atmospheric Glow in Center -->
+  <ellipse cx="600" cy="110" rx="420" ry="110" fill="url(#centerGlow)" />
+
+  <!-- Bottom Wave 1 -->
+  <path d="M 0 230 Q 300 190 600 235 T 1200 215 L 1200 280 L 0 280 Z" fill="url(#wave1)" />
+
+  <!-- Bottom Wave 2 -->
+  <path d="M 0 245 Q 350 265 700 220 T 1200 240 L 1200 280 L 0 280 Z" fill="url(#wave2)" />
+
+  <!-- Thin Highlight Line on Wave Crest -->
+  <path d="M 0 245 Q 350 265 700 220 T 1200 240" fill="none" stroke="url(#accentGrad)" stroke-width="1.8" opacity="0.8" />
+
+  <!-- Top Border Accent Strip -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accentGrad)" />
+
+  <!-- Pre-title Pill / Tag -->
+  <g transform="translate(600, 48)">
+    <rect x="-190" y="-14" width="380" height="28" rx="14" fill="#0B1329" stroke="#38BDF8" stroke-width="1" opacity="0.9" />
+    <text text-anchor="middle" y="5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#38BDF8" letter-spacing="2.5">DISTRIBUTED PAYMENT SETTLEMENT CORE</text>
+  </g>
+
+  <!-- Main Platform Title: NOVARIS -->
+  <g transform="translate(600, 118)">
+    <!-- Glow drop shadow effect on text -->
+    <text text-anchor="middle" y="4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Montserrat', Roboto, sans-serif" font-size="56" font-weight="900" fill="#00F2FE" opacity="0.3" letter-spacing="8">NOVARIS</text>
+    <text text-anchor="middle" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Montserrat', Roboto, sans-serif" font-size="56" font-weight="900" fill="url(#accentGrad)" letter-spacing="8">NOVARIS</text>
+  </g>
+
+  <!-- Subtitle -->
+  <text x="600" y="160" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="500" fill="#E2E8F0" letter-spacing="0.5">
+    Distributed Payment Settlement &amp; Adaptive Fraud Intelligence Platform
+  </text>
+
+  <!-- Tagline / SLA Highlights -->
+  <text x="600" y="194" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#94A3B8" letter-spacing="1.2">
+    3,500+ TPS  ·  P99 &lt; 40ms  ·  Sub-12ms AI Scoring  ·  Zero-Drift Double-Entry Ledger
+  </text>
+</svg>

@@ -1,7 +1,9 @@
 <div align="center">
 
-<!-- Floating Top Banner -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,24,30&height=220&section=header&text=⚡%20NOVARIS&fontSize=68&fontAlignY=38&desc=Distributed%20Payment%20Settlement%20%26%20Adaptive%20Fraud%20Intelligence%20Platform&descFontSize=20&descAlignY=62&fontColor=ffffff" alt="Novaris Banner" width="100%" />
+<!-- High-Definition Native Static Banner -->
+<p align="center">
+  <img src="assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+</p>
 
 <p align="center">
   <strong>An industrial-grade, event-driven financial engine engineering sub-40ms P99 settlement, zero-drift double-entry ledgers, and real-time sub-12ms adaptive ML fraud scoring.</strong>
@@ -13,7 +15,7 @@
   <img src="https://img.shields.io/badge/P99_Latency-%3C_40ms-0288D1?style=flat-square&logo=clockify&logoColor=white" alt="Latency" />
   <img src="https://img.shields.io/badge/ML_Inference-%3C_12ms-7B1FA2?style=flat-square&logo=lightning&logoColor=white" alt="ML Inference" />
   <img src="https://img.shields.io/badge/Ledger_Drift-0.00%25_Drift-00B0FF?style=flat-square&logo=checkmarx&logoColor=white" alt="Ledger Drift" />
-  <img src="https://img.shields.io/badge/License-MIT-FFA000?style=flat-square&logo=git&logoColor=white" alt="License" />
+  <img src="https://img.shields.io/badge/License-MIT-64748B?style=flat-square&logo=git&logoColor=white" alt="License" />
 </p>
 
 <!-- Core Tech Stack Badges -->
@@ -309,8 +311,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 <div align="center">
 
-<!-- Floating Bottom Banner -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=24,30,0,2&height=140&section=footer" alt="Footer Banner" width="100%" />
+<!-- High-Definition Native Static Footer -->
+<p align="center">
+  <img src="assets/footer.svg" alt="NOVARIS Footer" width="100%" />
+</p>
 
 <p align="center">
   <strong>Engineered by <a href="https://github.com/charan21042005">Tokachichu Sri Charan</a></strong><br>
