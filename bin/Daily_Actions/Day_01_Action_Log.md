@@ -27,7 +27,14 @@
    - 0.2 Concurrency & Database Terminology (Race Conditions, OCC, ACID, Locks)
    - 0.3 Distributed Systems Terminology (Idempotency, Dual-Writes, Outbox, KRaft)
    - 0.4 Operating Systems & Networking Terminology (Goroutines, Sockets, Signals)
-3. [Chapter 1: The Theoretical Foundations of Financial Engineering](#3-chapter-1-the-theoretical-foundations-of-financial-engineering)
+3. [Chapter 0.5: Complete Software Components, Tooling & Dependency Directory](#3-chapter-05-complete-software-components-tooling--dependency-directory)
+   - 0.5.1 Developer Languages & Core Runtimes
+   - 0.5.2 Infrastructure, Virtualization & Containers
+   - 0.5.3 Data Storage, In-Memory Caching & Distributed Streaming
+   - 0.5.4 Protocols, Formats & Cryptographic Standards
+   - 0.5.5 Testing, Probing & Client Developer Tooling
+   - 0.5.6 Machine Learning, MLOps & SRE Stack (Roadmap Preview)
+4. [Chapter 1: The Theoretical Foundations of Financial Engineering](#4-chapter-1-the-theoretical-foundations-of-financial-engineering)
    - 1.1 The Double-Entry Revolution: History & First Principles
    - 1.2 The Fundamental Accounting Equation
    - 1.3 Debits vs. Credits: The T-Account Mental Model
@@ -204,7 +211,143 @@ To ensure anyone from a computer science freshman to a senior data scientist can
 
 ---
 
-## 3. Chapter 1: The Theoretical Foundations of Financial Engineering
+## 3. Chapter 0.5: Complete Software Components, Tooling & Dependency Directory
+
+Every software tool, programming language runtime, database engine, protocol, and GUI utility used in NOVARIS is cataloged below with its version, exact role in the platform, why it was chosen, and how it connects to other pieces:
+
+### 0.5.1 Developer Languages & Core Runtimes
+
+#### 1. Go (Golang) — Version 1.22+ (Running v1.26.6 on your workstation)
+* **What it is:** An open-source, statically typed, compiled systems programming language created at Google.
+* **Exact Role in NOVARIS:** Powers the public **API Gateway** (`services/gateway`) and the **Double-Entry Settlement Engine** (`services/settlement`).
+* **Why this and not anything else:**
+  * Go compiles directly to a single native binary with zero external runtime dependencies.
+  * It eliminates the Python Global Interpreter Lock (GIL) and achieves sub-millisecond execution.
+  * Uses lightweight **goroutines** (~2 KB memory each) rather than OS threads (~1 MB), allowing a single gateway node to easily handle **3,500+ concurrent requests per second** with ~15 MB baseline RAM.
+
+#### 2. Python — Version 3.10 / 3.11+
+* **What it is:** A dynamic, high-level programming language renowned for machine learning and scientific computing.
+* **Exact Role in NOVARIS:** Powers the **Streaming Fraud Detection Engine** (`services/fraud-ml`) and automated MLOps pipelines (Apache Airflow DAGs).
+* **Why this and not anything else:**
+  * Unrivaled ecosystem for applied AI: native integration with XGBoost, PyTorch Geometric (Graph Neural Networks for fraud rings), Feast feature stores, and SHAP explainability.
+  * Models trained in Python are compiled into **ONNX Runtime** format so inference executes in $<12\text{ms}$ inside the payment path.
+
+#### 3. Node.js (v24 LTS) & npm (v11.9.0) / pnpm
+* **What it is:** A V8-powered JavaScript runtime for server-side and build-tool execution.
+* **Exact Role in NOVARIS:** Powers the frontend development toolchain (`frontend/`).
+* **Why this and not anything else:**
+  * Powers Vite (Next-generation lightning-fast frontend bundler), React 19, TailwindCSS, and real-time WebSocket dashboard clients for fraud analysts.
+
+#### 4. Git — Version 2.53+
+* **What it is:** The global standard for distributed version control.
+* **Exact Role in NOVARIS:** Manages code history, multi-branch GitOps workflows with ArgoCD, and atomic Conventional Commits.
+
+---
+
+### 0.5.2 Infrastructure, Virtualization & Containers
+
+#### 5. Docker Desktop & Docker Engine (v29.7.2)
+* **What it is:** An industry-standard container virtualization platform using Linux kernel namespaces and control groups (cgroups).
+* **Exact Role in NOVARIS:** Packages and runs PostgreSQL, Redis, and Kafka in isolated local containers without polluting your Windows host machine.
+* **Why this and not installing directly on Windows:**
+  * **Environment Parity:** Containers run the exact same Linux Alpine kernel images locally as our cloud Kubernetes cluster runs in production. Eliminates "works on my machine" bugs.
+  * **Zero System Contamination:** Keeps your Windows host clean; destroying or resetting the databases is as simple as running `docker compose down -v`.
+
+#### 6. Docker Compose (v3.8+ specification)
+* **What it is:** A declarative multi-container orchestration tool defined in YAML (`deployments/docker-compose.yml`).
+* **Exact Role in NOVARIS:** Coordinates our 3 core local infrastructure services with isolated virtual bridge networks, health checks, and persistent disk volumes.
+* **Why:** Enables running the entire distributed ecosystem with a single command: `docker compose -f deployments/docker-compose.yml up -d`.
+
+#### 7. Alpine Linux (v3.19+)
+* **What it is:** An ultra-lightweight, security-oriented Linux distribution built around `musl libc` and `busybox`.
+* **Exact Role in NOVARIS:** Serves as the base container OS for `postgres:16-alpine` and `redis:7-alpine`.
+* **Why:** Reduces container image size from ~400 MB (Ubuntu/Debian) down to ~80 MB, accelerating downloads and eliminating hundreds of unnecessary utility packages that carry security vulnerabilities (CVEs).
+
+---
+
+### 0.5.3 Data Storage, In-Memory Caching & Distributed Streaming
+
+#### 8. PostgreSQL 16 (Relational ACID Database)
+* **What it is:** The world's most advanced open-source object-relational database management system.
+* **Exact Role in NOVARIS:** The single source of truth for financial records: `accounts`, `transactions`, `journal_entries`, and `outbox`.
+* **Why this and not NoSQL (MongoDB/Cassandra):**
+  * FinTech platforms strictly require **ACID transactions** and **Serializable isolation** to prevent double-spending.
+  * Native support for cryptographic UUIDs (`gen_random_uuid()`), integer constraint validation (`CHECK`), and high-performance JSONB storage for ML risk factors.
+
+#### 9. Redis 7 (In-Memory Key-Value & Mutex Coordination)
+* **What it is:** An in-memory, ultra-low latency ($<1\text{ms}$) data structure store.
+* **Exact Role in NOVARIS:**
+  1. Distributed idempotency token caching (`SETNX` with 24-hour TTL).
+  2. Per-merchant token-bucket sliding rate limiting.
+  3. Distributed mutex coordination via the **Redlock Algorithm**.
+* **Why AOF (`--appendonly yes`):** Configured so that every write is persisted to disk, ensuring that active distributed locks survive unexpected server reboots.
+
+#### 10. Apache Kafka (Confluent cp-kafka v7.5.0 in KRaft Mode)
+* **What it is:** A distributed, partitioned, replicated commit log and event streaming platform.
+* **Exact Role in NOVARIS:** The asynchronous nervous system connecting the Gateway, Fraud Engine, and Settlement Worker (`tx.initiated`, `tx.settled`, `tx.declined`, `tx.dlq`).
+* **Why KRaft Mode:** Eliminates external Apache ZooKeeper clusters by embedding consensus directly inside Kafka using the Raft protocol. Topics are **partitioned by `account_id`** to guarantee strictly ordered event processing per customer.
+
+---
+
+### 0.5.4 Protocols, Formats & Cryptographic Standards
+
+#### 11. HTTP/1.1 & REST (HyperText Transfer Protocol)
+* **What it is:** The stateless application-level protocol powering the World Wide Web.
+* **Exact Role in NOVARIS:** The protocol for external merchant checkouts (`POST /v1/transactions`) and Kubernetes liveness probes (`GET /healthz`).
+
+#### 12. TCP / IP Sockets & File Descriptors (Ports 8080, 5432, 6379, 9092)
+* **What it is:** Transmission Control Protocol providing reliable, ordered byte streams over IP networks.
+* **Exact Role in NOVARIS:**
+  * Port `8080`: Go API Gateway HTTP port.
+  * Port `5432`: PostgreSQL database port.
+  * Port `6379`: Redis cache port.
+  * Port `9092`: Apache Kafka PLAINTEXT broker port.
+
+#### 13. JSON (JavaScript Object Notation)
+* **What it is:** Lightweight, human-readable text format for structured data serialization.
+* **Exact Role in NOVARIS:** Standard format for all external API payloads, structured logs, and Kafka message bodies.
+
+#### 14. UUIDv4 (Universally Unique Identifier Version 4)
+* **What it is:** A 128-bit pseudo-random cryptographic identifier (e.g. `c0a80101-0000-4000-8000-000000000000`).
+* **Exact Role in NOVARIS:** Primary keys for all database entities (`accounts.id`, `transactions.id`, `journal_entries.id`, `outbox.id`).
+* **Why:** Prevents sequential enumeration attacks and allows distributed workers to generate unique IDs locally without database locking.
+
+#### 15. POSIX Process Signals (`SIGINT`, `SIGTERM`)
+* **What it is:** Standard operating system inter-process communication signals.
+* **Exact Role in NOVARIS:** Intercepted by our Go gateway (`signal.Notify`) to trigger graceful connection draining when stopped by Ctrl+C or Kubernetes.
+
+---
+
+### 0.5.5 Testing, Probing & Client Developer Tooling
+
+#### 16. curl & PowerShell `Invoke-RestMethod`
+* **What it is:** Command-line HTTP clients.
+* **Exact Role in NOVARIS:** Used to execute live health check probes and simulated payment transactions against the running gateway.
+
+#### 17. DBeaver & pgAdmin (Recommended GUI Clients)
+* **What it is:** Universal visual database desktop managers.
+* **Exact Role in NOVARIS:** Allows developers to visually browse tables, inspect double-entry debit/credit balance equations, and monitor the outbox relay.
+
+#### 18. RedisInsight (Recommended GUI Client)
+* **What it is:** Official visual management desktop tool for Redis.
+* **Exact Role in NOVARIS:** Visually inspects active rate-limiting keys, TTL countdowns, and Redlock distributed mutex locks.
+
+---
+
+### 0.5.6 Machine Learning, MLOps & SRE Stack (Roadmap Preview)
+
+* **Feast:** Open-source feature store ensuring that feature computation logic remains identical in offline training and real-time online inference (eliminating train-serve skew).
+* **ONNX Runtime (Open Neural Network Exchange):** High-performance inference engine executing compiled XGBoost models in $<12\text{ms}$.
+* **TreeSHAP:** Explainable AI algorithm calculating feature attribution vectors so fraud analysts know exactly why a transaction was flagged.
+* **Apache Airflow:** Automated DAG workflow orchestrator running nightly batch jobs to retrain the fraud model on verified analyst verdicts.
+* **MLflow & Evidently AI:** Model tracking registry and automated data drift monitoring.
+* **k6 (Grafana CLI):** Developer-centric load testing CLI used to verify sustained 3,500+ TPS and measure P99 latency SLAs.
+* **Kubernetes (Minikube / EKS) & Helm:** Container orchestration and declarative cloud deployment packaging.
+* **Litmus Chaos:** Chaos engineering framework injecting pod crashes and network partitions during load tests to prove resilience.
+
+---
+
+## 4. Chapter 1: The Theoretical Foundations of Financial Engineering
 
 ### 1.1 The Double-Entry Revolution: History & First Principles
 Before computers existed, merchants kept track of money using **single-entry bookkeeping**—a simple list of notes stating *"Alice owes me \$10"* or *"I paid Bob \$5"*. 
