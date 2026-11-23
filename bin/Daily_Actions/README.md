@@ -37,8 +37,8 @@ For every single day of the implementation:
 | :---: | :---: | :--- | :--- | :---: |
 | **Phase 1** | **Day 01** | **Monorepo Layout, Docker Compose & Ledger Schema Foundation** | [Day_01_Action_Log.md](./Day_01_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 02** | **JWT Authentication & Security Middleware Pipeline** | [Day_02_Action_Log.md](./Day_02_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 1** | **Day 03** | Cryptographic HMAC-SHA256 Request Signing | *Pending* | ⏳ *Up Next* |
-| **Phase 1** | **Day 04** | Distributed Token-Bucket Rate Limiter | *Pending* | ⚪ |
+| **Phase 1** | **Day 03** | **Cryptographic HMAC-SHA256 Request Signing & Replay Defense** | [Day_03_Action_Log.md](./Day_03_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 1** | **Day 04** | Distributed Token-Bucket Rate Limiter | *Pending* | ⏳ *Up Next* |
 | **Phase 1** | **Day 05** | Production Double-Entry Ledger Schema & Indexes | *Pending* | ⚪ |
 | **Phase 1** | **Day 06** | Atomic Settlement Logic & Concurrency Rollbacks | *Pending* | ⚪ |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
