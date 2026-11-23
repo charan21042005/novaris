@@ -285,6 +285,19 @@ curl -X GET http://localhost:8080/healthz
 
 ---
 
+## 📚 Daily Implementation & Theory Action Logs
+
+Every milestone across the 84-day curriculum is documented with textbook-grade depth in [`bin/Daily_Actions/`](bin/Daily_Actions/README.md), covering first-principles computer science theory, line-by-line code masterclasses, and live verification matrices:
+
+| Day | Milestone Focus | Security / Architectural Guarantee | Theory & Action Log | Status |
+| :---: | :--- | :--- | :---: | :---: |
+| **Day 01** | **Monorepo Layout & Ledger Schema** | PostgreSQL 16 Double-Entry Ledger & Docker Infrastructure | [Day 01 Action Log](bin/Daily_Actions/Day_01_Action_Log.md) | ✅ *Completed* |
+| **Day 02** | **JWT Authentication & Middleware** | RFC 7519 Stateless Identity & `alg: none` Defense | [Day 02 Action Log](bin/Daily_Actions/Day_02_Action_Log.md) | ✅ *Completed* |
+| **Day 03** | **HMAC Request Signing & Replay Defense** | RFC 2104 Payload Integrity, Replay Window & Constant-Time Verification | [Day 03 Action Log](bin/Daily_Actions/Day_03_Action_Log.md) | ✅ *Completed* |
+| **Day 04** | **Distributed Token-Bucket Rate Limiter** | Burst-Tolerant Sliding Window Rate Limiting & DoS Protection | *Pending* | ⏳ *Up Next* |
+
+---
+
 ## 📊 12-Week Roadmap & Implementation Milestones
 
 ```

@@ -127,6 +127,14 @@ go test -v ./...
 
 ---
 
+## 📂 Subdirectory Architecture & Technical Documentation
+
+* 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken` and `signrequest`) for local token minting and signature testing.
+* 👉 **[`internal/` Engine Documentation](./internal/README.md):** Go compiler-enforced private package boundary.
+* 👉 **[`internal/auth/` Cryptographic Specs](./internal/auth/README.md):** Cryptographic JWT & HMAC-SHA256 engine specifications and test matrices.
+
+---
+
 <div align="center">
 
 <p align="center">
