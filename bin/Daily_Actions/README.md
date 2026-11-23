@@ -31,6 +31,13 @@ For every single day of the implementation:
 
 ---
 
+## ⚡ Master Testing & CLI Verification Runbook
+
+Looking for copy-pasteable commands to run or probe any day's milestone? Check the centralized cheat sheet:  
+👉 **[`COMMANDS_RUNBOOK.md`](./COMMANDS_RUNBOOK.md)** — Master copy-paste runbook containing all Docker setup commands, `curl` probes, CLI generators, and PowerShell scripts across all milestones.
+
+---
+
 ## 🗺️ Daily Logs Index
 
 | Phase | Day | Focus / Milestone | Document Link | Status |
