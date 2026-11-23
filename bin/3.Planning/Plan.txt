@@ -1,0 +1,94 @@
+
+
+High-Throughput Distributed FinTech Payment & Fraud Detection Engine
+
+
+Problem Statement
+
+Modern financial platforms process thousands of transactions per second (TPS) while needing near-zero latency validation, idempotent payment execution, and real-time ML-driven anomaly detection to block fraudulent charges.
+
+System Architecture
+
+Event-Driven Ingestion: Transactions are received via an API Gateway, validated for rate limits and digital signatures, and published to Apache Kafka/RabbitMQ.
+
+Stream Processing & Fraud Scoring: A streaming worker evaluates transactions in real-time against pre-trained anomaly detection models and historical user behavioral heuristics (e.g., velocity checks, geolocation hops).
+
+Transactional Ledger: Double-entry ledger architecture ensuring zero drift, strict atomicity, and ledger immutability.
+
+
+
+
+Tech Stack
+
+Frontend: React + TypeScript, Vite, Apache ECharts/Recharts (real-time transaction analytics and fraud incident resolution dashboard).
+
+Backend & APIs: Go (Golang) for the high-throughput payment processor; gRPC for ultra-fast internal microservice communication; GraphQL/REST for admin dashboard APIs.
+
+Databases & Caching:
+
+Relational: CockroachDB or PostgreSQL with strict ACID isolation for financial balances and ledgers.
+
+In-Memory/Key-Value: Redis (for distributed rate-limiting via sliding log algorithm and distributed locking with Redlock).
+
+Streaming: Apache Kafka or Redpanda for event streaming.
+
+AI/ML Engine: Python (FastAPI/Triton Inference Server), XGBoost / Isolation Forest / Graph Neural Networks (PyTorch Geometric) for fraud scoring.
+
+Cloud & DevOps: Docker, AWS (EKS, MSK for Kafka, RDS PostgreSQL), Prometheus & Grafana for live TPS/latency metrics, GitHub Actions CI/CD.
+
+
+
+Key Integrations
+Stripe API (Test Mode) or mock banking ACH gateway.
+
+Twilio / SendGrid for real-time 2FA triggers on high-risk transactions.
+
+Top Interview Talking Points
+Distributed Concurrency Control: Using distributed locks (Redis Redlock) and PostgreSQL optimistic locking (version columns) to prevent double-spending under high concurrency.
+
+Idempotency Keys: Ensuring network retries never execute a transaction twice using deterministic deduplication keys.
+
+Low-Latency Streaming: Achieving sub-50ms fraud scoring inference over Kafka streams.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+Suggested Day-1 Kickoff Steps (Week 1 Focus)
+
+You do not need to update or change anything in the blueprint. The architecture, data models, resilience patterns, and milestones are completely defined. You are ready to start building immediately.  Suggested Day-1 Kickoff Steps (Week 1 Focus)Initialize the Monorepo Structure
+Set up your project directories matching the blueprint components:  Plaintextnovaris/
+├── docker-compose.yml
+├── services/
+│   ├── gateway/        # Go (M1)
+│   ├── settlement/     # Go (M5)
+│   └── fraud-ml/       # Python / ONNX (M4)
+├── frontend/           # React 19 / Vite (M6)
+└── deployments/        # K8s / Helm manifests (M8)
+Boot the Local Infrastructure
+Launch your base storage and streaming stack using the docker-compose.yml in Appendix A (PostgreSQL 16, Redis 7, and Kafka KRaft).  Apply the Core Schema
+Execute the initial migration script creating the accounts, transactions, journal_entries, and outbox tables with appropriate UUID keys, foreign key constraints, and indexes.  Scaffold the Go API Gateway (M1)
+Initialize the Go module, establish database/Redis connections, and write the basic HMAC verification and token-bucket middleware.  Would you like to start by writing the PostgreSQL schema migration and Docker setup, or scaffold the Go Gateway service first?  
