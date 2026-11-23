@@ -1185,6 +1185,91 @@ Gateway stopped cleanly.
 
 ---
 
+### 9.2 Complete Step-by-Step Command Runbook (Bash & PowerShell)
+
+Here is the exact copy-pasteable command runbook to replicate, run, and verify every piece of Day 1's work in any terminal:
+
+#### 1. Boot Container Infrastructure (Postgres 16, Redis 7, Kafka KRaft):
+```bash
+# Navigate to deployment directory
+cd deployments
+
+# Start containers in background mode
+docker compose up -d
+
+# Verify all containers are healthy (postgres, redis, kafka)
+docker compose ps
+```
+*PowerShell Alternative:*
+```powershell
+Set-Location deployments
+docker compose up -d
+docker compose ps
+```
+
+#### 2. Verify Database Schema & Table Creation:
+```bash
+# Execute psql inside container to list created ledger tables
+docker exec -it novaris-postgres psql -U novaris -d novaris_ledger -c "\dt"
+
+# Inspect the accounts table structure
+docker exec -it novaris-postgres psql -U novaris -d novaris_ledger -c "\d accounts"
+
+# Inspect the journal entries table structure
+docker exec -it novaris-postgres psql -U novaris -d novaris_ledger -c "\d journal_entries"
+```
+
+#### 3. Compile and Run the Go API Gateway:
+```bash
+# Navigate to the gateway service directory
+cd services/gateway
+
+# Run directly with Go
+go run main.go
+```
+*To build as a standalone binary:*
+```bash
+# Linux / macOS
+go build -o gateway main.go
+./gateway
+
+# Windows PowerShell
+go build -o gateway.exe main.go
+.\gateway.exe
+```
+
+#### 4. Probe the Running Gateway (Terminal 2):
+```bash
+# Test public healthcheck liveness probe (Expect HTTP 200 OK)
+curl -i http://localhost:8080/healthz
+
+# Test public service discovery route (Expect HTTP 200 OK)
+curl -i http://localhost:8080/
+```
+*PowerShell Alternative:*
+```powershell
+# Probe healthcheck
+Invoke-RestMethod -Uri "http://localhost:8080/healthz" -Method Get
+
+# Probe root discovery
+Invoke-RestMethod -Uri "http://localhost:8080/" -Method Get
+```
+
+#### 5. Verify Graceful Shutdown:
+Press `Ctrl + C` in the terminal running the gateway. Observe the log output:
+```text
+[SHUTDOWN] OS termination signal received. Draining connections...
+[SHUTDOWN] NOVARIS Gateway stopped cleanly.
+```
+
+#### 6. Teardown Infrastructure:
+```bash
+cd deployments
+docker compose down
+```
+
+---
+
 ## 12. Chapter 10: The Interview Defense Compendium (10 High-Stakes Q&As)
 
 ### Q1: "Why did you use BIGINT integer cents for money instead of FLOAT or DECIMAL?"

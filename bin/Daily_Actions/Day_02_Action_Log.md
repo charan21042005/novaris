@@ -1274,6 +1274,79 @@ Invoke-RestMethod -Uri "http://localhost:8080/healthz"
 
 ---
 
+### 8.3 Complete Step-by-Step CLI Command Runbook (Bash & PowerShell)
+
+Here is the exact copy-pasteable command runbook to verify all Day 2 authentication functionality in any terminal:
+
+#### 1. Run Automated Unit Tests:
+```bash
+cd services/gateway
+go test -v ./...
+```
+
+#### 2. Start the Gateway Service (Terminal 1):
+```bash
+cd services/gateway
+go run main.go
+```
+
+#### 3. Mint Test Tokens via Developer CLI (Terminal 2):
+```bash
+# Generate a standard valid token (15-minute validity)
+TOKEN=$(go run cmd/gentoken/main.go -merchant merchant_123 -role merchant -mins 15)
+echo "Generated Token: $TOKEN"
+
+# Generate an expired token (expired 10 minutes ago)
+EXPIRED_TOKEN=$(go run cmd/gentoken/main.go -merchant merchant_test -expired)
+echo "Generated Expired Token: $EXPIRED_TOKEN"
+```
+*PowerShell Alternative:*
+```powershell
+$token = (go run cmd/gentoken/main.go -merchant merchant_123 -role merchant -mins 15)
+$expiredToken = (go run cmd/gentoken/main.go -merchant merchant_test -expired)
+```
+
+#### 4. Execute the 5 Verification Probes via `curl`:
+```bash
+# Probe 1: Missing Token -> Expect 401 Unauthorized
+curl -i http://localhost:8080/v1/payments
+
+# Probe 2: Valid Bearer Token -> Expect 200 OK with claims echoed back
+curl -i http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN"
+
+# Probe 3: Tampered Token (one byte modified in payload) -> Expect 401 Unauthorized
+curl -i http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer ${TOKEN}x"
+
+# Probe 4: Expired Token -> Expect 401 Unauthorized ("token is expired")
+curl -i http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $EXPIRED_TOKEN"
+
+# Probe 5: Public Health Probe -> Expect 200 OK
+curl -i http://localhost:8080/healthz
+```
+
+#### 5. Execute the 5 Verification Probes via Windows PowerShell:
+```powershell
+# Probe 1: Missing Token -> Expect 401
+try { Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Probe 2: Valid Token -> Expect 200 OK
+Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Headers @{ Authorization = "Bearer $token" }
+
+# Probe 3: Tampered Token -> Expect 401
+try { Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Headers @{ Authorization = "Bearer " + $token + "x" } } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Probe 4: Expired Token -> Expect 401
+try { Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Headers @{ Authorization = "Bearer $expiredToken" } } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Probe 5: Public Health -> Expect 200 OK
+Invoke-RestMethod -Uri "http://localhost:8080/healthz"
+```
+
+---
+
 ## 12. Chapter 9: The Interview Defense Compendium (10 High-Stakes Q&As)
 
 Here are the exact interview questions asked by Tier-1 FinTech companies (Stripe, Adyen, Block, Plaid) regarding API authentication, along with model answers:

@@ -1057,6 +1057,128 @@ Expected 401 Future Timestamp Caught: 401
 
 ---
 
+### 8.3 Complete Step-by-Step CLI Command Runbook (Bash & PowerShell)
+
+Here is the exact copy-pasteable command runbook to verify all Day 3 HMAC request signing, canonicalization, and replay defense in any terminal:
+
+#### 1. Run Automated Unit Tests (All 10 tests across JWT & HMAC):
+```bash
+cd services/gateway
+go test -v ./...
+```
+
+#### 2. Start the Gateway Service (Terminal 1):
+```bash
+cd services/gateway
+go run main.go
+```
+
+#### 3. Mint Test Credentials via Developer CLIs (Terminal 2):
+```bash
+# Generate a valid Bearer JWT
+TOKEN=$(go run cmd/gentoken/main.go -merchant merchant_stripe_live -role merchant -mins 15)
+
+# Generate valid HMAC signature and timestamp for standard payload
+# (Or run cmd/signrequest/main.go to view the interactive output)
+BODY='{"amount_cents":5000,"recipient":"merchant_456"}'
+TS=$(date +%s)
+SECRET="novaris_insecure_dev_hmac_secret_change_in_production_2026"
+CANONICAL="$TS.$BODY"
+SIG=$(echo -n "$CANONICAL" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+```
+*PowerShell Alternative:*
+```powershell
+$token = (go run cmd/gentoken/main.go -merchant merchant_stripe_live -role merchant -mins 15)
+$body = '{"amount_cents":5000,"recipient":"merchant_456"}'
+$ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
+$canonical = $ts + '.' + $body
+$secret = "novaris_insecure_dev_hmac_secret_change_in_production_2026"
+$hmacObj = New-Object System.Security.Cryptography.HMACSHA256
+$hmacObj.Key = [System.Text.Encoding]::UTF8.GetBytes($secret)
+$sig = [BitConverter]::ToString($hmacObj.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($canonical))).Replace('-','').ToLower()
+```
+
+#### 4. Execute the 7 Verification Probes via `curl`:
+```bash
+# Probe 1: Public Health Probe -> Expect 200 OK
+curl -i http://localhost:8080/healthz
+
+# Probe 2: Missing All Auth Headers -> Expect 401 Unauthorized
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+
+# Probe 3: JWT Only, Missing HMAC Headers -> Expect 401 Unauthorized
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+
+# Probe 4: Fully Valid JWT + HMAC Signed Request -> Expect 200 OK with restored body
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Novaris-Timestamp: $TS" \
+  -H "X-Novaris-Signature: $SIG" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+
+# Probe 5: Tampered Request Body ($50 changed to $50,000) -> Expect 401 Unauthorized
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Novaris-Timestamp: $TS" \
+  -H "X-Novaris-Signature: $SIG" \
+  -H "Content-Type: application/json" \
+  -d '{"amount_cents":5000000,"recipient":"attacker"}'
+
+# Probe 6: Stale Replay Timestamp (10m in past) -> Expect 401 Unauthorized ("outside allowed window")
+STALE_TS=$(($TS - 600))
+STALE_CANONICAL="$STALE_TS.$BODY"
+STALE_SIG=$(echo -n "$STALE_CANONICAL" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Novaris-Timestamp: $STALE_TS" \
+  -H "X-Novaris-Signature: $STALE_SIG" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+
+# Probe 7: Future Timestamp (+10m ahead) -> Expect 401 Unauthorized
+FUTURE_TS=$(($TS + 600))
+FUTURE_CANONICAL="$FUTURE_TS.$BODY"
+FUTURE_SIG=$(echo -n "$FUTURE_CANONICAL" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Novaris-Timestamp: $FUTURE_TS" \
+  -H "X-Novaris-Signature: $FUTURE_SIG" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+```
+
+#### 5. Execute the 7 Verification Probes via Windows PowerShell:
+```powershell
+$headersValid = @{
+    "Authorization"       = "Bearer " + $token
+    "X-Novaris-Timestamp" = $ts
+    "X-Novaris-Signature" = $sig
+}
+
+# Probe 1: Public Health -> Expect 200 OK
+Invoke-RestMethod -Uri "http://localhost:8080/healthz"
+
+# Probe 2: Missing All Headers -> Expect 401
+try { Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body $body -ContentType "application/json" } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Probe 3: JWT Only -> Expect 401
+try { Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body $body -ContentType "application/json" -Headers @{ Authorization = "Bearer " + $token } } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Probe 4: Fully Valid Signed Request -> Expect 200 OK
+Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body $body -ContentType "application/json" -Headers $headersValid
+
+# Probe 5: Tampered Body -> Expect 401
+try { Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body '{"amount_cents":5000000,"recipient":"attacker"}' -ContentType "application/json" -Headers $headersValid } catch { $_.Exception.Response.StatusCode.value__ }
+```
+
+---
+
 ## 12. Chapter 9: The Interview Defense Compendium (10 High-Stakes Tier-1 Q&As)
 
 ### Q1: "Why did you implement HMAC request signing if you already had JWT authentication in place?"
