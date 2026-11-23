@@ -22,40 +22,45 @@
 ## 📑 Detailed Table of Contents
 
 1. [Preface: The Core Dual Tension of Modern FinTech](#1-preface-the-core-dual-tension-of-modern-fintech)
-2. [Chapter 1: The Theoretical Foundations of Financial Engineering](#2-chapter-1-the-theoretical-foundations-of-financial-engineering)
+2. [Chapter 0: The Plain-English FinTech & Distributed Systems Lexicon](#2-chapter-0-the-plain-english-fintech--distributed-systems-lexicon)
+   - 0.1 Financial Domain Terminology (Ledgers, Debits, Credits, Invariants)
+   - 0.2 Concurrency & Database Terminology (Race Conditions, OCC, ACID, Locks)
+   - 0.3 Distributed Systems Terminology (Idempotency, Dual-Writes, Outbox, KRaft)
+   - 0.4 Operating Systems & Networking Terminology (Goroutines, Sockets, Signals)
+3. [Chapter 1: The Theoretical Foundations of Financial Engineering](#3-chapter-1-the-theoretical-foundations-of-financial-engineering)
    - 1.1 The Double-Entry Revolution: History & First Principles
    - 1.2 The Fundamental Accounting Equation
    - 1.3 Debits vs. Credits: The T-Account Mental Model
    - 1.4 The IEEE-754 Precision Catastrophe: Why Floating-Point Breaks Ledgers
    - 1.5 The Principle of Ledger Immutability: Why `UPDATE balance` is Forbidden
-3. [Chapter 2: Concurrency, Consistency & Distributed Locking Theory](#3-chapter-2-concurrency-consistency--distributed-locking-theory)
+4. [Chapter 2: Concurrency, Consistency & Distributed Locking Theory](#4-chapter-2-concurrency-consistency--distributed-locking-theory)
    - 2.1 The Physics of a Race Condition: The Classic Double-Spend Anomaly
    - 2.2 ACID Transaction Guarantees & ANSI SQL Isolation Levels
    - 2.3 Concurrency Control Paradigms: Pessimistic vs. Optimistic (OCC)
    - 2.4 Distributed Locking Primitives: Redis Redlock & In-Memory Mutexes
-4. [Chapter 3: Distributed Systems & Event Streaming Theory](#4-chapter-3-distributed-systems--event-streaming-theory)
+5. [Chapter 3: Distributed Systems & Event Streaming Theory](#5-chapter-3-distributed-systems--event-streaming-theory)
    - 3.1 The Fallacy of Synchronous Microservice Chains
    - 3.2 The Dual-Write Problem & The Two Generals' Paradox
    - 3.3 The Transactional Outbox Pattern: A Mathematical Solution
    - 3.4 Message Queues vs. Distributed Commit Logs (RabbitMQ vs. Kafka)
    - 3.5 Consensus Without ZooKeeper: The Raft Protocol & Kafka KRaft
-5. [Chapter 4: Operating Systems, Networking & The Edge API Gateway](#5-chapter-4-operating-systems-networking--the-edge-api-gateway)
+6. [Chapter 4: Operating Systems, Networking & The Edge API Gateway](#6-chapter-4-operating-systems-networking--the-edge-api-gateway)
    - 4.1 Process Concurrency Models: OS Threads vs. Event Loops vs. Goroutines
    - 4.2 Sockets, File Descriptors, and Slowloris Denial-of-Service Attacks
    - 4.3 POSIX Process Signals (`SIGINT`, `SIGTERM`) & Graceful Connection Draining
    - 4.4 Health Probe Semantics: Liveness vs. Readiness in Cloud-Native Systems
-6. [Chapter 5: The Data Science → Full-Stack Rosetta Stone](#6-chapter-5-the-data-science--full-stack-rosetta-stone)
-7. [Chapter 6: Architectural Trade-Off Analysis ("Why This and Not That")](#7-chapter-6-architectural-trade-off-analysis-why-this-and-not-that)
-8. [Chapter 7: Monorepo Architecture & Directory Taxonomy](#8-chapter-7-monorepo-architecture--directory-taxonomy)
-9. [Chapter 8: Line-by-Line Code Masterclass (Complete Dissections)](#9-chapter-8-line-by-line-code-masterclass-complete-dissections)
-   - 8.1 `deployments/docker-compose.yml`
-   - 8.2 `migrations/001_initial_ledger_schema.sql`
-   - 8.3 `services/gateway/main.go`
-   - 8.4 `services/gateway/go.mod`
-   - 8.5 `.gitignore`
-10. [Chapter 9: Verification Laboratory: Execution Proof & Log Dissection](#10-chapter-9-verification-laboratory-execution-proof--log-dissection)
-11. [Chapter 10: The Interview Defense Compendium (10 High-Stakes Q&As)](#11-chapter-10-the-interview-defense-compendium-10-high-stakes-qas)
-12. [Chapter 11: The Roadmap Horizon (Day 2 Preview & Exercises)](#12-chapter-11-the-roadmap-horizon-day-2-preview--exercises)
+7. [Chapter 5: The Data Science → Full-Stack Rosetta Stone](#7-chapter-5-the-data-science--full-stack-rosetta-stone)
+8. [Chapter 6: Architectural Trade-Off Analysis ("Why This and Not That")](#8-chapter-6-architectural-trade-off-analysis-why-this-and-not-that)
+9. [Chapter 7: Monorepo Architecture & Directory Taxonomy](#9-chapter-7-monorepo-architecture--directory-taxonomy)
+10. [Chapter 8: Line-by-Line Code Masterclass (Complete Dissections)](#10-chapter-8-line-by-line-code-masterclass-complete-dissections)
+    - 8.1 `deployments/docker-compose.yml`
+    - 8.2 `migrations/001_initial_ledger_schema.sql`
+    - 8.3 `services/gateway/main.go`
+    - 8.4 `services/gateway/go.mod`
+    - 8.5 `.gitignore`
+11. [Chapter 9: Verification Laboratory: Execution Proof & Log Dissection](#11-chapter-9-verification-laboratory-execution-proof--log-dissection)
+12. [Chapter 10: The Interview Defense Compendium (10 High-Stakes Q&As)](#12-chapter-10-the-interview-defense-compendium-10-high-stakes-qas)
+13. [Chapter 11: The Roadmap Horizon (Day 2 Preview & Exercises)](#13-chapter-11-the-roadmap-horizon-day-2-preview--exercises)
 
 ---
 
@@ -84,7 +89,122 @@ Most beginner projects compromise: they either build a fast API that silently co
 
 ---
 
-## 2. Chapter 1: The Theoretical Foundations of Financial Engineering
+## 2. Chapter 0: The Plain-English FinTech & Distributed Systems Lexicon
+
+To ensure anyone from a computer science freshman to a senior data scientist can understand every line of code we write, here are the fundamental terms defined in simple, first-principles English with real-world analogies:
+
+### 0.1 Financial Domain Terminology
+
+#### 1. What is a "Ledger"?
+* **Plain English:** A permanent, unchangeable diary where you record every single movement of money. You are never allowed to erase or scribble out a past page; you can only append a new line.
+* **Real-Life Analogy:** Think of a pilot's flight logbook. When a pilot lands in Tokyo, they don't erase the previous flight to London—they write a new line: *"Flight 204: Tokyo, 11 hours"*. At any time, you can add up all the hours to know their total flying time.
+* **Why it matters in NOVARIS:** We never store just a single mutable number called `balance`. We store a ledger of all historical movements. If the database crashes, we can reconstruct everyone's exact balance by replaying the ledger.
+
+#### 2. What is "Double-Entry Bookkeeping"?
+* **Plain English:** An accounting rule stating that money cannot appear out of nowhere or vanish into thin air. Every time money moves, it must come from somewhere (a Source) and go to somewhere (a Destination).
+* **Real-Life Analogy:** Imagine you take \$50 out of your physical leather wallet and put it into your piggy bank at home. Your wallet decreased by \$50, and your piggy bank increased by \$50. The total money you own across both did not change.
+* **The Rule:** Every transaction creates two balanced records: a **Debit** and a **Credit**. Total Debits must always equal Total Credits ($\sum \text{Debits} = \sum \text{Credits}$). If they don't match, you immediately know a software bug or fraud occurred.
+
+#### 3. What is a "Journal Entry"?
+* **Plain English:** A single line written in the ledger recording an individual debit or credit to an account.
+* **In NOVARIS Code:** Our `journal_entries` table stores these lines. A \$10 payment creates two journal entry rows: one debit row for the payer, and one credit row for the receiver.
+
+#### 4. What are "Debits" and "Credits"? (The Zero-Confusion Explanation)
+* **Why People Get Confused:** When your commercial bank sends you a text: *"Your account has been debited \$20"*, you think "debit = bad/loss". But that is from *the bank's perspective*! To the bank, your deposit is money they owe you (their liability).
+* **In Accounting:**
+  * **Debit:** Simply means writing an entry on the **Left** side of the ledger. For user wallets, a debit records money **leaving** the account.
+  * **Credit:** Simply means writing an entry on the **Right** side of the ledger. For user wallets, a credit records money **entering** the account.
+
+#### 5. What is "Integer Cents Arithmetic"?
+* **Plain English:** Storing money as raw pennies (integer cents) instead of decimal dollars (`$10.50` is stored as `1050`).
+* **Why it matters:** Computers make rounding errors when doing math with decimals (e.g. $0.1 + 0.2 = 0.30000000000000004$). By using integers, math is always 100% exact: $10 + 20 = 30$ cents.
+
+---
+
+### 0.2 Concurrency & Database Terminology
+
+#### 6. What is "Concurrency"?
+* **Plain English:** Multiple things happening at the exact same moment in time.
+* **Real-Life Analogy:** A popular coffee shop with 5 cashiers taking orders from 5 different customers at the exact same second.
+
+#### 7. What is a "Race Condition"?
+* **Plain English:** A software bug that happens when two threads rush to update the same piece of data at the same millisecond, and whoever finishes last accidentally overwrites and destroys what the first one did.
+* **Real-Life Analogy:** Imagine a shared joint bank account with \$100. A husband and wife both swipe their debit cards at two different stores at the exact same second for \$100 each. If the bank checks the balance for both before either deducts it, both payments succeed, and the bank loses \$100! That is a race condition.
+
+#### 8. What is "Optimistic Concurrency Control" (OCC)?
+* **Plain English:** A strategy where you "hope for the best, but check for changes before saving." You don't lock down the database row while thinking; you just stamp it with a version number (e.g., `version = 1`). When saving, you check: *"Is the version still 1?"* If yes, update it to `2`. If someone else changed it to `2` while you were thinking, your write safely fails, and you retry.
+* **Real-Life Analogy:** Editing a shared Google Doc offline. When you reconnect, Google Docs checks if someone else edited that paragraph while you were away.
+
+#### 9. What is "Pessimistic Locking"?
+* **Plain English:** A strategy where you "assume the worst." Before you even read the balance, you lock the door and force everyone else to wait in a queue until you are completely finished.
+* **In SQL:** `SELECT * FROM accounts WHERE id = 'alice' FOR UPDATE;`
+* **Downside:** If 1,000 people try to pay Alice at the same time, 999 people are stuck waiting in a frozen line, destroying system speed. That is why NOVARIS uses Optimistic Concurrency Control (OCC) instead!
+
+#### 10. What does "ACID" Mean?
+* **A - Atomicity ("All or Nothing"):** If a payment requires 4 database steps and step 3 crashes, steps 1 and 2 are automatically erased. Either the whole payment happens, or none of it happens.
+* **C - Consistency ("Follow the Rules"):** The database rejects any row that breaks mathematical constraints (e.g., you can never have a negative transaction amount).
+* **I - Isolation ("Private Booths"):** Two payments running at the same time cannot peek into each other's half-finished work.
+* **D - Durability ("Written in Stone"):** Once the database says "Saved", the data is written to the physical hard drive. Even if the server's power plug is yanked out a microsecond later, the money is not lost.
+
+#### 11. What is a "Mutex" / "Distributed Lock"?
+* **Plain English:** A digital key. Only the worker holding the key is allowed to touch an account.
+* **Real-Life Analogy:** The single key to a private restroom in a coffee shop. If someone has the key, you must wait outside until they hand it back.
+
+---
+
+### 0.3 Distributed Systems Terminology
+
+#### 12. What is "Idempotency"?
+* **Plain English:** An operation is idempotent if doing it 10 times in a row produces the exact same result as doing it once.
+* **Real-Life Analogy:** The "Call Elevator" button. If you press the elevator button 10 times in a panic, the elevator does not show up 10 times—it shows up once.
+* **In Payments:** If you click "Pay \$50" and your phone loses its 4G connection, your banking app automatically retries. If the server is **idempotent**, it recognizes the retry and guarantees you are only charged once, never twice.
+
+#### 13. What is an "Idempotency Key"?
+* **Plain English:** A unique tracking ID (like a FedEx tracking barcode) that the client generates and sends with a payment request. The server checks Redis: *"Have I seen tracking ID `abc-123` in the last 24 hours?"* If yes, it returns the previous receipt instead of charging the card again.
+
+#### 14. What is the "Dual-Write Problem"?
+* **Plain English:** Trying to update two different computer systems across the network (e.g. saving to PostgreSQL and sending a message to Kafka) in two separate steps. If your program crashes between step 1 and step 2, the systems fall out of sync and you lose data.
+
+#### 15. What is the "Transactional Outbox Pattern"?
+* **Plain English:** A clever architectural pattern that solves the Dual-Write Problem. Instead of calling Kafka directly over the network, your app saves the message into an `outbox` table inside the **exact same database transaction** as the payment. A separate background mail carrier picks up the messages from the outbox and delivers them to Kafka safely.
+
+#### 16. What is "Event Streaming" & Apache Kafka?
+* **Plain English:** An infinite, high-speed, un-erasable conveyor belt of messages.
+* **Real-Life Analogy:** An airport luggage carousel. Suitcases (events) arrive on the carousel in order. Passengers (services) watch the carousel and pick up their luggage at their own pace without stopping the carousel for other people.
+
+#### 17. What is "KRaft Mode" in Kafka?
+* **Plain English:** Modern Kafka running without needing a second helper program called ZooKeeper. It uses the clean **Raft consensus algorithm** to elect leaders internally, making Kafka faster, simpler, and easier to run.
+
+---
+
+### 0.4 Operating Systems & Networking Terminology
+
+#### 18. What is an "API Gateway"?
+* **Plain English:** The front security desk and receptionist of an office building. No visitor is allowed into the building without having their badge verified, their bag checked, and their visit approved at the front desk first. The Gateway protects internal microservices from bad traffic.
+
+#### 19. What is "Rate Limiting" (Token-Bucket)?
+* **Plain English:** Restricting how many requests a user can send per second so they don't crash the server.
+* **Analogy:** A token dispenser at an arcade that gives you 10 tokens per minute. Once you spend your 10 tokens, you must wait for the dispenser to drop another token before you can play another game.
+
+#### 20. What is a "Goroutine" vs. an "OS Thread"?
+* **OS Thread (Java, C++):** Heavyweight. Like hiring a full-time human truck driver (~1 MB memory). A laptop crashes if you hire 50,000 drivers.
+* **Goroutine (Go):** Lightweight. Like an ant carrying a breadcrumb (~2 KB memory). A laptop can easily run 500,000 ants simultaneously without breaking a sweat.
+
+#### 21. What is a "File Descriptor" (FD) & Network Socket?
+* **Plain English:** In Linux, everything is a file. When a user connects to your website, the OS opens a virtual telephone line called a **Socket** and gives it a tracking number called a **File Descriptor**. If an attacker opens 100,000 lines and refuses to speak, your computer runs out of tracking numbers and crashes.
+
+#### 22. What is a "Slowloris Attack"?
+* **Plain English:** A cyberattack where a hacker opens hundreds of connections to your server and sends HTTP request headers very... slowly... (1 letter every 30 seconds). Without timeouts, your server holds all the lines open forever until real customers get a "Server Busy" error.
+
+#### 23. What is a "Graceful Shutdown"?
+* **Plain English:** When closing a restaurant, you lock the front door so no *new* customers enter, but you let the customers already seated inside finish their dinner before turning off the kitchen lights. Our Gateway finishes in-flight payments before shutting down.
+
+#### 24. What is a "Healthcheck" (`/healthz`)?
+* **Plain English:** A digital doctor that pings the server every 5 seconds asking: *"Are you alive and feeling well?"* If the server doesn't respond with `200 OK`, Docker or Kubernetes restarts it automatically.
+
+---
+
+## 3. Chapter 1: The Theoretical Foundations of Financial Engineering
 
 ### 1.1 The Double-Entry Revolution: History & First Principles
 Before computers existed, merchants kept track of money using **single-entry bookkeeping**—a simple list of notes stating *"Alice owes me \$10"* or *"I paid Bob \$5"*. 
@@ -180,9 +300,9 @@ There are three major architectural reasons why this is unacceptable in producti
 
 ---
 
-## 3. Chapter 2: Concurrency, Consistency & Distributed Locking Theory
+## 4. Chapter 2: Concurrency, Consistency & Distributed Locking Theory
 
-### 3.1 The Physics of a Race Condition: The Classic Double-Spend Anomaly
+### 2.1 The Physics of a Race Condition: The Classic Double-Spend Anomaly
 Consider a user named Alice with exactly **\$100** in her wallet. She attempts to buy two \$100 items from two different merchant websites at the exact same millisecond:
 
 ```
@@ -205,7 +325,7 @@ Consider a user named Alice with exactly **\$100** in her wallet. She attempts t
 
 **The Consequence:** Alice spent \$200 while only possessing \$100. The platform lost \$100 because Thread B read the balance *before* Thread A wrote its update (a classic **Lost Update Anomaly**).
 
-### 3.2 ACID Transaction Guarantees & ANSI SQL Isolation Levels
+### 2.2 ACID Transaction Guarantees & ANSI SQL Isolation Levels
 Relational databases like PostgreSQL provide ACID guarantees:
 * **Atomicity:** All operations within a `BEGIN ... COMMIT` block succeed together, or all fail together (`ROLLBACK`).
 * **Consistency:** Constraints (`CHECK`, `FOREIGN KEY`, `UNIQUE`) are guaranteed to remain valid before and after the transaction.
@@ -218,7 +338,7 @@ Relational databases like PostgreSQL provide ACID guarantees:
 3. **Repeatable Read:** A query sees a snapshot of the database taken at the start of the transaction. Prevents non-repeatable reads, but can experience serialization anomalies.
 4. **Serializable:** The gold standard. Transactions execute as if they ran in strict sequential order. However, Serializable isolation incurs significant lock contention and aborts transactions under high write load.
 
-### 3.3 Concurrency Control Paradigms: Pessimistic vs. Optimistic (OCC)
+### 2.3 Concurrency Control Paradigms: Pessimistic vs. Optimistic (OCC)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -252,16 +372,16 @@ When settling a payment:
    * If `RowsAffected == 1`: The write succeeded! Version is now `4`.
    * If `RowsAffected == 0`: Another thread updated Alice's account while we were computing. Our read was stale! The transaction immediately aborts without corrupting balances, and the application safely retries.
 
-### 3.4 Distributed Locking Primitives: Redis Redlock
+### 2.4 Distributed Locking Primitives: Redis Redlock
 While OCC protects the database at the row level, high-frequency FinTech platforms require **distributed locking** at the edge before requests even reach SQL execution:
 * When an account is settling, NOVARIS acquires a distributed mutex in Redis using atomic `SET key value NX PX 5000`.
 * In Phase 3, we expand this into the **Redlock Algorithm** (distributed locking across multiple independent Redis instances), ensuring that even if one Redis node crashes, no concurrent thread can acquire a duplicate lock.
 
 ---
 
-## 4. Chapter 3: Distributed Systems & Event Streaming Theory
+## 5. Chapter 3: Distributed Systems & Event Streaming Theory
 
-### 4.1 The Fallacy of Synchronous Microservice Chains
+### 3.1 The Fallacy of Synchronous Microservice Chains
 Beginner architectures often chain microservices together via synchronous HTTP/REST:
 
 ```
@@ -275,7 +395,7 @@ Beginner architectures often chain microservices together via synchronous HTTP/R
 
 **NOVARIS Principle:** **Services communicate asynchronously via an event log.** The Gateway accepts the request, persists it reliably, and publishes an event to Apache Kafka. Downstream services consume at their own pace without blocking the client.
 
-### 4.2 The Dual-Write Problem & The Two Generals' Paradox
+### 3.2 The Dual-Write Problem & The Two Generals' Paradox
 
 ```
                   THE DUAL-WRITE PARADOX
@@ -301,7 +421,7 @@ If the application commits to the database, and crashes or encounters a network 
 * The database has the transaction.
 * Downstream fraud detectors, settlement workers, and notification systems never know it happened.
 
-### 4.3 The Transactional Outbox Pattern: A Mathematical Solution
+### 3.3 The Transactional Outbox Pattern: A Mathematical Solution
 The **Transactional Outbox Pattern** solves the dual-write problem by leveraging the database's native ACID transaction guarantees:
 
 ```
@@ -334,7 +454,7 @@ The **Transactional Outbox Pattern** solves the dual-write problem by leveraging
 2. **Decoupled Relaying:** A separate background worker reads unpublished rows from `outbox` and sends them to Kafka. Once Kafka acknowledges receipt (`acks=all`), the worker updates the outbox status to `PUBLISHED`.
 3. **Guaranteed Delivery:** If the system crashes at any point, the outbox row remains on disk and is re-published upon recovery.
 
-### 4.4 Message Queues vs. Distributed Commit Logs (RabbitMQ vs. Kafka)
+### 3.4 Message Queues vs. Distributed Commit Logs (RabbitMQ vs. Kafka)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -353,7 +473,7 @@ The **Transactional Outbox Pattern** solves the dual-write problem by leveraging
 
 In NOVARIS, Kafka topics are **partitioned by `account_id`**. This guarantees that all transactions affecting a specific account are guaranteed to arrive in strict chronological order at a single consumer thread, eliminating distributed race conditions.
 
-### 4.5 Consensus Without ZooKeeper: How KRaft Works
+### 3.5 Consensus Without ZooKeeper: How KRaft Works
 For over a decade, Apache Kafka required Apache ZooKeeper to manage cluster metadata, leader elections, and topic configurations. ZooKeeper was a separate distributed consensus engine based on the Zab protocol.
 
 **Why KRaft is Superior:**
@@ -363,9 +483,9 @@ For over a decade, Apache Kafka required Apache ZooKeeper to manage cluster meta
 
 ---
 
-## 5. Chapter 4: Operating Systems, Networking & The Edge API Gateway
+## 6. Chapter 4: Operating Systems, Networking & The Edge API Gateway
 
-### 5.1 Process Concurrency Models: OS Threads vs. Event Loops vs. Goroutines
+### 4.1 Process Concurrency Models: OS Threads vs. Event Loops vs. Goroutines
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -383,7 +503,7 @@ For over a decade, Apache Kafka required Apache ZooKeeper to manage cluster meta
 
 Go utilizes an **$M:N$ hybrid scheduler**: it maps $N$ green threads (goroutines) onto $M$ actual OS kernel threads. When a goroutine performs network I/O (e.g. waiting for a database response or reading an HTTP socket), the Go runtime unbinds the goroutine from the OS thread and assigns another goroutine to continue executing. This delivers non-blocking performance with clean, synchronous-looking code.
 
-### 5.2 Sockets, File Descriptors, and Slowloris Attacks
+### 4.2 Sockets, File Descriptors, and Slowloris Attacks
 Every incoming TCP connection to an HTTP server consumes an **Operating System File Descriptor (FD)**.
 
 In a **Slowloris Denial of Service (DoS) attack**, an attacker opens hundreds of TCP connections to the server and sends HTTP request headers at an excruciatingly slow rate (e.g. 1 byte every 30 seconds):
@@ -402,7 +522,7 @@ WriteTimeout: 10 * time.Second, // Drops connection if client cannot read respon
 IdleTimeout:  60 * time.Second, // Reclaims idle keep-alive sockets after 60s
 ```
 
-### 5.3 POSIX Process Signals (`SIGINT`, `SIGTERM`) & Graceful Connection Draining
+### 4.3 POSIX Process Signals (`SIGINT`, `SIGTERM`) & Graceful Connection Draining
 When a Docker container or Kubernetes pod stops:
 1. The kernel sends a **`SIGTERM` (Signal 15)** to the process.
 2. If the process does not shut down within a grace period (default: 30 seconds in Kubernetes), the kernel issues an uncatchable **`SIGKILL` (Signal 9)**, instantly terminating the process.
@@ -419,14 +539,14 @@ If a server terminates abruptly while processing an active payment:
 4. It allows all active in-flight requests to complete their HTTP cycles cleanly.
 5. Once all requests drain, the process exits with status code 0.
 
-### 5.4 Health Probe Semantics: Liveness vs. Readiness in Cloud-Native Systems
+### 4.4 Health Probe Semantics: Liveness vs. Readiness in Cloud-Native Systems
 In modern container orchestrators like Kubernetes, systems query dedicated HTTP probes:
 * **Liveness Probe (`/healthz`):** Asks *"Is the application process deadlocked or corrupted?"* If this probe fails repeatedly, Kubernetes restarts the container.
 * **Readiness Probe (`/readyz`):** Asks *"Is the application ready to accept traffic?"* If an application is booting or temporarily reconnecting to its database, it marks itself not ready so the load balancer stops routing traffic to it without restarting it.
 
 ---
 
-## 6. Chapter 5: The Data Science → Full-Stack Rosetta Stone
+## 7. Chapter 5: The Data Science → Full-Stack Rosetta Stone
 
 | You Already Know (Data Science / Scripting) | Today's New Concept (Distributed Systems) | Deep Conceptual Equivalence |
 | :--- | :--- | :--- |
@@ -444,7 +564,7 @@ In modern container orchestrators like Kubernetes, systems query dedicated HTTP 
 
 ---
 
-## 7. Chapter 6: Architectural Trade-Off Analysis ("Why This and Not That")
+## 8. Chapter 6: Architectural Trade-Off Analysis ("Why This and Not That")
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -484,7 +604,7 @@ In modern container orchestrators like Kubernetes, systems query dedicated HTTP 
 
 ---
 
-## 8. Chapter 7: Monorepo Architecture & Directory Taxonomy
+## 9. Chapter 7: Monorepo Architecture & Directory Taxonomy
 
 ```text
 novaris/
@@ -505,7 +625,7 @@ novaris/
 
 ---
 
-## 9. Chapter 8: Line-by-Line Code Masterclass (Complete Dissections)
+## 10. Chapter 8: Line-by-Line Code Masterclass (Complete Dissections)
 
 ---
 
@@ -659,8 +779,8 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 #### Detailed Explanation:
 * `idempotency_key VARCHAR(64) UNIQUE NOT NULL`: Client-provided deduplication key enforced by a database `UNIQUE` constraint to prevent double-charging on network retries.
-* `ON DELETE RESTRICT`: Foreign key constraint preventing deletion of accounts that possess transaction history.
-* `CHECK (amount_cents > 0)`: Database-level constraint rejecting invalid zero or negative transaction amounts.
+* `sender_account_id ... ON DELETE RESTRICT`: Foreign key constraint preventing deletion of accounts that possess transaction history.
+* `amount_cents BIGINT NOT NULL CHECK (amount_cents > 0)`: A SQL constraint enforcing that payment amounts must be strictly positive. You can never create a transaction for \$0 or a negative amount.
 * `risk_factors JSONB`: Stores machine learning explainability vectors (SHAP values) as structured binary JSON.
 
 ---
@@ -875,7 +995,7 @@ go 1.22
 
 ---
 
-## 10. Chapter 9: Verification Laboratory: Execution Proof & Log Dissection
+## 11. Chapter 9: Verification Laboratory: Execution Proof & Log Dissection
 
 ### Live Test Log Output:
 ```text
@@ -922,7 +1042,7 @@ Gateway stopped cleanly.
 
 ---
 
-## 11. Chapter 10: The Interview Defense Compendium (10 High-Stakes Q&As)
+## 12. Chapter 10: The Interview Defense Compendium (10 High-Stakes Q&As)
 
 ### Q1: "Why did you use BIGINT integer cents for money instead of FLOAT or DECIMAL?"
 * **Answer:** "Floating-point numbers in computer systems use the IEEE 754 standard, which represents fractional numbers in base-2 binary. Certain base-10 fractions like 0.1 cannot be represented cleanly in binary, resulting in recurring floating-point rounding errors (e.g. `0.1 + 0.2 = 0.30000000000000004`). In a distributed payment system processing thousands of transactions per second, this penny drift compounds into large balance discrepancies. We represent all money in integer cents using `BIGINT`, which provides exact, deterministic math up to $92 quadrillion."
@@ -956,7 +1076,7 @@ Gateway stopped cleanly.
 
 ---
 
-## 12. Chapter 11: The Roadmap Horizon (Day 2 Preview & Exercises)
+## 13. Chapter 11: The Roadmap Horizon (Day 2 Preview & Exercises)
 
 With the foundation poured and verified, we are officially ready for **Day 2**:
 * **Theme:** JWT Authentication & Gateway Security Middleware.
