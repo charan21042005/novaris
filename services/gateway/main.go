@@ -1,15 +1,15 @@
 // ==============================================================================
 // NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
-// MODULE 1: API Gateway Service Entry Point
+// MODULE 1: API Gateway Service Entry Point (Day 2 - JWT Protected)
 // ==============================================================================
 //
-// Purpose of the API Gateway:
-// The Gateway is the single public "front door" for external merchants and clients.
-// On Day 1, this service establishes:
-//   1. A clean, idiomatic Go HTTP server using the standard library (net/http).
-//   2. Structured request logging middleware (method, path, latency).
-//   3. A standard Kubernetes-compatible `/healthz` liveness/readiness probe.
-//   4. Graceful shutdown to handle OS termination signals (SIGINT, SIGTERM) cleanly.
+// Day 2 Evolution:
+// 1. /healthz remains public for unauthenticated Kubernetes/Docker health probing.
+// 2. / (root) provides public service discovery.
+// 3. /v1/payments is now a PROTECTED ROUTE wrapped with auth.JWTMiddleware:
+//    - Rejects unauthenticated requests with HTTP 401 Unauthorized.
+//    - Rejects expired or cryptographically tampered tokens.
+//    - Injects verified claims (merchant_id, role) into request context.
 // ==============================================================================
 
 package main
@@ -24,19 +24,19 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/charan21042005/novaris/services/gateway/internal/auth"
 )
 
 // Config holds runtime configuration parameters for the gateway.
-// In later phases, these will be populated from environment variables.
 type Config struct {
-	Port            string
-	ServiceName     string
+	Port           string
+	ServiceName    string
 	ServiceVersion string
-	Environment     string
+	Environment    string
 }
 
 // HealthResponse defines the structured JSON payload returned by the /healthz probe.
-// This matches standard container orchestration (Kubernetes) health expectations.
 type HealthResponse struct {
 	Status      string    `json:"status"`
 	Service     string    `json:"service"`
@@ -54,26 +54,31 @@ type InfoResponse struct {
 	Endpoints   map[string]string `json:"endpoints"`
 }
 
+// PaymentResponse defines the response returned by the protected /v1/payments route.
+type PaymentResponse struct {
+	Status     string    `json:"status"`
+	MerchantID string    `json:"merchant_id"`
+	Role       string    `json:"role"`
+	Message    string    `json:"message"`
+	Timestamp  time.Time `json:"timestamp"`
+}
+
 // loggingMiddleware intercepts incoming HTTP requests, records the processing time,
-// and outputs a structured log line. In production, this provides request observability.
+// and outputs a structured log line for full observability.
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		// Call the next handler in the chain
 		next.ServeHTTP(w, r)
 
-		// Log method, path, remote client IP, and elapsed duration
 		duration := time.Since(start)
 		log.Printf("[HTTP] %s %s from %s in %v", r.Method, r.URL.Path, r.RemoteAddr, duration)
 	})
 }
 
-// healthzHandler responds with HTTP 200 and system health metadata.
-// Used by Docker and Kubernetes to verify the service is alive and healthy.
+// healthzHandler responds with HTTP 200 and system health metadata. (Public route)
 func healthzHandler(cfg Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Only allow GET requests on the health endpoint
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -90,13 +95,11 @@ func healthzHandler(cfg Config) http.HandlerFunc {
 			Timestamp:   time.Now().UTC(),
 		}
 
-		if err := json.NewEncoder(w).Encode(payload); err != nil {
-			log.Printf("ERROR: Failed to serialize health check payload: %v", err)
-		}
+		_ = json.NewEncoder(w).Encode(payload)
 	}
 }
 
-// rootHandler provides introductory information and lists available routes.
+// rootHandler provides introductory information and lists available routes. (Public route)
 func rootHandler(cfg Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -113,8 +116,9 @@ func rootHandler(cfg Config) http.HandlerFunc {
 			Status:      "online",
 			Version:     cfg.ServiceVersion,
 			Endpoints: map[string]string{
-				"health_check":     "/healthz",
-				"transaction_flow": "/v1/transactions (Coming in Phase 1: Day 2-4)",
+				"health_check":       "/healthz (Public Liveness Probe)",
+				"payments_protected": "/v1/payments (Protected - Requires 'Authorization: Bearer <token>')",
+				"transaction_flow":   "/v1/transactions (Coming in Phase 1: Day 3 HMAC & Day 4 Rate Limiting)",
 			},
 		}
 
@@ -122,49 +126,79 @@ func rootHandler(cfg Config) http.HandlerFunc {
 	}
 }
 
+// paymentsHandler is a PROTECTED route stub.
+// It retrieves the pre-verified JWT claims from the request context and returns an authorized response.
+// Real double-entry ledger logic and Kafka streaming will be hooked into this pipeline in later days.
+func paymentsHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve pre-verified claims that were attached to the context by auth.JWTMiddleware
+	claims, ok := auth.GetClaimsFromContext(r.Context())
+	if !ok {
+		// Defensive programming: this should never happen because the middleware guarantees presence
+		http.Error(w, "Internal Server Error: Missing claims in context", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	payload := PaymentResponse{
+		Status:     "authorized",
+		MerchantID: claims.MerchantID,
+		Role:       claims.Role,
+		Message:    "Access granted to protected payments route. Identity cryptographically verified via JWT.",
+		Timestamp:  time.Now().UTC(),
+	}
+
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
 func main() {
-	// Initialize default configuration
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
 	cfg := Config{
-		Port:            port,
-		ServiceName:     "novaris-gateway",
+		Port:           port,
+		ServiceName:    "novaris-gateway",
 		ServiceVersion: "1.0.0",
-		Environment:     "development",
+		Environment:    "development",
 	}
 
 	// Create a new ServeMux (HTTP request router)
 	mux := http.NewServeMux()
 
-	// Register route handlers
+	// 1. Public Routes (No authentication required)
 	mux.HandleFunc("/", rootHandler(cfg))
 	mux.HandleFunc("/healthz", healthzHandler(cfg))
 
-	// Wrap router with logging middleware
+	// 2. Protected Routes (Wrapped with auth.JWTMiddleware)
+	// Any request arriving here without a valid Bearer token is rejected with HTTP 401
+	mux.HandleFunc("/v1/payments", auth.JWTMiddleware(paymentsHandler))
+
+	// Wrap router with logging middleware for latency & request tracing
 	handlerWithMiddleware := loggingMiddleware(mux)
 
-	// Configure the HTTP server with production-grade timeouts to prevent slowloris attacks
+	// Configure server with production-grade timeouts to prevent Slowloris attacks
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Port),
 		Handler:      handlerWithMiddleware,
-		ReadTimeout:  10 * time.Second, // Max duration reading the entire request
-		WriteTimeout: 10 * time.Second, // Max duration writing the response
-		IdleTimeout:  60 * time.Second, // Max time to keep idle keep-alive connections
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
-	// Channel to listen for OS termination signals (CTRL+C, SIGTERM from Docker/K8s)
+	// Channel for OS termination signals (SIGINT, SIGTERM)
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 
-	// Start server in a background goroutine so it does not block the main signal listener
+	// Launch HTTP listener in a background goroutine
 	go func() {
 		log.Printf("=======================================================")
-		log.Printf(" ⚡ NOVARIS Gateway Service v%s started", cfg.ServiceVersion)
+		log.Printf(" ⚡ NOVARIS Gateway Service v%s (Day 2 - JWT Security)", cfg.ServiceVersion)
 		log.Printf(" Listening on port: :%s", cfg.Port)
-		log.Printf(" Healthcheck: http://localhost:%s/healthz", cfg.Port)
+		log.Printf(" Public:    http://localhost:%s/healthz", cfg.Port)
+		log.Printf(" Protected: http://localhost:%s/v1/payments", cfg.Port)
 		log.Printf("=======================================================")
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -172,16 +206,15 @@ func main() {
 		}
 	}()
 
-	// Block here until a termination signal is received
+	// Block until OS termination signal arrives
 	<-stopChan
-	log.Println("\n[SHUTDOWN] OS termination signal received. Initiating graceful shutdown...")
+	log.Println("\n[SHUTDOWN] OS termination signal received. Draining connections...")
 
-	// Create a shutdown context with a 5-second deadline
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("FATAL: Server forced to shutdown: %v", err)
+		log.Fatalf("FATAL: Forced shutdown: %v", err)
 	}
 
 	log.Println("[SHUTDOWN] NOVARIS Gateway stopped cleanly.")
