@@ -35,8 +35,8 @@ For every single day of the implementation:
 
 | Phase | Day | Focus / Milestone | Document Link | Status |
 | :---: | :---: | :--- | :--- | :---: |
-| **Phase 1** | **Day 01** | **Monorepo Layout, Docker Compose & Ledger Schema Foundation** | [Day_01_Action_Log.md](./Day_01_Action_Log.md) | ⏳ *Up Next* |
-| **Phase 1** | **Day 02** | JWT Authentication & Middleware Pipeline | *Pending* | ⚪ |
+| **Phase 1** | **Day 01** | **Monorepo Layout, Docker Compose & Ledger Schema Foundation** | [Day_01_Action_Log.md](./Day_01_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 1** | **Day 02** | JWT Authentication & Middleware Pipeline | *Pending* | ⏳ *Up Next* |
 | **Phase 1** | **Day 03** | Cryptographic HMAC-SHA256 Request Signing | *Pending* | ⚪ |
 | **Phase 1** | **Day 04** | Distributed Token-Bucket Rate Limiter | *Pending* | ⚪ |
 | **Phase 1** | **Day 05** | Production Double-Entry Ledger Schema & Indexes | *Pending* | ⚪ |
