@@ -79,6 +79,8 @@
     - 8.3 Complete Step-by-Step CLI Runbook (Bash & PowerShell)
 12. [Chapter 9: The Interview Defense Compendium (10 High-Stakes Tier-1 Q&As)](#12-chapter-9-the-interview-defense-compendium-10-high-stakes-tier-1-qas)
 13. [Chapter 10: The Roadmap Horizon (Day 5 Preview: Double-Entry Financial Ledger)](#13-chapter-10-the-roadmap-horizon-day-5-preview-double-entry-financial-ledger)
+    - 10.1 Day 5 Architectural Objectives
+    - 10.2 Hands-On Mastery Exercises for the Reader
 
 ---
 
@@ -1318,6 +1320,27 @@ Tomorrow on **Day 5**, we turn our attention inward to the core of the financial
 1. **Schema Refinements & Foreign Keys:** Link journal entries directly to merchant accounts with strict referential integrity.
 2. **Composite Indexes for Query Performance:** Build high-cardinality composite B-Tree indexes on `(account_id, created_at DESC)` for sub-millisecond ledger auditing.
 3. **Double-Entry Invariant Enforcement:** Implement PostgreSQL database constraints guaranteeing that every financial transaction has equal and opposite debit and credit legs.
+
+---
+
+### 10.2 Hands-On Mastery Exercises for the Reader
+
+To solidify your practical mastery of Day 4 rate limiting and Go concurrency:
+
+1. **Dynamic Tiering Exercise:**
+   * Extend `RateLimitMiddleware` to look up the merchant's subscription tier in `claims.Role`:
+     * If `claims.Role == "enterprise"`, grant a bucket capacity of $50.0$ and refill rate of $10.0$ req/sec.
+     * If `claims.Role == "standard"`, grant the default capacity of $10.0$ and refill rate of $2.0$ req/sec.
+   * Write an automated test asserting that enterprise merchants can burst 50 requests before receiving HTTP 429.
+
+2. **Fractional Refill Experiment:**
+   * In `main.go`, adjust `DefaultRefillRate` to $0.5$ tokens/second (1 token every 2 seconds).
+   * Exhaust the bucket with 10 immediate requests.
+   * On the 11th request, inspect the `Retry-After` header. Verify that it returns `Retry-After: 2` (or greater), proving dynamic deficit calculation.
+
+3. **Goroutine Leakage Profiling:**
+   * Write a small Go test comparing memory consumption between spawning 50,000 idle `time.NewTicker` background goroutines versus 50,000 passive `TokenBucket` structs.
+   * Use `runtime.ReadMemStats` and `runtime.NumGoroutine()` to measure the exact resident set memory and scheduler thread count differences.
 
 ---
 
