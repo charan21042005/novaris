@@ -23,19 +23,21 @@
 
 1. [Preface: Throttling the Firehose — The Peril of Legitimate Floods](#1-preface-throttling-the-firehose--the-peril-of-legitimate-floods)
 2. [Chapter 0: The Plain-English Rate Limiting & Concurrency Lexicon](#2-chapter-0-the-plain-english-rate-limiting--concurrency-lexicon)
-   - 0.1 Traffic Shaping vs. Traffic Policing
+   - 0.1 Traffic Shaping vs. Traffic Policing (The Highway Meter vs. The Bouncer)
    - 0.2 Burst Tolerance ($c$) vs. Sustained Rate ($r$)
-   - 0.3 The Noisy Neighbor Problem & Resource Starvation
+   - 0.3 The Noisy Neighbor Problem & Multi-Tenant Starvation
    - 0.4 Concurrency Defect Models: Race Conditions & Critical Sections
    - 0.5 Mutual Exclusion Primitives (`sync.Mutex` vs. `sync.RWMutex`)
-   - 0.6 Zero-Goroutine Lazy Refill vs. Active Background Polling
-   - 0.7 RFC 6585 HTTP 429 Status Code & RFC 7231 `Retry-After` Header
-   - 0.8 Fail-Fast Architecture & Computational Defense Economics
+   - 0.6 Check-then-Act Flaws (Time of Check to Time of Use - TOCTOU)
+   - 0.7 Zero-Goroutine Lazy Refill vs. Active Background Polling
+   - 0.8 RFC 6585 HTTP 429 Status Code & RFC 7231 `Retry-After` Header
+   - 0.9 Fail-Fast Architecture & Computational Defense Economics
+   - 0.10 In-Memory Rate Limiting vs. Distributed Redis Rate Limiting
 3. [Chapter 0.5: Complete Software Components, Tooling & Dependency Directory](#3-chapter-05-complete-software-components-tooling--dependency-directory)
    - 0.5.1 Concurrency Primitives (`sync.RWMutex`, `sync.Mutex`, `sync/atomic`)
    - 0.5.2 Mathematical & Time Primitives (`math.Min`, `math.Ceil`, `time.Now`, `time.Since`)
    - 0.5.3 Go HTTP & Context Pipeline (`net/http`, `http.Handler`, `http.ResponseWriter`, `context`)
-   - 0.5.4 Testing & Verification Tools (Go Race Detector `-race`, `httptest.Server`, `curl`)
+   - 0.5.4 Testing, Race Detection & Verification Tools (`go test -race`, ThreadSanitizer, `curl`, PowerShell)
    - 0.5.5 Standards & RFC Specifications (RFC 6585, RFC 7231, RFC 7519, RFC 2104)
 4. [Chapter 1: The Theoretical Foundations of Rate Limiting in Financial Gateways](#4-chapter-1-the-theoretical-foundations-of-rate-limiting-in-financial-gateways)
    - 1.1 Why Stateless Security (JWT/HMAC) Needs Stateful Flow Control
@@ -44,7 +46,7 @@
    - 1.4 How Real-World Gateways Enforce Rate Limits (Stripe, GitHub, Cloudflare, AWS API Gateway)
 5. [Chapter 2: The Mathematical Architecture of the Token Bucket Algorithm](#5-chapter-2-the-mathematical-architecture-of-the-token-bucket-algorithm)
    - 2.1 The Metaphor: The Bucket, the Faucet, and the Drops
-   - 2.2 Mathematical Formalization of the Token Balance
+   - 2.2 Mathematical Formalization of Token Accumulation & Clamping
    - 2.3 Burst Dynamics: Why $c=10$ and $r=2$ Accommodates Spikes Without Breaches
    - 2.4 Mathematical Derivation of the `Retry-After` Duration
    - 2.5 Zero-Goroutine Lazy Refill: Eliminating $O(N)$ Background Timer Overhead
@@ -57,7 +59,7 @@
 7. [Chapter 4: Middleware Stacking & Fail-Fast Economics](#7-chapter-4-middleware-stacking--fail-fast-economics)
    - 4.1 The 3-Layer Defense-in-Depth Pipeline: JWT $\rightarrow$ RateLimit $\rightarrow$ HMAC $\rightarrow$ Settlement
    - 4.2 The Critical Ordering Question: Why Rate Limiting Sits BEFORE HMAC
-   - 4.3 Computational Economics: Hashing Cost vs. Mutex Math Cost
+   - 4.3 Computational Economics: Hashing Cost (~25,000 cycles) vs. Mutex Math Cost (~80 cycles)
    - 4.4 Protecting Downstream Invariants: Memory, Sockets, Kafka Brokers & DB Pools
 8. [Chapter 5: The Data Science → Full-Stack Rate Limiting Rosetta Stone](#8-chapter-5-the-data-science--full-stack-rate-limiting-rosetta-stone)
 9. [Chapter 6: Architectural Trade-Off Analysis ("Why This and Not That")](#9-chapter-6-architectural-trade-off-analysis-why-this-and-not-that)
@@ -66,13 +68,14 @@
    - 6.3 Lazy Mathematical Refill vs. Background Ticker Goroutines
    - 6.4 Static Burst/Refill Configuration vs. Dynamic Tiered Quotas
 10. [Chapter 7: Line-by-Line Code Masterclass (Complete Dissections)](#10-chapter-7-line-by-line-code-masterclass-complete-dissections)
-    - 7.1 `services/gateway/internal/ratelimit/limiter.go` (The Rate Limiting Engine)
+    - 7.1 `services/gateway/internal/ratelimit/limiter.go` (The Complete Rate Limiting Engine)
     - 7.2 `services/gateway/internal/ratelimit/limiter_test.go` (Unit & Concurrency Tests)
-    - 7.3 `services/gateway/main.go` (Wiring the 3-Layer Pipeline)
+    - 7.3 `services/gateway/main.go` (Wiring the 3-Layer Defense Pipeline)
     - 7.4 `services/gateway/main_test.go` (End-to-End Ingress Integration Tests)
+    - 7.5 `services/gateway/internal/ratelimit/README.md` (Internal Architectural Specs)
 11. [Chapter 8: Verification Laboratory: Execution Proof & Complete Runbook](#11-chapter-8-verification-laboratory-execution-proof--complete-runbook)
     - 8.1 Complete Automated Test Suite Output (18/18 Passing Tests)
-    - 8.2 Real-World HTTP Verification Scenarios (Burst, 429 Rejection, Refill, Isolation)
+    - 8.2 Real-World HTTP Verification Matrix: 6 Concrete Scenarios
     - 8.3 Complete Step-by-Step CLI Runbook (Bash & PowerShell)
 12. [Chapter 9: The Interview Defense Compendium (10 High-Stakes Tier-1 Q&As)](#12-chapter-9-the-interview-defense-compendium-10-high-stakes-tier-1-qas)
 13. [Chapter 10: The Roadmap Horizon (Day 5 Preview: Double-Entry Financial Ledger)](#13-chapter-10-the-roadmap-horizon-day-5-preview-double-entry-financial-ledger)
@@ -108,6 +111,7 @@ Junior developers assume that Denial of Service (DoS) attacks only originate fro
 Consider what happens when a major retail merchant connects their payment processing service to NOVARIS:
 1. **The Infinite While-Loop Bug:** An engineer at Merchant Alpha writes a script to sync pending orders. A subtle bug causes an exception handler to retry immediately without exponential backoff:
    ```python
+   # THE SILENT GATEWAY KILLER: An unthrottled client retry loop
    while not response.is_success():
        response = http.post("https://gateway.novaris.io/v1/payments", ...) # 5,000 req/sec!
    ```
@@ -134,41 +138,74 @@ Today, we implement the **Token-Bucket Rate Limiter**. We build:
 
 ## 2. Chapter 0: The Plain-English Rate Limiting & Concurrency Lexicon
 
-For engineers transitioning from computer science theory or data science into high-throughput systems engineering, distributed terminology can be overwhelming. Here is every concept explained in intuitive, unambiguous terms:
+For engineers transitioning from computer science theory or data science into high-throughput systems engineering, distributed systems terminology can be intimidating. Here is every concept explained in intuitive, unambiguous, first-principles terms:
 
-### 0.1 Traffic Shaping vs. Traffic Policing
-* **Traffic Shaping (Delay / Queue):** Holds excess requests in a memory queue and releases them slowly at a smooth rate. Think of a metered highway on-ramp with a traffic light that lets one car merge every 3 seconds. If the queue overflows, requests time out.
-* **Traffic Policing (Rate Limiting / Drop):** Evaluates incoming requests instantaneously. If the caller has exceeded their quota, the request is **immediately rejected** with an error (HTTP 429). NOVARIS uses traffic policing at the gateway edge to protect memory and guarantee low latency.
+### 1. What is Rate Limiting?
+* **Plain English:** A traffic control mechanism that restricts how many times a user, merchant, or client IP can call an API endpoint within a specific time window.
+* **The Bouncer Analogy:** A popular nightclub has a maximum legal capacity. The bouncer stands at the door with a counter. If 500 people try to push through at once, the bouncer holds up their hand and says: *"Wait outside. We will let 2 people enter every minute as others leave."*
 
-### 0.2 Burst Tolerance ($c$) vs. Sustained Rate ($r$)
+### 2. Traffic Policing vs. Traffic Shaping
+* **Traffic Shaping (Queueing / Delay):** Holds excess requests in a memory queue and releases them slowly at a smooth rate. Think of a metered highway on-ramp with a traffic light that lets one car merge every 3 seconds. If the queue overflows, requests time out.
+* **Traffic Policing (Rate Limiting / Dropping):** Evaluates incoming requests instantaneously. If the caller has exceeded their quota, the request is **immediately rejected** with an error (HTTP 429). NOVARIS uses traffic policing at the gateway edge to protect memory and guarantee low latency.
+
+### 3. Burst Tolerance ($c$) vs. Sustained Rate ($r$)
 * **Burst Capacity ($c$):** The maximum number of requests a caller can submit in an instantaneous spike without being rejected. In our system, $c = 10.0$. If a merchant sends 10 requests at the exact same millisecond, all 10 are processed immediately.
 * **Sustained Rate ($r$):** The long-term average throughput permitted once the initial burst capacity is depleted. In our system, $r = 2.0\text{ tokens/second}$. Once the bucket is empty, the merchant can only make 1 request every $500\text{ms}$.
 
-### 0.3 The Noisy Neighbor Problem & Resource Starvation
-In a shared multi-tenant architecture, multiple customers share the same underlying hardware (CPU, RAM, network bandwidth, database pools).
-* A **Noisy Neighbor** is a tenant whose excessive consumption degrades or halts the performance of adjacent tenants.
-* **Per-Merchant Rate Limiting** creates virtual boundaries between tenants. If Merchant A floods the gateway with 100,000 requests, Merchant A's bucket empties and Merchant A receives 429 errors. Meanwhile, Merchant B's bucket remains full and Merchant B experiences sub-millisecond response times with zero disruption.
+### 4. What is a "Token" in Token Bucket?
+* **Plain English:** A virtual credit or permit. Every time you make an HTTP request, you must pay 1 token. If you have at least 1 token, the server takes your token and handles your payment. If you have 0 tokens, the server turns you away.
+* **The Arcade Analogy:** You visit an arcade that gives you 10 tokens at the entrance. Each game costs 1 token. You can play 10 games in a row (burst). Once your tokens are gone, you cannot play until the manager drops another token into your cup.
 
-### 0.4 Concurrency Defect Models: Race Conditions & Critical Sections
-* **Critical Section:** A block of code that accesses shared, mutable memory (e.g., deducting tokens from a balance or writing to a hash map).
-* **Race Condition (Data Race):** When two or more concurrent execution threads (or Go goroutines) access the same memory location simultaneously, and at least one of the accesses is a write.
-* **Check-then-Act (TOCTOU):** A fatal flaw where thread 1 checks `if balance >= 1`, but before thread 1 can deduct `balance--`, thread 2 also checks `if balance >= 1`. Both threads see a balance of 1, both proceed, and the balance ends up at $-1$!
+### 5. The Noisy Neighbor Problem
+* **Plain English:** In a shared multi-tenant architecture, multiple customers share the same physical servers (CPU cores, RAM, network cards, database connections).
+* **The Shared Apartment Analogy:** You live in an apartment with four roommates. One roommate decides to run a commercial laundry service, running all washing machines 24 hours a day. Suddenly, you cannot take a shower because all the hot water is gone. That roommate is the "Noisy Neighbor."
+* **Per-Merchant Isolation:** In NOVARIS, every merchant gets their own private token bucket. If Merchant Alpha floods the gateway with 100,000 requests, only Merchant Alpha's bucket runs out of tokens. Merchant Beta's bucket remains full, and Merchant Beta's payments process with zero latency.
 
-### 0.5 Mutual Exclusion Primitives (`sync.Mutex` vs. `sync.RWMutex`)
-* **`sync.Mutex` (Exclusive Lock):** Allows exactly ONE goroutine to hold the lock at any time. Any other goroutine trying to acquire the lock must sleep and wait.
-* **`sync.RWMutex` (Reader/Writer Lock):** Allows **multiple readers** to hold the lock simultaneously (`RLock()`), provided no writer is active. Only a **writer** (`Lock()`) demands exclusive, single-goroutine access. This is essential for high-throughput gateway lookups where 99.9% of operations are read-only bucket lookups.
+### 6. What is a "Race Condition" (Data Race)?
+* **Plain English:** A software bug that occurs when two or more computer threads try to read and write to the same shared memory location at the exact same time, and the final result depends on which thread happened to run first.
+* **The ATM Double-Withdrawal Analogy:** You have \$100 in your bank account. You and your friend stand at two different ATMs across the city. At exactly 12:00:00.000, you both press "Withdraw \$100." If the bank's software checks `if balance >= 100` on both ATMs simultaneously before either ATM deducts the money, both ATMs dispense \$100! You just stole \$100 because of a race condition.
 
-### 0.6 Zero-Goroutine Lazy Refill vs. Active Background Polling
-* **Active Background Polling (Naive):** Spawns a background worker thread (`time.NewTicker`) for every merchant that wakes up every second to increment the balance. If you have 50,000 merchants, you have 50,000 background timers burning CPU and memory even when the merchants are asleep!
-* **Lazy Mathematical Refill (NOVARIS):** No background threads exist. When a request arrives at time $t_{\text{now}}$, the system checks the timestamp of the previous request ($t_{\text{last}}$). It calculates elapsed time $\Delta t = t_{\text{now}} - t_{\text{last}}$, multiplies by refill rate $r$, and adds the resulting tokens to the balance. Memory is $O(1)$ and idle CPU usage is exactly $0\%$.
+### 7. What is a "Critical Section"?
+* **Plain English:** A section of computer code that accesses shared mutable data (like a bank balance or a token counter) that must **never** be executed by more than one thread at the same time.
+* **The Single-Occupancy Restroom Analogy:** An airplane restroom has a lock on the door. Only one person can be inside at a time. The restroom is the "Critical Section." The lock is the "Mutex."
 
-### 0.7 RFC 6585 HTTP 429 Status Code & RFC 7231 `Retry-After` Header
-* **HTTP 429 Too Many Requests:** Introduced in RFC 6585 to standardize rate limiting across the internet. It explicitly signals: *"You have sent too many requests in a given amount of time."*
-* **`Retry-After` Header:** Defined in RFC 7231. An integer indicating the number of seconds the client must wait before making another request. In NOVARIS, we compute this dynamically based on the exact fractional token deficit.
+### 8. What is a "Mutex" (Mutual Exclusion)?
+* **Plain English:** A synchronization lock that enforces mutual exclusion. When a thread wants to enter a critical section, it must first acquire the lock (`mu.Lock()`). Any other thread that arrives while the lock is held must pause, sleep, and wait until the first thread unlocks the door (`mu.Unlock()`).
 
-### 0.8 Fail-Fast Architecture & Computational Defense Economics
-* A software system exhibits **Fail-Fast** behavior when it terminates an invalid or unauthorized operation as close to the boundary as possible, using the fewest possible computational cycles.
-* Putting Rate Limiting *before* HMAC hashing saves tens of thousands of CPU cycles per rejected request by avoiding body reads and cryptographic math.
+### 9. `sync.Mutex` vs. `sync.RWMutex` (Why Readers Don't Block Readers)
+* **`sync.Mutex` (Exclusive Lock):** Only one thread can enter, whether it wants to read data or write data. If 1,000 threads only want to read a merchant's name, they must queue up single-file, crushing throughput.
+* **`sync.RWMutex` (Reader/Writer Lock):** Distinguishes between readers and writers:
+  * **Many Readers Allowed Simultaneously (`RLock()`):** 1,000 threads can read the data concurrently with zero blocking, because reading does not modify memory.
+  * **Only One Writer Allowed (`Lock()`):** If a thread wants to modify data, it acquires an exclusive write lock. All readers and other writers are locked out until the write finishes.
+* **Why This Matters:** In our gateway, 99.9% of requests look up existing merchants. Using `sync.RWMutex` allows all merchant lookups to execute concurrently across all CPU cores.
+
+### 10. The Check-then-Act Flaw (TOCTOU)
+* **Plain English:** A common concurrency bug where an application checks a condition (e.g., `if tokens >= 1.0`), but by the time it acts on that condition (e.g., `tokens -= 1.0`), another concurrent thread has already changed the data underneath it.
+* **Mitigation:** The check and the subtraction must happen inside the **same atomic lock acquisition**.
+
+### 11. What is "Lazy Evaluation" / "Lazy Refill"?
+* **Plain English:** Deferring a mathematical calculation until the exact moment its result is needed, rather than running a continuous background loop to keep it updated.
+* **The Electric Meter Analogy:** The power company does not dispatch a technician to sit in your front yard 24/7 watching your electricity meter spin. Instead, once a month, they read the current number, subtract last month's number, multiply by the rate, and print the bill.
+* **Zero-Goroutine Architecture:** NOVARIS computes token balances on request arrival based on elapsed wall-clock time ($\Delta t \times r$). When a merchant is idle, zero CPU cycles are spent.
+
+### 12. What is RFC 6585 and HTTP 429 Too Many Requests?
+* **Plain English:** An official internet protocol standard created by the Internet Engineering Task Force (IETF) in 2012. It added the HTTP status code `429 Too Many Requests` so clients and proxies unambiguously know that an error is due to rate limiting (and NOT a server crash like 500 or an auth error like 401).
+
+### 13. What is the `Retry-After` Header (RFC 7231)?
+* **Plain English:** An HTTP response header sent alongside HTTP 429 that tells the client exactly how many seconds it must sleep before it is allowed to send another request.
+* **Why It Matters:** Without `Retry-After`, throttled clients immediately hammer the server with retries. With `Retry-After: 1`, well-behaved SDKs pause for 1 second, giving the server breathing room.
+
+### 14. What is "Fail-Fast Architecture"?
+* **Plain English:** A design philosophy where any request destined to fail is rejected at the earliest possible stage in the processing pipeline, consuming the absolute minimum amount of CPU, memory, and database resources.
+* **In NOVARIS:** Checking the rate limiter before computing the HMAC-SHA256 signature drops flood traffic at Layer 2, saving ~25,000 CPU cycles per request.
+
+### 15. In-Memory Rate Limiting vs. Distributed Redis Rate Limiting
+* **In-Memory (Day 4):** State lives directly inside the Go server's RAM.
+  * *Latency:* $< 1 \mu\text{s}$ (sub-microsecond, lightning-fast).
+  * *Limitation:* Isolated to a single process.
+* **Distributed Redis (Weeks 3–4):** State lives in an external Redis in-memory cache shared across multiple gateway pods.
+  * *Latency:* $\approx 1-2 \text{ms}$ (due to network round-trip).
+  * *Benefit:* Coordinated global rate limits across 50 Kubernetes pods.
 
 ---
 
@@ -176,35 +213,52 @@ In a shared multi-tenant architecture, multiple customers share the same underly
 
 Every software package, standard library module, and protocol specification utilized in Day 4 is detailed below:
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 DAY 4 SOFTWARE & TOOLING DIRECTORY                                     │
-├─────────────────────────┬──────────────────────┬───────────────────────────────────────────────────────┤
-│ COMPONENT / PACKAGE     │ SOURCE / STANDARD    │ ARCHITECTURAL ROLE IN NOVARIS                         │
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ sync.RWMutex            │ Go Standard Library  │ Guards the global merchant bucket store against       │
-│                         │ (sync)               │ concurrent map read/write runtime panics.             │
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ sync.Mutex              │ Go Standard Library  │ Guards individual TokenBucket token balance and       │
-│                         │ (sync)               │ lastRefill timestamp during consumption.              │
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ math.Min, math.Ceil     │ Go Standard Library  │ Calculates capacity ceilings (Min) and integer        │
-│                         │ (math)               │ Retry-After second thresholds (Ceil).                 │
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ time.Now, time.Since    │ Go Standard Library  │ Measures sub-nanosecond monotonic elapsed time        │
-│                         │ (time)               │ to drive lazy refill mathematical calculations.       │
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ strconv.Itoa            │ Go Standard Library  │ Formats Retry-After header string values for RFC      │
-│                         │ (strconv)            │ compliance without string allocation overhead.        │
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ Go Race Detector        │ Go Toolchain         │ Compiler instrumentation (`-race`) based on           │
-│                         │ (ThreadSanitizer)    │ ThreadSanitizer detecting unsynchronized memory.      │
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ RFC 6585                │ IETF Standard        │ Standardizes HTTP 429 Too Many Requests response code.│
-├─────────────────────────┼──────────────────────┼───────────────────────────────────────────────────────┤
-│ RFC 7231                │ IETF Standard        │ Specifies HTTP Retry-After header syntax and semantics│
-└─────────────────────────┴──────────────────────┴───────────────────────────────────────────────────────┘
-```
+### 0.5.1 Concurrency Primitives
+
+| Component / Type | Package | Architectural Role in NOVARIS |
+| :--- | :--- | :--- |
+| **`sync.RWMutex`** | `sync` | Guards the global merchant bucket store (`map[string]*TokenBucket`) against concurrent map read/write runtime panics while allowing massive read concurrency. |
+| **`sync.Mutex`** | `sync` | Guards individual `TokenBucket` token balance (`tokens`) and evaluation timestamp (`lastRefill`) during request consumption. |
+| **`sync/atomic`** | `sync/atomic` | Used in our multi-goroutine test harness (`atomic.Int64`) to reliably track success and throttled counts across 100 concurrent worker threads without race conditions. |
+
+### 0.5.2 Mathematical & Time Primitives
+
+| Function / Type | Package | Architectural Role in NOVARIS |
+| :--- | :--- | :--- |
+| **`math.Min`** | `math` | Clamps the calculated token accumulation to the bucket's maximum capacity ceiling ($c=10.0$), preventing token balance overflow. |
+| **`math.Ceil`** | `math` | Rounds the fractional token deficit up to the next whole integer second to compute RFC-compliant `Retry-After` header values. |
+| **`time.Now`** | `time` | Captures high-precision monotonic timestamps to determine elapsed time $\Delta t$ between consecutive requests. |
+| **`time.Duration`** | `time` | Represents elapsed time intervals with nanosecond precision for mathematical rate calculations. |
+| **`time.Since` / `time.Sub`**| `time` | Calculates the exact monotonic duration between the current request and the previous token refill. |
+
+### 0.5.3 Go HTTP & Context Pipeline
+
+| Component | Package | Architectural Role in NOVARIS |
+| :--- | :--- | :--- |
+| **`http.Handler`** | `net/http` | The fundamental Go interface (`ServeHTTP(w, r)`) implemented by our rate limiting middleware to wrap downstream handlers. |
+| **`http.ResponseWriter`** | `net/http` | Used to emit HTTP headers (`Retry-After: 1`), content types, and status code `429 Too Many Requests`. |
+| **`http.Request`** | `net/http` | Carries incoming HTTP metadata and context containing authenticated merchant claims. |
+| **`context.Context`** | `context` | Carries authenticated `Claims` (including `merchant_id`) injected by `JWTMiddleware` into `RateLimitMiddleware`. |
+| **`strconv.Itoa`** | `strconv` | Fast integer-to-ASCII string conversion for serializing the `Retry-After` header without memory allocation overhead. |
+
+### 0.5.4 Testing, Race Detection & Verification Tools
+
+| Tool | Invocation | Architectural Role in NOVARIS |
+| :--- | :--- | :--- |
+| **Go Race Detector** | `go test -race` | Compiler instrumentation based on ThreadSanitizer that dynamically detects unsynchronized memory accesses across goroutines. |
+| **`httptest.NewRecorder`**| `net/http/httptest` | In-memory HTTP response recorder used in unit tests to assert status codes, headers, and bodies without opening network sockets. |
+| **`httptest.NewRequest`** | `net/http/httptest` | Synthesizes incoming HTTP requests with headers and payloads for deterministic unit testing. |
+| **`curl`** | `curl -i -X POST ...` | Command-line HTTP client used to verify raw HTTP/1.1 response status codes (`429`) and `Retry-After` headers. |
+| **Windows PowerShell** | `Invoke-RestMethod` | Scripting environment used to execute automated multi-request burst and throttle verification probes. |
+
+### 0.5.5 Standards & RFC Specifications
+
+| Standard | Full Title | Why NOVARIS Adheres to It |
+| :--- | :--- | :--- |
+| **RFC 6585** | Additional HTTP Status Codes | Formally standardizes the HTTP `429 Too Many Requests` status code for rate limiting across web applications. |
+| **RFC 7231** | Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content | Defines the syntax and semantics of the `Retry-After` header indicating minimum backoff duration. |
+| **RFC 7519** | JSON Web Token (JWT) | Provides the cryptographic merchant identity (`merchant_id`) required to index per-merchant token buckets. |
+| **RFC 2104** | HMAC: Keyed-Hashing for Message Authentication | Provides payload integrity verification executed downstream of the rate limiter. |
 
 ---
 
@@ -436,7 +490,7 @@ Instead, we implement the **Double-Checked Locking Pattern**:
    s.mu.Lock()
    defer s.mu.Unlock()
 
-   // Double-check: another goroutine might have created it
+   // Double-Check: another goroutine might have created it
    if bucket, exists := s.buckets[merchantID]; exists {
        return bucket
    }
@@ -630,7 +684,7 @@ For data scientists and machine learning engineers, API rate limiting and concur
 
 ## 10. Chapter 7: Line-by-Line Code Masterclass (Complete Dissections)
 
-### 7.1 `services/gateway/internal/ratelimit/limiter.go`
+### 7.1 `services/gateway/internal/ratelimit/limiter.go` (The Complete Rate Limiting Engine)
 
 ```go
 package ratelimit
@@ -649,13 +703,15 @@ import (
 
 // Default limiter tuning parameters for the NOVARIS API Gateway.
 const (
-	DefaultBucketCapacity float64 = 10.0 // Maximum burst allowance
-	DefaultRefillRate     float64 = 2.0  // Sustained tokens added per second
-)
-```
-* **Lines 30–50:** Package imports and default constants. $c = 10.0$ allows instant bursts of up to 10 requests. $r = 2.0$ bounds long-term throughput to 2 req/sec.
+	// DefaultBucketCapacity defines the maximum number of tokens a bucket can hold.
+	// This represents the burst allowance (e.g., 10 requests allowed in a sudden spike).
+	DefaultBucketCapacity float64 = 10.0
 
-```go
+	// DefaultRefillRate defines how many tokens are added back to the bucket per second.
+	// 2.0 tokens/sec = sustained rate of 2 requests/sec per merchant.
+	DefaultRefillRate float64 = 2.0
+)
+
 // TokenBucket models a thread-safe token bucket using lazy mathematical refill.
 type TokenBucket struct {
 	capacity   float64    // Maximum burst allowance
@@ -664,11 +720,19 @@ type TokenBucket struct {
 	lastRefill time.Time  // Monotonic timestamp of last evaluation
 	mu         sync.Mutex // Guards access to this individual bucket
 }
-```
-* **Lines 52–60:** The `TokenBucket` struct. Notice `mu sync.Mutex` is private and per-bucket. This guarantees that two different merchants never lock each other.
 
-```go
+// NewTokenBucket creates and initializes a bucket with full capacity.
+func NewTokenBucket(capacity, refillRate float64) *TokenBucket {
+	return &TokenBucket{
+		capacity:   capacity,
+		refillRate: refillRate,
+		tokens:     capacity, // Starts fully loaded
+		lastRefill: time.Now(),
+	}
+}
+
 // TryConsume attempts to withdraw 1 token from the bucket.
+// Returns (true, 0) if allowed, or (false, retryAfterSeconds) if exhausted.
 func (b *TokenBucket) TryConsume() (bool, int) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -694,21 +758,22 @@ func (b *TokenBucket) TryConsume() (bool, int) {
 
 	return false, retryAfterSec
 }
-```
-* **Lines 75–105:** The core algorithm.
-  1. `b.mu.Lock()` enters the critical section.
-  2. `now.Sub(b.lastRefill).Seconds()` computes monotonic elapsed time $\Delta t$.
-  3. `math.Min` clamps the token balance to `b.capacity`, preventing overflow during idle periods.
-  4. If `b.tokens >= 1.0`, exactly 1.0 token is deducted and `true, 0` is returned.
-  5. If `b.tokens < 1.0`, we calculate the exact fractional deficit and round up to the nearest integer second using `math.Ceil`.
 
-```go
 // BucketStore manages isolated per-merchant token buckets with sync.RWMutex.
 type BucketStore struct {
 	buckets    map[string]*TokenBucket
 	capacity   float64
 	refillRate float64
 	mu         sync.RWMutex // Read-Write mutex guarding the map
+}
+
+// NewBucketStore initializes the store.
+func NewBucketStore(capacity, refillRate float64) *BucketStore {
+	return &BucketStore{
+		buckets:    make(map[string]*TokenBucket),
+		capacity:   capacity,
+		refillRate: refillRate,
+	}
 }
 
 // GetBucket retrieves an existing bucket or creates one using double-checked locking.
@@ -734,10 +799,7 @@ func (s *BucketStore) GetBucket(merchantID string) *TokenBucket {
 	s.buckets[merchantID] = bucket
 	return bucket
 }
-```
-* **Lines 110–165:** The concurrent `BucketStore`. Employs optimistic read-locking (`RLock`) so that thousands of concurrent requests can fetch existing buckets with zero synchronization serialization. Newly seen merchants trigger the exclusive lock (`Lock`) with double-checked verification.
 
-```go
 // RateLimitMiddleware returns an HTTP middleware enforcing per-merchant rate limits.
 func RateLimitMiddleware(store *BucketStore) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -768,7 +830,266 @@ func RateLimitMiddleware(store *BucketStore) func(http.Handler) http.Handler {
 	}
 }
 ```
-* **Lines 170–225:** The HTTP middleware. Extracts `claims.MerchantID` previously validated by `JWTMiddleware`. If `TryConsume()` returns false, it immediately sets `Retry-After: <sec>`, emits HTTP `429 Too Many Requests`, and aborts execution—**completely bypassing downstream HMAC verification and business logic**.
+
+#### Detailed Line-by-Line Breakdown:
+1. **Lines 17–25:** Package constants `DefaultBucketCapacity = 10.0` and `DefaultRefillRate = 2.0`. A merchant can send 10 instant requests and sustain 2 req/sec thereafter.
+2. **Lines 28–35:** The `TokenBucket` struct. `mu sync.Mutex` is an unexported private field per bucket. Locking this mutex affects only requests for that exact merchant.
+3. **Lines 44–47:** `b.mu.Lock()` and `defer b.mu.Unlock()`. Enters the critical section. Guarantees that token balance arithmetic is 100% thread-safe under concurrent goroutines.
+4. **Lines 49–51:** `now := time.Now()` captures monotonic wall time. `now.Sub(b.lastRefill).Seconds()` calculates floating-point seconds elapsed.
+5. **Line 54:** `b.tokens = math.Min(b.capacity, b.tokens + (elapsed * b.refillRate))`. The zero-goroutine lazy refill formula. It calculates the newly generated tokens and strictly clamps the balance so it never overflows `capacity`.
+6. **Lines 56–59:** If `b.tokens >= 1.0`, exactly 1.0 token is consumed, the bucket state is updated, and the request is permitted.
+7. **Lines 62–67:** If `b.tokens < 1.0`, the request is denied. `math.Ceil(deficit / b.refillRate)` calculates the exact integer seconds until at least 1.0 token will refill, returning it as `retryAfter`.
+8. **Lines 82–91:** `s.mu.RLock()` optimistic read lock. Multiple CPU cores can read from `s.buckets` simultaneously with zero lock contention.
+9. **Lines 94–105:** `s.mu.Lock()` exclusive write lock. Double-checks existence before creating a new `TokenBucket`, preventing duplicate allocations if two goroutines arrived simultaneously for an unseen merchant.
+10. **Lines 115–122:** Middleware extracts pre-verified `claims.MerchantID` from request context. If missing, it immediately rejects with 401.
+11. **Lines 127–135:** If `TryConsume()` returns false, the middleware sets `w.Header().Set("Retry-After", strconv.Itoa(retryAfter))`, writes HTTP `429 Too Many Requests`, and returns immediately—**bypassing body reads and HMAC hashing completely**.
+
+---
+
+### 7.2 `services/gateway/internal/ratelimit/limiter_test.go` (Unit & Concurrency Tests)
+
+```go
+package ratelimit
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/charan21042005/novaris/services/gateway/internal/auth"
+)
+
+func TestTokenBucket_BurstAndExhaustion(t *testing.T) {
+	// Capacity = 5, Refill = 1 token/sec
+	bucket := NewTokenBucket(5.0, 1.0)
+
+	// Consume 5 tokens in immediate succession (burst)
+	for i := 1; i <= 5; i++ {
+		allowed, _ := bucket.TryConsume()
+		if !allowed {
+			t.Fatalf("request %d within burst capacity was unexpectedly rate limited", i)
+		}
+	}
+
+	// 6th immediate request must be throttled
+	allowed, retryAfter := bucket.TryConsume()
+	if allowed {
+		t.Fatal("expected 6th request to be rejected, but it was allowed")
+	}
+	if retryAfter < 1 {
+		t.Errorf("expected Retry-After >= 1 second, got %d", retryAfter)
+	}
+}
+
+func TestTokenBucket_RefillOverTime(t *testing.T) {
+	// Capacity = 2, Refill = 10 tokens/sec (fast refill for testing)
+	bucket := NewTokenBucket(2.0, 10.0)
+
+	// Exhaust all tokens
+	bucket.TryConsume()
+	bucket.TryConsume()
+
+	allowed, _ := bucket.TryConsume()
+	if allowed {
+		t.Fatal("bucket should be empty")
+	}
+
+	// Sleep 150ms -> at 10 tokens/sec, this generates 1.5 tokens
+	time.Sleep(150 * time.Millisecond)
+
+	allowed, _ = bucket.TryConsume()
+	if !allowed {
+		t.Fatal("expected bucket to have refilled at least 1 token after 150ms")
+	}
+}
+
+func TestTokenBucket_CapacityCeiling(t *testing.T) {
+	// Capacity = 3, Refill = 100 tokens/sec
+	bucket := NewTokenBucket(3.0, 100.0)
+
+	// Sleep to let tokens accumulate
+	time.Sleep(50 * time.Millisecond)
+
+	// Consume 3 tokens (should succeed)
+	for i := 0; i < 3; i++ {
+		if allowed, _ := bucket.TryConsume(); !allowed {
+			t.Fatalf("request %d should have been allowed", i+1)
+		}
+	}
+
+	// 4th request must fail (proves tokens did not accumulate beyond capacity of 3)
+	if allowed, _ := bucket.TryConsume(); allowed {
+		t.Fatal("bucket tokens exceeded capacity ceiling")
+	}
+}
+
+func TestBucketStore_PerMerchantIsolation(t *testing.T) {
+	store := NewBucketStore(2.0, 1.0)
+
+	// Exhaust Merchant A
+	bA := store.GetBucket("merchant_A")
+	bA.TryConsume()
+	bA.TryConsume()
+
+	if allowed, _ := bA.TryConsume(); allowed {
+		t.Fatal("merchant A should be throttled")
+	}
+
+	// Merchant B must still have full capacity
+	bB := store.GetBucket("merchant_B")
+	if allowed, _ := bB.TryConsume(); !allowed {
+		t.Fatal("merchant B was unfairly throttled by merchant A's activity")
+	}
+}
+
+func TestTokenBucket_ConcurrentRaceConditions(t *testing.T) {
+	// Capacity = 20, Refill = 0 (no refill during test to test exact burst)
+	bucket := NewTokenBucket(20.0, 0.0)
+
+	var allowedCount int64
+	var throttledCount int64
+
+	var wg sync.WaitGroup
+	workers := 100
+
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go func() {
+			defer wg.Done()
+			allowed, _ := bucket.TryConsume()
+			if allowed {
+				atomic.AddInt64(&allowedCount, 1)
+			} else {
+				atomic.AddInt64(&throttledCount, 1)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if allowedCount != 20 {
+		t.Errorf("expected exactly 20 allowed requests, got %d", allowedCount)
+	}
+	if throttledCount != 80 {
+		t.Errorf("expected exactly 80 throttled requests, got %d", throttledCount)
+	}
+}
+```
+
+#### Detailed Line-by-Line Breakdown:
+1. **Lines 13–35 (`TestTokenBucket_BurstAndExhaustion`):** Sets $c=5.0$. Verifies that calls $1$ through $5$ return `allowed = true`. Asserts call $6$ returns `allowed = false` with `retryAfter >= 1`.
+2. **Lines 37–57 (`TestTokenBucket_RefillOverTime`):** Completely drains the bucket, sleeps $150\text{ms}$ at $10\text{ tokens/sec}$ (accumulating $1.5$ tokens), and verifies the subsequent call is accepted.
+3. **Lines 59–77 (`TestTokenBucket_CapacityCeiling`):** Tests that even if a bucket sits idle with a high refill rate, it strictly caps at $c=3.0$ and rejects the 4th request.
+4. **Lines 79–98 (`TestBucketStore_PerMerchantIsolation`):** The Noisy Neighbor test. Drains Merchant A to zero. Queries Merchant B and proves Merchant B's bucket is completely intact and returns `200 OK`.
+5. **Lines 100–135 (`TestTokenBucket_ConcurrentRaceConditions`):** Concurrency race test. Sets capacity to $20.0$ and refill to $0$. Spawns **100 concurrent goroutines** competing for the 20 tokens. Using `sync/atomic` counters, asserts that **exactly 20 succeed** and **exactly 80 are throttled**, proving zero race-condition overselling.
+
+---
+
+### 7.3 `services/gateway/main.go` (Wiring the 3-Layer Pipeline)
+
+```go
+// 2. Protected Routes (Stacked Defense-in-Depth Middleware: JWT -> RateLimit -> HMAC -> paymentsHandler)
+// Execution order:
+//   Step 1: JWTMiddleware checks Authorization Bearer token (rejects if missing/forged/expired -> 401).
+//           Injects verified Claims (including MerchantID) into request context.
+//   Step 2: RateLimitMiddleware reads claims.MerchantID and evaluates token bucket quota.
+//           If tokens are exhausted, rejects immediately with HTTP 429 Too Many Requests and Retry-After header.
+//           *Fail-Fast Principle*: Eliminates abusive traffic BEFORE doing body read, hashing & crypto checks!
+//   Step 3: HMACMiddleware checks X-Novaris-Timestamp & X-Novaris-Signature (rejects if tampered/stale -> 401).
+//           Restores r.Body for downstream consumption.
+//   Step 4: paymentsHandler processes payment settlement logic (reaches here only if all three layers pass).
+mux.HandleFunc("/v1/payments",
+	auth.JWTMiddleware(
+		ratelimit.RateLimitMiddleware(bucketStore)(
+			auth.HMACMiddleware(paymentsHandler),
+		),
+	),
+)
+```
+
+---
+
+### 7.4 `services/gateway/main_test.go` (End-to-End Ingress Integration Tests)
+
+```go
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"testing"
+	"time"
+
+	"github.com/charan21042005/novaris/services/gateway/internal/auth"
+	"github.com/charan21042005/novaris/services/gateway/internal/ratelimit"
+)
+
+// setupTestPipeline initializes a test gateway pipeline with custom rate limit settings.
+func setupTestPipeline(burstCapacity, refillRate float64) http.Handler {
+	bucketStore := ratelimit.NewBucketStore(burstCapacity, refillRate)
+
+	pipeline := auth.JWTMiddleware(
+		ratelimit.RateLimitMiddleware(bucketStore)(
+			auth.HMACMiddleware(paymentsHandler),
+		),
+	)
+
+	return pipeline
+}
+
+// TestPipeline_BurstAllowanceAndRateLimitEnforcement verifies end-to-end HTTP pipeline behavior.
+func TestPipeline_BurstAllowanceAndRateLimitEnforcement(t *testing.T) {
+	pipeline := setupTestPipeline(5.0, 1.0)
+	body := []byte(`{"amount_cents":5000,"recipient":"merchant_test_receiver"}`)
+
+	merchantA := "merchant_burst_alpha"
+	merchantB := "merchant_isolated_beta"
+
+	// 1. Send 5 burst requests from Merchant A (all must succeed with 200 OK)
+	for i := 1; i <= 5; i++ {
+		req := buildSignedPaymentRequest(t, merchantA, body)
+		rec := httptest.NewRecorder()
+		pipeline.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("burst request %d of 5 for merchant %s failed with status %d", i, merchantA, rec.Code)
+		}
+	}
+
+	// 2. The 6th request from Merchant A must be rejected with HTTP 429 Too Many Requests
+	{
+		req := buildSignedPaymentRequest(t, merchantA, body)
+		rec := httptest.NewRecorder()
+		pipeline.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusTooManyRequests {
+			t.Fatalf("expected 6th request to be 429 Too Many Requests, got status %d", rec.Code)
+		}
+
+		if rec.Header().Get("Retry-After") == "" {
+			t.Error("expected Retry-After header on 429 response")
+		}
+	}
+
+	// 3. Merchant B sends a request while Merchant A is throttled (Noisy Neighbor Isolation)
+	{
+		req := buildSignedPaymentRequest(t, merchantB, body)
+		rec := httptest.NewRecorder()
+		pipeline.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("merchant B was unfairly throttled by merchant A's flood! Status: %d", rec.Code)
+		}
+	}
+}
+```
 
 ---
 
@@ -825,15 +1146,20 @@ PASS
 ok  	github.com/charan21042005/novaris/services/gateway/internal/ratelimit	(cached)
 ```
 
-### 8.2 Real-World HTTP Verification Scenarios
+---
+
+### 8.2 Real-World HTTP Verification Matrix
+
+The table below catalogs every concrete probe scenario verified on the gateway:
 
 | Scenario | Actions Performed | Gateway Observation | Result |
 | :--- | :--- | :--- | :--- |
-| **1. Burst Allowance** | Send 10 valid requests immediately from `merchant_123` | All 10 requests return HTTP `200 OK` | ✅ PASS |
-| **2. Burst Exhaustion** | Send 11th request in the same second from `merchant_123` | Rejected with HTTP `429 Too Many Requests` + `Retry-After: 1` | ✅ PASS |
-| **3. Noisy Neighbor** | Send request from `merchant_456` while `merchant_123` is throttled | `merchant_456` returns HTTP `200 OK` (Isolated bucket) | ✅ PASS |
-| **4. Token Refill** | Sleep 1 second ($+2$ tokens refilled) and retry `merchant_123` | Returns HTTP `200 OK` (Refill confirmed) | ✅ PASS |
-| **5. 100-Goroutine Race** | 100 goroutines compete for 20 tokens simultaneously | Exactly 20 succeed; exactly 80 receive 429; zero panics | ✅ PASS |
+| **Probe 1: Burst Allowance** | Send 10 valid requests immediately from `merchant_123` | All 10 requests return HTTP `200 OK` | ✅ PASS |
+| **Probe 2: Burst Exhaustion** | Send 11th request in the same second from `merchant_123` | Rejected with HTTP `429 Too Many Requests` + `Retry-After: 1` | ✅ PASS |
+| **Probe 3: Noisy Neighbor** | Send request from `merchant_456` while `merchant_123` is throttled | `merchant_456` returns HTTP `200 OK` (Isolated bucket) | ✅ PASS |
+| **Probe 4: Token Refill** | Sleep 1 second ($+2$ tokens refilled) and retry `merchant_123` | Returns HTTP `200 OK` (Refill confirmed) | ✅ PASS |
+| **Probe 5: 100-Goroutine Race** | 100 goroutines compete for 20 tokens simultaneously | Exactly 20 succeed; exactly 80 receive 429; zero panics | ✅ PASS |
+| **Probe 6: Fail-Fast Missing JWT** | Send request with no JWT Bearer token | Rejected with 401 at Layer 1; rate limiter untouched | ✅ PASS |
 
 ---
 
@@ -853,9 +1179,44 @@ go test -v ./internal/ratelimit
 go test -v ./...
 ```
 
-#### Option B: Live HTTP Terminal Verification (PowerShell)
+#### Option B: Live HTTP Terminal Verification (Bash / Linux / macOS)
+```bash
+# 1. Start Gateway in Terminal 1
+cd services/gateway
+go run main.go
+
+# 2. In Terminal 2, generate a JWT token for merchant_stripe_101
+TOKEN=$(go run cmd/gentoken/main.go -merchant merchant_stripe_101 | grep -o 'ey[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*' | head -n 1)
+
+# 3. Payload & HMAC Signature
+BODY='{"amount_cents":5000,"recipient":"merchant_coffee"}'
+SECRET="novaris_insecure_dev_hmac_secret_change_in_production_2026"
+TS=$(date +%s)
+CANONICAL="$TS.$BODY"
+SIG=$(echo -n "$CANONICAL" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+
+# 4. Burst of 10 requests (All return 200 OK)
+for i in {1..10}; do
+  curl -s -o /dev/null -w "Request $i: HTTP %{http_code}\n" -X POST http://localhost:8080/v1/payments \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "X-Novaris-Timestamp: $TS" \
+    -H "X-Novaris-Signature: $SIG" \
+    -H "Content-Type: application/json" \
+    -d "$BODY"
+done
+
+# 5. Immediate 11th request (Returns HTTP 429 Too Many Requests!)
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Novaris-Timestamp: $TS" \
+  -H "X-Novaris-Signature: $SIG" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+```
+
+#### Option C: Live HTTP Terminal Verification (Windows PowerShell)
 ```powershell
-# 1. Start the gateway server in Terminal 1
+# 1. Start Gateway in Terminal 1
 cd services\gateway
 go run main.go
 
@@ -871,21 +1232,26 @@ $HMAC.Key = $KEY
 $CANONICAL = [System.Text.Encoding]::UTF8.GetBytes("$TS.$BODY")
 $SIG = [BitConverter]::ToString($HMAC.ComputeHash($CANONICAL)).Replace("-", "").ToLower()
 
+$headers = @{
+    "Authorization"       = "Bearer " + $TOKEN
+    "X-Novaris-Timestamp" = $TS
+    "X-Novaris-Signature" = $SIG
+}
+
 # 4. Fire 10 burst requests in rapid succession (All return 200 OK)
 1..10 | ForEach-Object {
-    Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post `
-      -Headers @{"Authorization"="Bearer $TOKEN"; "X-Novaris-Timestamp"="$TS"; "X-Novaris-Signature"="$SIG"; "Content-Type"="application/json"} `
-      -Body $BODY
+    $res = Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post `
+      -Headers $headers -Body $BODY -ContentType "application/json"
+    Write-Host "Request $_ : Status $($res.status) for $($res.merchant_id)"
 }
 
 # 5. Fire 11th request immediately (Returns HTTP 429 Too Many Requests!)
 try {
     Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post `
-      -Headers @{"Authorization"="Bearer $TOKEN"; "X-Novaris-Timestamp"="$TS"; "X-Novaris-Signature"="$SIG"; "Content-Type"="application/json"} `
-      -Body $BODY
+      -Headers $headers -Body $BODY -ContentType "application/json"
 } catch {
-    $_.Exception.Response.StatusCode # Outputs 429
-    $_.ErrorDetails.Message          # Outputs JSON with retry_after_seconds
+    Write-Host "Throttled with HTTP $($_.Exception.Response.StatusCode.value__)"
+    Write-Host "Response Payload: $($_.ErrorDetails.Message)"
 }
 ```
 
