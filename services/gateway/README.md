@@ -31,7 +31,8 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 4. **Payload Integrity & Replay Defense (Day 3):** Enforces HMAC-SHA256 request body signing with `X-Novaris-Timestamp` (±300s replay window) and constant-time signature comparison (`hmac.Equal`) to neutralize side-channel timing attacks.
 5. **Structured Observability:** Middleware tracking request method, path, remote IP, and microsecond processing latency.
 6. **Graceful Termination:** Intercepts OS signals (`SIGINT`, `SIGTERM`) and allows in-flight connections to drain cleanly with a 5-second deadline.
-7. *(Upcoming Day 5):* Immutable double-entry financial ledger schema & database migrations.
+7. **Relational Ledger & Schema Integrity (Day 5):** Full SRS Blueprint database schema including `accounts`, `transactions`, `journal_entries`, `outbox`, `fraud_reviews` (human ground-truth labels with CHECK constraints), and `feature_snapshots` (JSONB point-in-time features with composite B-Tree indexing).
+8. *(Upcoming Day 6):* Atomic double-entry settlement engine, balance validation, and transaction rollbacks.
 
 ---
 
@@ -139,7 +140,16 @@ go run cmd/signrequest/main.go -offset -600
 go run cmd/signrequest/main.go -tamper
 ```
 
-### 3. Automated Unit Test Suite
+### 3. Database Schema Verifier (`cmd/verifyschema`)
+```bash
+# Run deterministic static analysis over SQL migrations
+go run cmd/verifyschema/main.go -offline
+
+# Verify live schema against running PostgreSQL instance
+go run cmd/verifyschema/main.go
+```
+
+### 4. Automated Unit Test Suite
 ```bash
 go test -v ./...
 ```
