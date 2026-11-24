@@ -43,6 +43,10 @@ services/gateway/internal/
 │   ├── hmac.go           # RFC 2104 HMAC-SHA256 request signing & replay defense
 │   ├── hmac_test.go      # Unit tests for tampering, replay, & stream restoration
 │   └── README.md         # Forensic security documentation for internal/auth
+├── ratelimit/            # In-memory traffic control & token-bucket rate limiter
+│   ├── limiter.go        # Zero-goroutine lazy refill algorithm & sync.RWMutex store
+│   ├── limiter_test.go   # Burst, refill, multi-goroutine race tests, and HTTP 429
+│   └── README.md         # Rate limiter architecture, math derivation & test guide
 └── README.md             # This documentation
 ```
 
@@ -64,8 +68,10 @@ flowchart TD
 
     subgraph InternalBoundary ["Go Compiler 'internal/' Boundary"]
         AuthPackage["internal/auth (hmac.go, jwt.go)"]
+        RateLimitPackage["internal/ratelimit (limiter.go)"]
         ContextKey["Type-Safe contextKey"]
         CryptoVerify["hmac.Equal & Constant-Time Checks"]
+        TokenBucket["Lazy Refill TokenBucket"]
     end
 
     subgraph ExternalDisallowed ["External Repositories (Disallowed)"]
@@ -73,10 +79,12 @@ flowchart TD
     end
 
     GatewayMain -->|"Allowed: imports"| AuthPackage
+    GatewayMain -->|"Allowed: imports"| RateLimitPackage
     GenTokenCLI -->|"Allowed: imports"| AuthPackage
     SignRequestCLI -->|"Allowed: imports"| AuthPackage
 
     ExternalModule -.->|"❌ Rejected by go build (compiler error)"| AuthPackage
+    ExternalModule -.->|"❌ Rejected by go build (compiler error)"| RateLimitPackage
 ```
 
 ---
@@ -84,6 +92,7 @@ flowchart TD
 ## 🧭 Directory Index
 
 * 👉 **[internal/auth/ README](./auth/README.md):** In-depth documentation covering JWT claims verification, HMAC payload hashing, constant-time equality comparisons, and stream restoration mechanics.
+* 👉 **[internal/ratelimit/ README](./ratelimit/README.md):** In-depth documentation covering token-bucket algorithm, zero-goroutine lazy mathematical refill, thread safety, and HTTP 429 Retry-After specifications.
 
 ---
 
