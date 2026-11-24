@@ -45,8 +45,8 @@ Looking for copy-pasteable commands to run or probe any day's milestone? Check t
 | **Phase 1** | **Day 01** | **Monorepo Layout, Docker Compose & Ledger Schema Foundation** | [Day_01_Action_Log.md](./Day_01_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 02** | **JWT Authentication & Security Middleware Pipeline** | [Day_02_Action_Log.md](./Day_02_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 03** | **Cryptographic HMAC-SHA256 Request Signing & Replay Defense** | [Day_03_Action_Log.md](./Day_03_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 1** | **Day 04** | Distributed Token-Bucket Rate Limiter | *Pending* | ⏳ *Up Next* |
-| **Phase 1** | **Day 05** | Production Double-Entry Ledger Schema & Indexes | *Pending* | ⚪ |
+| **Phase 1** | **Day 04** | **Token-Bucket Rate Limiting, Concurrency Safety & Fail-Fast Gateway** | [Day_04_Action_Log.md](./Day_04_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 1** | **Day 05** | Production Double-Entry Ledger Schema & Indexes | *Pending* | ⏳ *Up Next* |
 | **Phase 1** | **Day 06** | Atomic Settlement Logic & Concurrency Rollbacks | *Pending* | ⚪ |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 

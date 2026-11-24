@@ -6,11 +6,11 @@
 </p>
 
 # ⚡ NOVARIS Master Verification & Testing Runbook
-### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–3+)
+### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–4+)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Runbook-Master_Testing_Suite-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Runbook" />
-  <img src="https://img.shields.io/badge/Days-01_to_03_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
+  <img src="https://img.shields.io/badge/Days-01_to_04_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
   <img src="https://img.shields.io/badge/Shell-Bash_%26_PowerShell-7C4DFF?style=flat-square&logo=powershell&logoColor=white" alt="Shell" />
   <img src="https://img.shields.io/badge/Standard-Industrial_FinTech-FFA000?style=flat-square&logo=standards&logoColor=white" alt="Standard" />
 </p>
@@ -30,7 +30,8 @@ This document is the **central command cheat sheet** for NOVARIS. Every command 
 1. [Day 01: Docker Infrastructure, PostgreSQL Ledger & Health Probes](#1-day-01-docker-infrastructure-postgresql-ledger--health-probes)
 2. [Day 02: JWT Authentication, Token CLI & Identity Probes](#2-day-02-jwt-authentication-token-cli--identity-probes)
 3. [Day 03: HMAC-SHA256 Request Signing, Signer CLI & Replay Probes](#3-day-03-hmac-sha256-request-signing-signer-cli--replay-probes)
-4. [Master Daily Git Multi-Commit & Push Workflow](#4-master-daily-git-multi-commit--push-workflow)
+4. [Day 04: Token-Bucket Rate Limiter, Concurrency & 429 Probes](#4-day-04-token-bucket-rate-limiter-concurrency--429-probes)
+5. [Master Daily Git Multi-Commit & Push Workflow](#5-master-daily-git-multi-commit--push-workflow)
 
 ---
 
@@ -236,7 +237,105 @@ try { Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -B
 
 ---
 
-## 4. Master Daily Git Multi-Commit & Push Workflow
+## 4. Day 04: Token-Bucket Rate Limiter, Concurrency & 429 Probes
+
+### 4.1 Run Rate Limiter Automated Tests:
+```bash
+cd services/gateway
+
+# Run rate limiter unit and concurrency test suite
+go test -v ./internal/ratelimit
+
+# Run full gateway test suite (auth + ratelimit + integration)
+go test -v ./...
+```
+
+### 4.2 Start Gateway with Rate Limiting Enabled:
+```bash
+# Start the gateway server
+go run main.go
+```
+
+### 4.3 Burst & 429 Verification via Bash / cURL:
+```bash
+# Generate JWT token for merchant_stripe_101
+TOKEN=$(go run cmd/gentoken/main.go -merchant merchant_stripe_101 | grep -o 'ey[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*' | head -n 1)
+
+# Payload & cryptographic HMAC signature
+BODY='{"amount_cents":5000,"recipient":"merchant_coffee"}'
+SECRET="novaris_insecure_dev_hmac_secret_change_in_production_2026"
+TS=$(date +%s)
+CANONICAL="$TS.$BODY"
+SIG=$(echo -n "$CANONICAL" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+
+# Probe 1: Send burst of 10 requests (All return HTTP 200 OK)
+for i in {1..10}; do
+  curl -s -o /dev/null -w "Request $i: HTTP %{http_code}\n" -X POST http://localhost:8080/v1/payments \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "X-Novaris-Timestamp: $TS" \
+    -H "X-Novaris-Signature: $SIG" \
+    -H "Content-Type: application/json" \
+    -d "$BODY"
+done
+
+# Probe 2: Send 11th request immediately (Returns HTTP 429 Too Many Requests + Retry-After: 1)
+curl -i -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Novaris-Timestamp: $TS" \
+  -H "X-Novaris-Signature: $SIG" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+
+# Probe 3: Send request from Merchant B during Merchant A throttling (Returns 200 OK - Noisy Neighbor Isolation)
+TOKEN_B=$(go run cmd/gentoken/main.go -merchant merchant_isolated_beta | grep -o 'ey[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*' | head -n 1)
+curl -s -o /dev/null -w "Merchant B: HTTP %{http_code}\n" -X POST http://localhost:8080/v1/payments \
+  -H "Authorization: Bearer $TOKEN_B" \
+  -H "X-Novaris-Timestamp: $TS" \
+  -H "X-Novaris-Signature: $SIG" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"
+```
+
+### 4.4 Burst & 429 Verification via Windows PowerShell:
+```powershell
+cd services\gateway
+
+# 1. Mint JWT token
+$token = (go run cmd/gentoken/main.go -merchant merchant_stripe_101 | Select-String -Pattern "ey[A-Za-z0-9_-]+" | Select-Object -First 1).Matches.Value
+
+# 2. Compute HMAC signature
+$body = '{"amount_cents":5000,"recipient":"merchant_coffee"}'
+$ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+$key = [System.Text.Encoding]::UTF8.GetBytes("novaris_insecure_dev_hmac_secret_change_in_production_2026")
+$hmac = New-Object System.Security.Cryptography.HMACSHA256
+$hmac.Key = $key
+$canonical = [System.Text.Encoding]::UTF8.GetBytes("$ts.$body")
+$sig = [BitConverter]::ToString($hmac.ComputeHash($canonical)).Replace("-", "").ToLower()
+
+$headers = @{
+    "Authorization"       = "Bearer " + $token
+    "X-Novaris-Timestamp" = $ts
+    "X-Novaris-Signature" = $sig
+}
+
+# 3. Burst of 10 requests (All return 200 OK)
+1..10 | ForEach-Object {
+    $res = Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body $body -ContentType "application/json" -Headers $headers
+    Write-Host "Request $_ : Status $($res.status) for $($res.merchant_id)"
+}
+
+# 4. Immediate 11th request (Catches 429 Too Many Requests)
+try {
+    Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body $body -ContentType "application/json" -Headers $headers
+} catch {
+    Write-Host "Throttled with HTTP $($_.Exception.Response.StatusCode.value__)"
+    Write-Host "Response Payload: $($_.ErrorDetails.Message)"
+}
+```
+
+---
+
+## 5. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 

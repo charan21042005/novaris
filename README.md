@@ -294,7 +294,8 @@ Every milestone across the 84-day curriculum is documented with textbook-grade d
 | **Day 01** | **Monorepo Layout & Ledger Schema** | PostgreSQL 16 Double-Entry Ledger & Docker Infrastructure | [Day 01 Action Log](bin/Daily_Actions/Day_01_Action_Log.md) | ✅ *Completed* |
 | **Day 02** | **JWT Authentication & Middleware** | RFC 7519 Stateless Identity & `alg: none` Defense | [Day 02 Action Log](bin/Daily_Actions/Day_02_Action_Log.md) | ✅ *Completed* |
 | **Day 03** | **HMAC Request Signing & Replay Defense** | RFC 2104 Payload Integrity, Replay Window & Constant-Time Verification | [Day 03 Action Log](bin/Daily_Actions/Day_03_Action_Log.md) | ✅ *Completed* |
-| **Day 04** | **Distributed Token-Bucket Rate Limiter** | Burst-Tolerant Sliding Window Rate Limiting & DoS Protection | *Pending* | ⏳ *Up Next* |
+| **Day 04** | **Token-Bucket Rate Limiter & Concurrency Defense** | Burst-Tolerant Lazy Mathematical Refill, sync.RWMutex & RFC 6585 HTTP 429 | [Day 04 Action Log](bin/Daily_Actions/Day_04_Action_Log.md) | ✅ *Completed* |
+| **Day 05** | **Production Double-Entry Ledger Schema & Indexes** | Append-Only Journal Entries, B-Tree Indexes & Referential Integrity | *Pending* | ⏳ *Up Next* |
 
 ---
 
