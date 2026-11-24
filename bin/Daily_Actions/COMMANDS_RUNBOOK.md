@@ -298,6 +298,133 @@ curl -s -o /dev/null -w "Merchant B: HTTP %{http_code}\n" -X POST http://localho
 
 ### 4.4 Burst & 429 Verification via Windows PowerShell:
 ```powershell
+$token = (go run cmd/gentoken/main.go -merchant merchant_stripe_101 -role merchant -mins 15 | Select-String -Pattern 'ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+').Matches.Value
+$body = '{"amount_cents":5000,"recipient":"merchant_coffee"}'
+$secret = "novaris_insecure_dev_hmac_secret_change_in_production_2026"
+$ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
+$canonical = "$ts.$body"
+
+$hmac = New-Object System.Security.Cryptography.HMACSHA256
+$hmac.Key = [System.Text.Encoding]::UTF8.GetBytes($secret)
+$hash = $hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($canonical))
+$sig = [BitConverter]::ToString($hash).Replace("-","").ToLower()
+
+$headers = @{
+    "Authorization"       = "Bearer " + $token
+    "X-Novaris-Timestamp" = $ts
+    "X-Novaris-Signature" = $sig
+}
+
+# Send burst of 10 requests (All return 200 OK)
+1..10 | ForEach-Object {
+    $res = Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body $body -ContentType "application/json" -Headers $headers
+    Write-Host "Request $_: Success"
+}
+
+# 11th request triggers 429
+try {
+    Invoke-RestMethod -Uri "http://localhost:8080/v1/payments" -Method Post -Body $body -ContentType "application/json" -Headers $headers
+} catch {
+    Write-Host "11th Request Throttled: HTTP" $_.Exception.Response.StatusCode.value__
+}
+```
+
+---
+
+## 5. Day 05: Full Ledger Schema, Composite Indexes & JSONB Probes
+
+### 5.1 Run Schema Verification Test Suite:
+```bash
+cd services/gateway
+
+# Run automated schema test suite (offline AST & SQL checks)
+go test -v ./cmd/verifyschema
+
+# Run full gateway test suite (21/21 tests pass)
+go test -v ./...
+```
+
+### 5.2 Execute Go Schema Verifier CLI:
+```bash
+cd services/gateway
+
+# Mode 1: Offline static migration validation (Ideal for CI/CD)
+go run cmd/verifyschema/main.go -offline
+
+# Mode 2: Live PostgreSQL inspection against running container
+go run cmd/verifyschema/main.go
+```
+*PowerShell Alternative:*
+```powershell
+Set-Location services\gateway
+go test -v ./cmd/verifyschema
+go run cmd/verifyschema/main.go -offline
+```
+
+### 5.3 Apply Migration 002 to Docker PostgreSQL:
+```bash
+# Copy migration file to container
+docker cp migrations/002_fraud_and_features.sql novaris-postgres:/tmp/002.sql
+
+# Execute SQL file against live database
+docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002.sql
+```
+*PowerShell Alternative:*
+```powershell
+docker cp migrations\002_fraud_and_features.sql novaris-postgres:/tmp/002.sql
+docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002.sql
+```
+
+### 5.4 Inspect Relations & Composite Index via `psql`:
+```bash
+# List all 6 tables (accounts, transactions, journal_entries, outbox, fraud_reviews, feature_snapshots)
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "\dt"
+
+# Inspect composite index on feature_snapshots (idx_feature_snapshots_account_time)
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "\d+ feature_snapshots"
+
+# Inspect CHECK constraint on fraud_reviews (CONFIRMED_FRAUD, FALSE_POSITIVE)
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "\d+ fraud_reviews"
+```
+
+### 5.5 Test CHECK Constraint Enforcement:
+```bash
+# Attempt to insert an invalid verdict string -> Expect Error 23514 (check constraint violation)
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
+INSERT INTO fraud_reviews (transaction_id, analyst_id, verdict, notes)
+VALUES ('c0a80101-0000-0000-0000-000000000001', 'a0a80101-0000-0000-0000-000000000001', 'SUSPICIOUS_ONLY', 'Analyst flag');"
+```
+
+### 5.6 Test JSONB Containment & Extraction Queries:
+```bash
+# Insert a sample feature snapshot with nested JSONB signals
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
+INSERT INTO feature_snapshots (account_id, feature_data)
+VALUES ('a1111111-1111-1111-1111-111111111111', '{\"velocity_5m\": 14, \"geo_hop_km\": 1820.4, \"device_known\": false, \"vpn_detected\": true}');"
+
+# Query 1: Extract velocity as text using ->> operator
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
+SELECT id, account_id, feature_data->>'velocity_5m' AS velocity FROM feature_snapshots;"
+
+# Query 2: Filter with JSONB containment operator (@>)
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
+SELECT id, computed_at FROM feature_snapshots WHERE feature_data @> '{\"vpn_detected\": true}';"
+```
+
+### 5.7 Verify B-Tree Index Utilization with `EXPLAIN ANALYZE`:
+```bash
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
+EXPLAIN ANALYZE
+SELECT * FROM feature_snapshots
+WHERE account_id = 'a1111111-1111-1111-1111-111111111111'
+ORDER BY computed_at DESC
+LIMIT 5;"
+```
+*(Verify output confirms `Index Scan using idx_feature_snapshots_account_time` with zero in-memory sort).*
+
+---
+
+## 6. Master Daily Git Multi-Commit & Push Workflow
 cd services\gateway
 
 # 1. Mint JWT token
