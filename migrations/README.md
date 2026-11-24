@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Accounting-Double--Entry_Zero--Drift-00C853?style=flat-square&logo=cashapp&logoColor=white" alt="Accounting" />
   <img src="https://img.shields.io/badge/Concurrency-Optimistic_Locking_(OCC)-00E5FF?style=flat-square&logo=affinitylock&logoColor=white" alt="Concurrency" />
   <img src="https://img.shields.io/badge/Pattern-Transactional_Outbox-7C4DFF?style=flat-square&logo=apachekafka&logoColor=white" alt="Outbox" />
+  <img src="https://img.shields.io/badge/Indexing-Composite_B--Tree_+_GIN-FF6D00?style=flat-square&logo=speedtest&logoColor=white" alt="Indexing" />
 </p>
 
 ---
@@ -45,14 +46,41 @@ If another transaction commits first, the version check fails atomically without
 ### 4. Transactional Outbox Pattern
 The `outbox` table solves the dual-write failure mode where an application commits a database record but crashes before publishing to Kafka. Both operations commit atomically within the same PostgreSQL ACID transaction.
 
+### 5. Semi-Structured JSONB for Evolving ML Features (Day 5)
+The `feature_snapshots.feature_data` column uses binary JSON (`JSONB`). This allows the machine learning team to add new fraud signals (e.g. IP velocity, geo-hop speed, device trust score) dynamically across Weeks 7-8 without executing disruptive DDL table alters.
+
+### 6. Left-to-Right Composite Index Ordering (Day 5)
+The composite index `idx_feature_snapshots_account_time` is ordered as `(account_id, computed_at DESC)`:
+* **The Rule:** A composite index on `(A, B)` speeds up queries on `A` alone or `A AND B`, but is useless for queries filtering on `B` alone.
+* **Access Pattern:** Queries always fetch a single account's feature history over time (`WHERE account_id = ? ORDER BY computed_at DESC`), making `account_id` the essential leading column.
+
 ---
 
 ## 🗃️ Migration Files Index
 
-| File | Migration Name | Applied In | Core Entities Created |
-| :--- | :--- | :---: | :--- |
-| **`001_initial_ledger_schema.sql`** | Initial Ledger & Outbox Schema | **Day 1** | `accounts`, `transactions`, `journal_entries`, `outbox` |
-| **`002_fraud_review_tables.sql`** | Fraud Reviews & Feature Snapshots | *Day 5* | `fraud_reviews`, `feature_snapshots` |
+| File | Migration Name | Applied In | Core Entities Created | Status |
+| :--- | :--- | :---: | :--- | :---: |
+| **[`001_initial_ledger_schema.sql`](./001_initial_ledger_schema.sql)** | Initial Ledger & Outbox Schema | **Day 1** | `accounts`, `transactions`, `journal_entries`, `outbox` | ✅ Active |
+| **[`002_fraud_and_features.sql`](./002_fraud_and_features.sql)** | Human Reviews & Feature Snapshots | **Day 5** | `fraud_reviews`, `feature_snapshots` | ✅ Active |
+| **[`verify_day05_schema.sql`](./verify_day05_schema.sql)** | Day 5 Verification & Diagnostics | **Day 5** | Deterministic Seed Data, Constraint & Index Tests | 🧪 Test Suite |
+
+---
+
+## 🚀 Applying Migrations to an Existing Database Container
+
+Because PostgreSQL only executes scripts in `/docker-entrypoint-initdb.d/` on the very first container initialization, subsequent migrations on an existing volume must be applied manually:
+
+```bash
+# 1. Copy the migration script into the running container
+docker cp migrations/002_fraud_and_features.sql novaris-postgres:/tmp/002_fraud_and_features.sql
+
+# 2. Execute migration with psql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
+
+# 3. Execute deterministic verification harness
+docker cp migrations/verify_day05_schema.sql novaris-postgres:/tmp/verify_day05_schema.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day05_schema.sql
+```
 
 ---
 
