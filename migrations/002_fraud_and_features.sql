@@ -1,136 +1,135 @@
 -- ==============================================================================
 -- NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
--- MIGRATION 002: Human Fraud Review Logs & Point-in-Time Feature Snapshots (Day 5)
--- FILE: migrations/002_fraud_and_features.sql
+-- MIGRATION 002: Human-in-the-Loop Fraud Reviews & Ephemeral Feature Snapshots
 -- ==============================================================================
 --
--- Architectural Purpose & Domain Significance:
--- Days 1-4 established perimeter ingress defenses (JWT, HMAC, Token-Bucket Rate Limiter)
--- and core transactional bookkeeping (accounts, transactions, journal_entries, outbox).
+-- Architectural Purpose & Milestone Context (Day 5 of 84):
+-- Days 2 through 4 fortified the API Gateway perimeter (JWT -> Rate Limiting -> HMAC).
+-- Day 5 shifts inward to complete the persistence foundation defined in the SRS Blueprint:
 --
--- Today on Day 5, we complete the SRS Capstone relational database blueprint by
--- adding the two missing load-bearing tables required for future ML and Operations:
+-- 1. Human-in-the-Loop Governance (`fraud_reviews`):
+--    When transactions fall into the ambiguous risk band (Risk Score 30 - 70), they are
+--    flagged for human analyst triage (built in Weeks 9-10). This table permanently
+--    records human verdicts ('CONFIRMED_FRAUD' vs 'FALSE_POSITIVE').
+--    *Critical Downstream Dependency*: This table forms the verified ground-truth labeled
+--    training dataset queried by Day 66's automated nightly Airflow retraining DAG!
 --
--- 1. `fraud_reviews`:
---    - Represents: A human fraud analyst's final verdict on an escalated transaction.
---    - Written By: The Human-in-the-Loop Analyst Dashboard (React 19 / WebSocket - Week 9-10).
---    - Read By: The Nightly Retraining DAG (Airflow / MLflow - Day 66 / Week 7-8).
---    - Machine Learning Role: THIS IS NOT JUST AN AUDIT LOG. This table is the literal,
---      authoritative source of human-verified GROUND-TRUTH LABELS used to retrain
---      the XGBoost and Graph Neural Network fraud detection models.
+-- 2. Temporal Machine Learning Feature Freezing (`feature_snapshots`):
+--    In Week 3 (Day 20), we build sub-millisecond Redis velocity counters. However,
+--    Redis is an ephemeral in-memory cache—it only knows an account's velocity *right now*,
+--    never what it was three weeks ago during a disputed transaction.
+--    `feature_snapshots` acts as the permanent offline feature store (Week 7-8 & Feast Day 51),
+--    preserving historical model inputs at the exact microsecond of transaction scoring.
 --
--- 2. `feature_snapshots`:
---    - Represents: A point-in-time immutable archive of ephemeral fraud signals.
---    - Written By: The Feature Enrichment & Ingestion Service (Kafka / Redis - Day 25).
---    - Read By: The Offline ML Training Pipeline (Day 44-46) and Feast Feature Store (Day 51).
---    - Machine Learning Role: Redis sliding counters only store the "current" state
---      (e.g., velocity in the last 5 minutes right now). Redis CANNOT tell you what
---      the velocity was 3 weeks ago when a specific fraudulent charge occurred.
---      This table archives computed features permanently in JSONB format.
+-- 3. Semi-Structured JSONB Flexibility:
+--    The `feature_data` column uses binary JSON (JSONB). As feature engineering evolves
+--    across Weeks 7-8 (adding device fingerprints, geo-hops, graph embeddings), new
+--    signals are added without requiring continuous schema migrations.
 --
--- 3. Composite Indexing:
---    - An index on (account_id, computed_at DESC) allows instant chronological retrieval
---      of an account's behavioral history without expensive full-table sequential scans.
---
--- MIGRATION DISCIPLINE NOTE:
--- We NEVER modify `001_initial_ledger_schema.sql` after it has been executed on a database.
--- Numbered, immutable migrations ensure every staging, dev, and production database
--- executes the exact same sequence of deterministic schema transformations.
+-- 4. High-Performance Composite Indexing:
+--    Implements a composite B-Tree index on `(account_id, computed_at DESC)`.
+--    The leading column (`account_id`) narrows the search space to a single tenant, while
+--    the second column (`computed_at DESC`) returns chronological history with zero sort overhead.
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
 -- 1. FRAUD_REVIEWS TABLE
--- Stores human analyst review decisions on transactions scored in the review band (30-70).
+-- Stores human analyst review decisions on flagged transactions (Score 30-70).
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS fraud_reviews (
+    -- Unique primary identifier for this review record
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    -- Foreign Key: Links directly to the specific transaction evaluated.
-    -- If a transaction is deleted, CASCADE or RESTRICT prevents dangling audit trails.
+    -- Foreign Key binding this review directly to the underlying financial transaction.
+    -- ON DELETE RESTRICT: Prevents accidental deletion of a transaction with an active audit log.
     transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT,
 
-    -- Identifier of the human fraud analyst who reviewed the flagged transaction.
-    -- Guarantees auditability, regulatory compliance, and analyst performance tracking.
+    -- Identifier of the security analyst or automated compliance officer who made the determination
     analyst_id UUID NOT NULL,
 
-    -- Verdict outcome: Restricted by a strict CHECK constraint to prevent typos.
-    -- Pattern: VARCHAR(16) + CHECK constraint is chosen over native Postgres ENUM
-    -- because it easily accommodates future verdict additions (e.g. 'ESCALATED_L2')
-    -- via simple ALTER TABLE migrations without lock-heavy ALTER TYPE statements.
-    verdict VARCHAR(16) NOT NULL
-        CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE')),
+    -- The human verdict. Strictly constrained at the database engine level via CHECK constraint.
+    -- VARCHAR + CHECK is chosen over native Postgres ENUM for consistency with Day 1's
+    -- `transactions.status` and to allow friction-free future additions via ALTER TABLE.
+    verdict VARCHAR(16) NOT NULL CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE')),
 
-    -- Free-form text notes detailing the analyst's investigative reasoning
-    -- (e.g. "Customer confirmed card was stolen via phone call").
+    -- Free-form textual reasoning entered by the analyst explaining why the flag was confirmed or overturned
     notes TEXT,
 
-    -- Timestamp when the human verdict was finalized.
+    -- ISO-8601 UTC timestamp of when the analyst submitted their final determination
     reviewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Index on transaction_id for instant retrieval of review status during settlement checks
-CREATE INDEX IF NOT EXISTS idx_fraud_reviews_tx_id ON fraud_reviews(transaction_id);
+-- Index for looking up all reviews associated with a specific transaction
+CREATE INDEX IF NOT EXISTS idx_fraud_reviews_tx 
+    ON fraud_reviews(transaction_id);
 
--- Index on analyst_id for supervisor audit logs and analyst productivity metrics
-CREATE INDEX IF NOT EXISTS idx_fraud_reviews_analyst_id ON fraud_reviews(analyst_id);
+-- Index for auditing analyst workload and productivity over time
+CREATE INDEX IF NOT EXISTS idx_fraud_reviews_analyst 
+    ON fraud_reviews(analyst_id, reviewed_at DESC);
 
--- Index on verdict and reviewed_at for training dataset extraction queries (e.g. Day 66 DAG)
-CREATE INDEX IF NOT EXISTS idx_fraud_reviews_verdict_time ON fraud_reviews(verdict, reviewed_at DESC);
+-- Composite index for Day 66's retraining pipeline: quickly extract training batches by verdict and date
+CREATE INDEX IF NOT EXISTS idx_fraud_reviews_verdict_time 
+    ON fraud_reviews(verdict, reviewed_at DESC);
 
 
 -- ------------------------------------------------------------------------------
 -- 2. FEATURE_SNAPSHOTS TABLE
--- Point-in-time archive of ephemeral Redis fraud features and real-time signals.
+-- Permanent historical archive of ephemeral Redis fraud signals captured at scoring time.
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS feature_snapshots (
+    -- Unique primary identifier for this feature snapshot
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    -- Foreign Key: Identifies the account/wallet whose features are being snapshotted.
+    -- The account whose behavioral profile and velocity signals are being snapshotted
     account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
 
-    -- Foreign Key (NULLABLE): The transaction that triggered this feature snapshot.
-    -- Nullable by design: Enables periodic scheduled snapshots (e.g., hourly account health)
-    -- even when no immediate transaction is currently occurring.
+    -- The specific transaction that triggered this feature extraction.
+    -- Nullable by architectural design: allows non-transactional periodic background snapshots.
     transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL,
 
-    -- Flexible JSONB document containing arbitrary feature vectors:
-    -- e.g. {"velocity_5m": 12, "geo_hop_km": 1420.5, "device_known": false, "card_attempts": 3}
-    -- JSONB (Binary JSON) is selected over plain JSON because:
-    -- 1. It is stored in a decomposed binary format, eliminating text parsing on reads.
-    -- 2. It supports indexing via Generalized Inverted Indexes (GIN) in future phases.
-    -- 3. It supports fast existence and containment operators (@>, ?, ?&).
+    -- De-normalized, semi-structured feature vector stored as binary JSON (JSONB).
+    -- Example payload:
+    -- {
+    --   "velocity_1m": 3,
+    --   "velocity_5m": 12,
+    --   "amount_ratio_30d": 4.25,
+    --   "geo_hop_speed_mph": 842.1,
+    --   "ip_country": "US",
+    --   "device_trust_score": 0.94
+    -- }
     feature_data JSONB NOT NULL,
 
-    -- Monotonic timestamp recording exactly when the features were computed.
+    -- Exact microsecond timestamp when the feature vector was computed by the enrichment worker
     computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Index for looking up features captured for a specific transaction
+CREATE INDEX IF NOT EXISTS idx_feature_snapshots_tx 
+    ON feature_snapshots(transaction_id) 
+    WHERE transaction_id IS NOT NULL;
+
 -- ------------------------------------------------------------------------------
--- 3. COMPOSITE INDEX DESIGN: WHY COLUMN ORDER MATTERS
+-- COMPOSITE INDEX: (account_id, computed_at DESC)
 -- ------------------------------------------------------------------------------
--- A composite B-Tree index physically sorts data hierarchically:
--- It sorts FIRST by the 1st column, and THEN by the 2nd column within identical 1st values.
+-- WHY THIS EXACT COLUMN ORDER MATTERS (The Left-to-Right Index Rule):
+-- A B-Tree composite index physically sorts data hierarchically:
+--   1. First by `account_id` (Equality filter)
+--   2. Within each `account_id`, by `computed_at DESC` (Range/Sort order)
 --
--- CRITICAL QUERY ACCESS PATTERN:
--- In fraud intelligence and feature retrieval, the query pattern is ALWAYS:
---   "Fetch all feature snapshots for Account X, ordered by most recent first"
---   -> SELECT * FROM feature_snapshots WHERE account_id = $1 ORDER BY computed_at DESC;
+-- Anticipated Access Pattern:
+--   "Fetch the last 50 feature snapshots for Account X ordered by computed_at DESC"
+--   Query: SELECT * FROM feature_snapshots WHERE account_id = '...' ORDER BY computed_at DESC LIMIT 50;
 --
--- COLUMN ORDERING JUSTIFICATION:
--- 1. (account_id, computed_at DESC):
---    - The database can jump directly to the account's branch in the B-Tree in O(log N)
---      and scan forward/backward along computed_at in pre-sorted order!
--- 2. If the order were reversed to (computed_at, account_id):
---    - The index would sort all accounts by timestamp. To find Account X, the database
---      would have to scan across thousands of different timestamps—rendering the index
---      virtually USELESS for account-level history queries.
---
--- Therefore, account_id MUST come first, followed by computed_at DESC.
+-- Why NOT (computed_at DESC, account_id)?
+-- If `computed_at` were the leading column, searching for Account X across all time would
+-- require scanning through every single timestamp bucket on earth! Leading with `account_id`
+-- instantly isolates the B-Tree search to that merchant's sub-tree.
 -- ------------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_feature_snapshots_account_time 
     ON feature_snapshots(account_id, computed_at DESC);
 
--- Auxiliary index for looking up snapshots triggered by a specific transaction
-CREATE INDEX IF NOT EXISTS idx_feature_snapshots_tx_id 
-    ON feature_snapshots(transaction_id) 
-    WHERE transaction_id IS NOT NULL;
+-- GIN (Generalized Inverted Index) on the JSONB payload:
+-- Accelerates containment queries (@>) and JSON path lookups when filtering by internal feature keys
+-- Example: SELECT * FROM feature_snapshots WHERE feature_data @> '{"ip_country": "US"}';
+CREATE INDEX IF NOT EXISTS idx_feature_snapshots_data_gin 
+    ON feature_snapshots USING GIN (feature_data);
