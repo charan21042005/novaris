@@ -295,8 +295,8 @@ Every milestone across the 84-day curriculum is documented with textbook-grade d
 | **Day 02** | **JWT Authentication & Middleware** | RFC 7519 Stateless Identity & `alg: none` Defense | [Day 02 Action Log](bin/Daily_Actions/Day_02_Action_Log.md) | ✅ *Completed* |
 | **Day 03** | **HMAC Request Signing & Replay Defense** | RFC 2104 Payload Integrity, Replay Window & Constant-Time Verification | [Day 03 Action Log](bin/Daily_Actions/Day_03_Action_Log.md) | ✅ *Completed* |
 | **Day 04** | **Token-Bucket Rate Limiter & Concurrency Defense** | Burst-Tolerant Lazy Mathematical Refill, sync.RWMutex & RFC 6585 HTTP 429 | [Day 04 Action Log](bin/Daily_Actions/Day_04_Action_Log.md) | ✅ *Completed* |
-| **Day 05** | **Full Ledger Schema, JSONB & Composite Indexes** | Human Review Audits, Ephemeral-to-Persistent Feature Storage & B-Tree Order | [Day 05 Action Log](bin/Daily_Actions/Day_05_Action_Log.md) | ✅ *Completed* |
-| **Day 06** | **Atomic Double-Entry Settlement & Rollbacks** | ACID Transaction Boundaries, Debit/Credit Balance Invariants & OCC | *Pending* | ⏳ *Up Next* |
+| **Day 05** | **Full Ledger Schema, Composite Indexes & JSONB** | Human Fraud Reviews, Feature Snapshots, GIN & Hierarchical B-Trees | [Day 05 Action Log](bin/Daily_Actions/Day_05_Action_Log.md) | ✅ *Completed* |
+| **Day 06** | **Atomic Settlement Logic & Concurrency Rollbacks** | Multi-Table ACID Transactions, Balance Sufficiency & OCC Retries | *Pending* | ⏳ *Up Next* |
 
 ---
 
