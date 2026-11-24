@@ -11,6 +11,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Go_1.22+-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/Security-JWT_+_HMAC--SHA256-00C853?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="Security" />
+  <img src="https://img.shields.io/badge/Rate_Limiter-Token_Bucket_[10_burst,_2/s]-FF6D00?style=flat-square&logo=speedtest&logoColor=white" alt="Rate Limiter" />
   <img src="https://img.shields.io/badge/Port-8080-7C4DFF?style=flat-square&logo=gnubash&logoColor=white" alt="Port" />
   <img src="https://img.shields.io/badge/Resilience-Graceful_Shutdown-FFA000?style=flat-square&logo=shield&logoColor=white" alt="Resilience" />
 </p>
@@ -26,10 +27,11 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 ### Multi-Layer Security Architecture (Defense in Depth):
 1. **Liveness & Readiness Probing:** Exposes standardized `/healthz` endpoints for Kubernetes container orchestration.
 2. **Cryptographic Identity Verification (Day 2):** Enforces RFC 7519 JSON Web Token (JWT) validation with defenses against the `alg: none` exploit and algorithm confusion attacks.
-3. **Payload Integrity & Replay Defense (Day 3):** Enforces HMAC-SHA256 request body signing with `X-Novaris-Timestamp` (±300s replay window) and constant-time signature comparison (`hmac.Equal`) to neutralize side-channel timing attacks.
-4. **Structured Observability:** Middleware tracking request method, path, remote IP, and microsecond processing latency.
-5. **Graceful Termination:** Intercepts OS signals (`SIGINT`, `SIGTERM`) and allows in-flight connections to drain cleanly with a 5-second deadline.
-6. *(Upcoming Day 4):* Distributed sliding token-bucket rate limiting via Redis.
+3. **In-Memory Token-Bucket Rate Limiter (Day 4):** Enforces per-merchant rate quotas (Burst: 10 requests, Sustained: 2 req/sec) using zero-goroutine lazy mathematical refill. Responds with HTTP `429 Too Many Requests` + `Retry-After: <sec>`. *Fail-Fast Optimization:* Drops floods before body hashing.
+4. **Payload Integrity & Replay Defense (Day 3):** Enforces HMAC-SHA256 request body signing with `X-Novaris-Timestamp` (±300s replay window) and constant-time signature comparison (`hmac.Equal`) to neutralize side-channel timing attacks.
+5. **Structured Observability:** Middleware tracking request method, path, remote IP, and microsecond processing latency.
+6. **Graceful Termination:** Intercepts OS signals (`SIGINT`, `SIGTERM`) and allows in-flight connections to drain cleanly with a 5-second deadline.
+7. *(Upcoming Day 5):* Immutable double-entry financial ledger schema & database migrations.
 
 ---
 
@@ -81,12 +83,29 @@ Requires valid credentials across both security layers:
   "role": "merchant",
   "amount_cents": 5000,
   "recipient": "merchant_456",
-  "message": "Payment request verified successfully: JWT identity confirmed and HMAC body integrity preserved.",
-  "timestamp": "2026-11-23T06:50:11.608Z"
+  "message": "Payment request verified successfully: JWT identity confirmed, rate limit quota allocated, and HMAC body integrity preserved.",
+  "timestamp": "2026-11-24T12:50:11.608Z"
 }
 ```
 
-* **Failure Responses (`401 Unauthorized`):**
+* **Rate Limit Exceeded Response (`429 Too Many Requests`):**
+  * Emitted when a merchant exceeds their burst capacity ($c=10.0$) and sustains traffic above refill ($r=2.0\text{ tokens/sec}$).
+  * Includes RFC 6585 standard `Retry-After` header indicating minimum seconds to wait before retrying.
+  ```http
+  HTTP/1.1 429 Too Many Requests
+  Content-Type: application/json
+  Retry-After: 1
+  ```
+  ```json
+  {
+    "error": "too_many_requests",
+    "merchant_id": "merchant_123",
+    "message": "rate limit quota exhausted. Please retry after the specified backoff interval.",
+    "retry_after_seconds": 1
+  }
+  ```
+
+* **Authentication & Integrity Failure Responses (`401 Unauthorized`):**
   * Missing Bearer token: `{"error": "unauthorized", "message": "missing Authorization header"}`
   * Missing HMAC headers: `{"error": "unauthorized", "auth_type": "hmac_sha256", "message": "missing required signature headers..."}`
   * Tampered request body: `{"error": "unauthorized", "auth_type": "hmac_sha256", "message": "HMAC signature verification failed: invalid signature: payload hash mismatch"}`
@@ -132,6 +151,7 @@ go test -v ./...
 * 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken` and `signrequest`) for local token minting and signature testing.
 * 👉 **[`internal/` Engine Documentation](./internal/README.md):** Go compiler-enforced private package boundary.
 * 👉 **[`internal/auth/` Cryptographic Specs](./internal/auth/README.md):** Cryptographic JWT & HMAC-SHA256 engine specifications and test matrices.
+* 👉 **[`internal/ratelimit/` Rate Limiter Specs](./internal/ratelimit/README.md):** Token-bucket rate limiter mathematical model, concurrency architecture, and test suites.
 
 ---
 

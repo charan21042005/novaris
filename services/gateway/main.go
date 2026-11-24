@@ -1,21 +1,25 @@
 // ==============================================================================
 // NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
-// MODULE 1: API Gateway Service Entry Point (Day 3 - JWT + HMAC Layered Security)
+// MODULE 1: API Gateway Service Entry Point (Day 4 - JWT + Rate Limiting + HMAC Defense)
 // ==============================================================================
 //
-// Day 3 Evolution:
+// Day 4 Evolution:
 // 1. /healthz remains public for unauthenticated Kubernetes/Docker health probing.
-// 2. / (root) provides public service discovery.
-// 3. /v1/payments is now protected by a TWO-LAYER DEFENSE IN DEPTH PIPELINE:
-//    - Layer 1 (Outermost): auth.JWTMiddleware
+// 2. / (root) provides public service discovery with updated Day 4 capabilities.
+// 3. /v1/payments is now protected by a THREE-LAYER DEFENSE IN DEPTH PIPELINE:
+//    - Layer 1 (Identity): auth.JWTMiddleware
 //      Answers "WHO ARE YOU?": Validates the Bearer token's cryptographic signature,
 //      checks token expiration, and injects merchant identity claims into context.
-//    - Layer 2 (Inner): auth.HMACMiddleware
-//      Answers "HAS THIS BEEN ALTERED OR REPLAYED?": Reads the raw request body bytes,
-//      verifies X-Novaris-Timestamp within a ±300s window (replay defense),
-//      recomputes the HMAC-SHA256 signature using the shared secret, and compares
-//      using constant-time hmac.Equal (timing attack defense). Restores r.Body.
-//    - Layer 3 (Core): paymentsHandler
+//    - Layer 2 (Velocity / Volume): ratelimit.RateLimitMiddleware
+//      Answers "HOW MUCH / HOW FAST?": Enforces per-merchant token-bucket rate limiting
+//      (Capacity = 10 burst, Refill = 2 tokens/sec). Evaluated via lazy math refill
+//      without background goroutines. Returns HTTP 429 Too Many Requests with Retry-After.
+//      *CRITICAL FAIL-FAST OPTIMIZATION*: Drops abusive traffic BEFORE costly HMAC hashing!
+//    - Layer 3 (Integrity / Replay): auth.HMACMiddleware
+//      Answers "HAS THIS BEEN ALTERED OR REPLAYED?": Reads request body bytes, verifies
+//      X-Novaris-Timestamp within ±300s window, recomputes HMAC-SHA256 signature using
+//      constant-time comparison, and restores r.Body for downstream handler consumption.
+//    - Core (Settlement): paymentsHandler
 //      Reads verified claims and payment payload, returning authorized settlement JSON.
 // ==============================================================================
 
@@ -33,6 +37,7 @@ import (
 	"time"
 
 	"github.com/charan21042005/novaris/services/gateway/internal/auth"
+	"github.com/charan21042005/novaris/services/gateway/internal/ratelimit"
 )
 
 // Config holds runtime configuration parameters for the gateway.
@@ -133,12 +138,12 @@ func rootHandler(cfg Config) http.HandlerFunc {
 			Description: "High-Throughput Distributed Payment Settlement & Fraud Intelligence Ingestion Gateway",
 			Status:      "online",
 			Version:     cfg.ServiceVersion,
-			Day:         3,
-			Phase:       "Phase 1 - Design & Ledger",
+			Day:         4,
+			Phase:       "Phase 1 - Design, Ledger & Ingestion Security",
 			Endpoints: map[string]string{
 				"health_check":       "/healthz (Public Liveness Probe)",
-				"payments_protected": "/v1/payments (Protected - Requires JWT Bearer + HMAC-SHA256 Signature)",
-				"transaction_flow":   "/v1/transactions (Coming in Phase 1: Day 4 Rate Limiting & Day 5 Ledger)",
+				"payments_protected": "/v1/payments (Protected - Requires JWT Identity + Token-Bucket Rate Limiter [10 burst, 2/s] + HMAC-SHA256 Integrity)",
+				"transaction_flow":   "/v1/transactions (Coming in Phase 1: Day 5 Ledger Schema & Double-Entry Ingestion)",
 			},
 		}
 
@@ -173,7 +178,7 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 		Role:        claims.Role,
 		AmountCents: req.AmountCents,
 		Recipient:   req.Recipient,
-		Message:     "Payment request verified successfully: JWT identity confirmed and HMAC body integrity preserved.",
+		Message:     "Payment request verified successfully: JWT identity confirmed, rate limit quota allocated, and HMAC body integrity preserved.",
 		Timestamp:   time.Now().UTC(),
 	}
 
@@ -189,9 +194,16 @@ func main() {
 	cfg := Config{
 		Port:           port,
 		ServiceName:    "novaris-gateway",
-		ServiceVersion: "0.3.0-day3",
+		ServiceVersion: "0.4.0-day4",
 		Environment:    "development",
 	}
+
+	// Initialize the In-Memory Token-Bucket Rate Limiter Store
+	// Default: Burst capacity = 10.0 tokens, Refill rate = 2.0 tokens/second per merchant
+	bucketStore := ratelimit.NewBucketStore(
+		ratelimit.DefaultBucketCapacity,
+		ratelimit.DefaultRefillRate,
+	)
 
 	// Create a new ServeMux (HTTP request router)
 	mux := http.NewServeMux()
@@ -200,12 +212,23 @@ func main() {
 	mux.HandleFunc("/", rootHandler(cfg))
 	mux.HandleFunc("/healthz", healthzHandler(cfg))
 
-	// 2. Protected Routes (Stacked Middleware: JWTMiddleware -> HMACMiddleware -> paymentsHandler)
-	// Execution flow:
-	//   Step 1: JWTMiddleware checks Authorization Bearer token (rejects if missing/forged/expired -> 401)
-	//   Step 2: HMACMiddleware checks X-Novaris-Timestamp & X-Novaris-Signature (rejects if tampered/stale -> 401)
-	//   Step 3: paymentsHandler processes payment settlement logic (reaches here only if both pass)
-	mux.HandleFunc("/v1/payments", auth.JWTMiddleware(auth.HMACMiddleware(paymentsHandler)))
+	// 2. Protected Routes (Stacked Defense-in-Depth Middleware: JWT -> RateLimit -> HMAC -> paymentsHandler)
+	// Execution order:
+	//   Step 1: JWTMiddleware checks Authorization Bearer token (rejects if missing/forged/expired -> 401).
+	//           Injects verified Claims (including MerchantID) into request context.
+	//   Step 2: RateLimitMiddleware reads claims.MerchantID and evaluates token bucket quota.
+	//           If tokens are exhausted, rejects immediately with HTTP 429 Too Many Requests and Retry-After header.
+	//           *Fail-Fast Principle*: Eliminates abusive traffic BEFORE doing body read, hashing & crypto checks!
+	//   Step 3: HMACMiddleware checks X-Novaris-Timestamp & X-Novaris-Signature (rejects if tampered/stale -> 401).
+	//           Restores r.Body for downstream consumption.
+	//   Step 4: paymentsHandler processes payment settlement logic (reaches here only if all three layers pass).
+	mux.HandleFunc("/v1/payments",
+		auth.JWTMiddleware(
+			ratelimit.RateLimitMiddleware(bucketStore)(
+				auth.HMACMiddleware(paymentsHandler),
+			),
+		),
+	)
 
 	// Wrap router with logging middleware for latency & request tracing
 	handlerWithMiddleware := loggingMiddleware(mux)
@@ -226,10 +249,12 @@ func main() {
 	// Launch HTTP listener in a background goroutine
 	go func() {
 		log.Printf("=================================================================")
-		log.Printf(" ⚡ NOVARIS Gateway Service v%s (Day 3 - JWT + HMAC Defense)", cfg.ServiceVersion)
+		log.Printf(" ⚡ NOVARIS Gateway Service v%s (Day 4 - Rate Limiter Defense)", cfg.ServiceVersion)
 		log.Printf(" Listening on port: :%s", cfg.Port)
 		log.Printf(" Public:    http://localhost:%s/healthz", cfg.Port)
-		log.Printf(" Protected: http://localhost:%s/v1/payments (JWT + HMAC)", cfg.Port)
+		log.Printf(" Protected: http://localhost:%s/v1/payments (JWT + RateLimit + HMAC)", cfg.Port)
+		log.Printf(" Rate Limit: Capacity=%.0f tokens, Refill=%.1f tokens/sec per merchant",
+			ratelimit.DefaultBucketCapacity, ratelimit.DefaultRefillRate)
 		log.Printf("=================================================================")
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
