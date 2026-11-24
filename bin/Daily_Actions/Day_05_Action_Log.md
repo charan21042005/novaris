@@ -6,7 +6,7 @@
 </p>
 
 # 📖 NOVARIS THEORY TEXTBOOK • DAY 05
-## Full Ledger Schema: JSONB Documents, Composite Indexing & Ground-Truth Machine Learning Stores
+## Full Ledger Schema: Human Fraud Reviews, Temporal Feature Snapshots, Composite Indexing & JSONB
 
 <p align="center">
   <img src="https://img.shields.io/badge/Volume-01_Foundations_%26_Ledgers-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Volume" />
@@ -21,490 +21,614 @@
 
 ## 📑 Detailed Table of Contents
 
-1. [Preface: Finishing the Foundation — The Bridge from Ingress to Intelligence](#1-preface-finishing-the-foundation--the-bridge-from-ingress-to-intelligence)
-2. [Chapter 0: The Plain-English Database & Schema Engineering Lexicon](#2-chapter-0-the-plain-english-database--schema-engineering-lexicon)
-   - 0.1 What is a Database Schema? (The Architectural Blueprint Analogy)
-   - 0.2 Relational Foreign Keys & Referential Integrity (The Parent-Child String Analogy)
-   - 0.3 Database Migrations & The Immutable Commit History Principle
-   - 0.4 Migration Discipline: Why We Never Edit Past Migrations
-   - 0.5 JSON vs. JSONB in PostgreSQL (Raw Text vs. Decomposed Binary Byte-Code)
-   - 0.6 What is a B-Tree Index? (The Balanced Library Catalog Analogy)
-   - 0.7 What is a Composite (Multi-Column) Index? (The Phonebook Analogy)
-   - 0.8 Column Ordering in Composite Indexes: The March Birthday Paradox
-   - 0.9 CHECK Constraints: Database-Enforced Business Invariants
-   - 0.10 PostgreSQL ENUM vs. VARCHAR + CHECK (The Extensibility Trade-Off)
-   - 0.11 `EXPLAIN ANALYZE`: The X-Ray of Database Query Execution
-   - 0.12 Sequential Scan (`Seq Scan`) vs. Index Scan (`Index Scan`)
-   - 0.13 Ground-Truth Labels in Machine Learning (The Teacher's Answer Key)
-   - 0.14 Ephemeral vs. Persistent Features (The Speedometer vs. The Flight Black Box)
-   - 0.15 Schema Drift: The Danger of Divergent Environments
+1. [Preface: Completing the Persistence Bedrock — The Invisible Bridge to Future Intelligence](#1-preface-completing-the-persistence-bedrock--the-invisible-bridge-to-future-intelligence)
+2. [Chapter 0: The Plain-English Database & Schema Design Lexicon](#2-chapter-0-the-plain-english-database--schema-design-lexicon)
+   - 0.1 What is Database Normalization? (The Messy Garage vs. Tool Chest Analogy)
+   - 0.2 What is Semi-Structured Data? (The Flexible Invoice Analogy)
+   - 0.3 JSON vs. JSONB in PostgreSQL (Plain Text vs. Decomposed Binary Trees)
+   - 0.4 JSONB Operators (`->`, `->>`, `@>`) Explained Simply
+   - 0.5 What is a Database Index? (The Textbook Index Analogy)
+   - 0.6 What is a Composite Index? (The Telephone Directory Analogy)
+   - 0.7 The Left-to-Right Index Prefix Rule (Why Column Order Dictates Performance)
+   - 0.8 B-Tree Index vs. GIN Index (Generalized Inverted Index)
+   - 0.9 What is a Foreign Key (`REFERENCES`) and Referential Integrity?
+   - 0.10 Referential Actions: `RESTRICT` vs. `CASCADE` vs. `SET NULL`
+   - 0.11 What is a Database `CHECK` Constraint? (The Electronic Rollercoaster Gauge)
+   - 0.12 PostgreSQL Native `ENUM` vs. `VARCHAR + CHECK` (Rigid Types vs. Flexible Evolution)
+   - 0.13 What is Schema Drift? (Architectural Blueprints vs. As-Built Reality)
+   - 0.14 Migration Immutability & Numbering Discipline (Why We Never Edit Old Migrations)
+   - 0.15 Hot In-Memory Caching vs. Cold Durable Storage (Redis vs. Postgres)
 3. [Chapter 0.5: Complete Software Components, Tooling & Dependency Directory](#3-chapter-05-complete-software-components-tooling--dependency-directory)
-   - 0.5.1 Relational Engine & Database Types (PostgreSQL 16, UUID, BIGINT, JSONB)
-   - 0.5.2 Indexing & Query Optimization Primitives (B-Tree, Composite, GIN, EXPLAIN)
-   - 0.5.3 Go Database Drivers & Schema Verification Stack (`database/sql`, `lib/pq`)
-   - 0.5.4 Standards & Specifications (SQL:2016, RFC 8259 JSON, ISO 8601 Timestamps)
-4. [Chapter 1: The Theoretical Foundations of Relational Ledger Systems](#4-chapter-1-the-theoretical-foundations-of-relational-ledger-systems)
-   - 1.1 The Missing Pieces: Why Days 1–4 Left Two Tables Open
-   - 1.2 The Human-in-the-Loop Triage Architecture (The 30–70 Score Band)
-   - 1.3 The Temporal Decay of In-Memory State: Why Redis Needs an RDBMS Archive
-   - 1.4 How Real-World FinTech Giants Model Fraud Data (Stripe Radar, Adyen Protect)
-5. [Chapter 2: The Structural & Mathematical Architecture of JSONB and Composite Indexes](#5-chapter-2-the-structural--mathematical-architecture-of-jsonb-and-composite-indexes)
-   - 2.1 The Mathematics of B-Trees: Depth $O(\log N)$ and Hierarchical Sorting
-   - 2.2 Hierarchical Column Ordering in Composite B-Trees: Why `(account_id, computed_at DESC)` Succeeds
-   - 2.3 The Phonebook Proof: Why `(computed_at, account_id)` Fails for Account History
-   - 2.4 Internal Storage Layout of JSONB: Header, Offset Tables, and Key-Value Pointers
-   - 2.5 JSONB Containment Mathematics: The Sub-Document Inclusion Operator (`@>`)
-6. [Chapter 3: Critical Database Engineering Gotchas & Schema Discipline](#6-chapter-3-critical-database-engineering-gotchas--schema-discipline)
-   - 3.1 Migration Discipline: Why Editing `001_initial_ledger_schema.sql` Causes Fatal Drift
-   - 3.2 The `docker-entrypoint-initdb.d` Trap: Why New Migrations Don't Run on Existing Volumes
-   - 3.3 The ENUM vs. VARCHAR+CHECK Dilemma: Why Altering Enums Requires Table Locks
-   - 3.4 Nullable vs. Required Foreign Keys: Why `feature_snapshots.transaction_id` is Nullable
-   - 3.5 Cascading Deletions: Why `ON DELETE RESTRICT` Protects Financial Auditability
-7. [Chapter 4: The Closed MLOps Feedback Loop: Bridging Relational DBs to AI](#7-chapter-4-the-closed-mlops-feedback-loop-bridging-relational-dbs-to-ai)
-   - 4.1 From Analyst Click to Retrained Weights: The Full Data Lifecycle
-   - 4.2 How Day 66 Nightly Retraining DAG Queries `fraud_reviews`
-   - 4.3 How Day 44–51 Feature Pipelines Join `feature_snapshots` with Labeled Verdicts
-   - 4.4 Data Architecture Symmetry Across the 84-Day Roadmap
+   - 0.5.1 Relational Engine & Storage Primitives (PostgreSQL 16, Alpine, `uuid-ossp`)
+   - 0.5.2 Indexing Engines & Query Planners (B-Tree, GIN, `EXPLAIN ANALYZE`)
+   - 0.5.3 Database Administration & CLI Tooling (`psql`, `docker cp`, `docker exec`)
+   - 0.5.4 Standards & Specifications (ANSI SQL-92, SQL:2016 JSON, ISO 8601, ISO 4217)
+4. [Chapter 1: The Theoretical Foundations of Schema Evolution in Financial AI Systems](#4-chapter-1-the-theoretical-foundations-of-schema-evolution-in-financial-ai-systems)
+   - 1.1 The Lifecycle of a Disputed Transaction: The 30-70 Ambiguity Band
+   - 1.2 The Cold-Start Dilemma: Why Boring Backend Work IS Exciting ML Work
+   - 1.3 Freezing Ephemeral Time: Why Redis Cannot Act as an Offline Feature Store
+   - 1.4 How Real-World Gateways Store Reviews and Features (Stripe Radar, Adyen Score)
+5. [Chapter 2: The Mathematical & Structural Architecture of JSONB and Index Trees](#5-chapter-2-the-mathematical--structural-architecture-of-jsonb-and-index-trees)
+   - 2.1 The Internal Representation of JSONB: Binary Header & JEntry Offsets
+   - 2.2 Mathematical Complexity of Lookups: $O(N)$ Text Scanning vs. $O(\log K)$ Binary Search
+   - 2.3 The Geometry of Composite B-Trees: Hierarchical Sorting on $(A, B)$
+   - 2.4 Mathematical Proof: Why Filtering on $B$ Alone Cannot Utilize a $(A, B)$ B-Tree
+   - 2.5 Inverted Indexing (GIN) Mechanics: How Postgres Indexes Internal JSONB Keys
+   - 2.6 PostgreSQL Page Layout, Buffer Cache & TOAST (Oversized-Attribute Storage)
+   - 2.7 Write Amplification, MVCC Tuple Dynamics & Immutability in Feature Stores
+6. [Chapter 3: Critical Database Engineering Obstacles & Defense Science](#6-chapter-3-critical-database-engineering-obstacles--defense-science)
+   - 3.1 Migration Discipline: Why Modifying `001_initial_ledger_schema.sql` Causes Divergent Reality
+   - 3.2 The Docker Entrypoint Initialization Trap (Why New Scripts Are Ignored on Existing Volumes)
+   - 3.3 Foreign Key Cascading Hazards in Auditable Financial Systems
+   - 3.4 Why Nullable `transaction_id` in `feature_snapshots` is a Strategic Architectural Choice
+7. [Chapter 4: Defense in Depth & Schema Integration Architecture](#7-chapter-4-defense-in-depth--schema-integration-architecture)
+   - 4.1 The Complete 6-Table Entity-Relationship Model
+   - 4.2 The Cross-Phase Dependency Graph (Connecting Day 5 to Days 20, 44, 51, and 66)
+   - 4.3 Database-Enforced Invariants vs. Application-Level Validation
 8. [Chapter 5: The Data Science → Full-Stack Schema Rosetta Stone](#8-chapter-5-the-data-science--full-stack-schema-rosetta-stone)
 9. [Chapter 6: Architectural Trade-Off Analysis ("Why This and Not That")](#9-chapter-6-architectural-trade-off-analysis-why-this-and-not-that)
-   - 6.1 JSONB Column vs. Fully Normalized Relational Table
-   - 6.2 VARCHAR + CHECK vs. Postgres Native ENUM
-   - 6.3 Composite Index `(account_id, computed_at)` vs. Two Separate Single-Column Indexes
-   - 6.4 Client-Side Validation vs. Database CHECK Constraints (Defense in Depth)
+   - 6.1 Fully Normalized Relational Columns vs. Semi-Structured JSONB
+   - 6.2 PostgreSQL Native ENUM vs. VARCHAR + CHECK Constraint
+   - 6.3 Composite Index `(account_id, computed_at DESC)` vs. Two Separate Single-Column Indexes
+   - 6.4 Eager Point-in-Time Snapshotting vs. On-Demand Historical Reconstruction
 10. [Chapter 7: Line-by-Line Code Masterclass (Complete Dissections)](#10-chapter-7-line-by-line-code-masterclass-complete-dissections)
-    - 7.1 `migrations/002_fraud_and_features.sql` (The Complete Day 5 Migration)
-    - 7.2 `services/gateway/cmd/verifyschema/main.go` (The Go Schema Verifier CLI)
-    - 7.3 `services/gateway/cmd/verifyschema/main_test.go` (Automated Schema Test Suite)
-    - 7.4 `services/gateway/cmd/README.md` (Updated CLI Documentation)
+    - 7.1 `migrations/002_fraud_and_features.sql` (The Complete Day 5 DDL Migration)
+    - 7.2 `migrations/verify_day05_schema.sql` (Deterministic Test & Diagnostic Harness)
+    - 7.3 `migrations/001_initial_ledger_schema.sql` (Reviewing Foreign Key Foundations)
+    - 7.4 `deployments/docker-compose.yml` (Reviewing Persistence Volume Architecture)
+    - 7.5 `migrations/README.md` (Updated Database Persistence Documentation)
 11. [Chapter 8: Verification Laboratory: Execution Proof & Complete Runbook](#11-chapter-8-verification-laboratory-execution-proof--complete-runbook)
-    - 8.1 Complete Automated Test Suite Output (21/21 Passing Tests across Gateway)
-    - 8.2 Live Docker & PostgreSQL Command Matrix (Applying Migrations, Inserts & Index Scans)
-    - 8.3 Complete Step-by-Step CLI Runbook (Bash & PowerShell)
-12. [Chapter 9: The Interview Defense Compendium (10 High-Stakes Tier-1 Q&As)](#12-chapter-9-the-interview-defense-compendium-10-high-stakes-tier-1-qas)
-13. [Chapter 10: The Roadmap Horizon (Day 6 Preview: Atomic Double-Entry Settlement)](#13-chapter-10-the-roadmap-horizon-day-6-preview-atomic-double-entry-settlement)
+    - 8.1 Schema Verification Matrix: Column-by-Column Diff with the SRS Blueprint
+    - 8.2 Real-World SQL Verification Scenarios (Seeding, JSONB Extraction, Check Violations, EXPLAIN Plans)
+    - 8.3 Complete Step-by-Step CLI Runbook (Docker, psql, and PowerShell)
+    - 8.4 Production Database Diagnostics, Index Performance & Troubleshooting Runbook
+12. [Chapter 9: The Interview Defense Compendium (15 High-Stakes Tier-1 Q&As)](#12-chapter-9-the-interview-defense-compendium-15-high-stakes-tier-1-qas)
+13. [Chapter 10: The Roadmap Horizon (Day 6 Preview: Atomic Settlement & Concurrency Rollbacks)](#13-chapter-10-the-roadmap-horizon-day-6-preview-atomic-settlement--concurrency-rollbacks)
     - 10.1 Day 6 Architectural Objectives
     - 10.2 Hands-On Mastery Exercises for the Reader
 
 ---
 
-## 1. Preface: Finishing the Foundation — The Bridge from Ingress to Intelligence
+## 1. Preface: Completing the Persistence Bedrock — The Invisible Bridge to Future Intelligence
 
-Over the first four days of NOVARIS, we constructed an unassailable perimeter defense network in front of our Go API Gateway:
-* **Day 2:** Cryptographic JWT authentication (Identity verification).
-* **Day 3:** HMAC-SHA256 request body signing (Payload integrity & replay defense).
-* **Day 4:** In-memory Token-Bucket rate limiting (Velocity & flood policing).
+On **Days 2 through 4**, we constructed an increasingly formidable cryptographic and traffic-control gauntlet at the gateway perimeter:
+* **Day 2:** We built JSON Web Token (JWT) authentication, answering **"Who are you?"**
+* **Day 3:** We implemented HMAC-SHA256 request signing with timestamp replay windows, answering **"Has this request been altered or replayed?"**
+* **Day 4:** We engineered a zero-goroutine Token-Bucket rate limiter with `sync.RWMutex` double-checked locking, answering **"How fast and how much can you send?"**
 
-Today on **Day 5**, we deliberately step back from the gateway perimeter to complete the relational database foundation underneath our entire platform.
+Today, on **Day 5**, we step back from the network perimeter into the very heart of the system: **the PostgreSQL database engine**.
 
 ```
-       WHAT WAS BUILT ON DAY 1:                     WHAT WAS DELIBERATELY DEFERRED UNTIL TODAY:
-       
-┌──────────────────────────────────────┐     ┌────────────────────────────────────────────────────────┐
-│ 1. accounts                          │     │ 5. fraud_reviews                                       │
-│    (Wallets, Balances, Currencies)   │     │    * Captures human analyst decisions on flagged txs   │
-│ 2. transactions                      │     │    * Provides verified labels for ML retraining models │
-│    (Payment Lifecycle, Risk Scores)  │     │ 6. feature_snapshots                                   │
-│ 3. journal_entries                   │     │    * Point-in-time archive of ephemeral Redis features │
-│    (Immutable Double-Entry Ledger)   │     │    * JSONB flexible storage with composite B-Tree      │
-│ 4. outbox                            │     │      indexing on (account_id, computed_at DESC)        │
-│    (Transactional Kafka Event Relay) │     └────────────────────────────────────────────────────────┘
-└──────────────────────────────────────┘
+                THE ARCHITECTURAL LIFECYCLE OF NOVARIS INGESTION & AUDIT
+                
+   [DAYS 2 - 4]                                   [DAY 1 & DAY 5]
+ GATEWAY PERIMETER                            POSTGRESQL 16 PERSISTENCE
+ ┌─────────────────┐                          ┌───────────────────────────────────────┐
+ │ 1. JWT Auth     │                          │ DAY 1: CORE LEDGER                    │
+ │ 2. Rate Limiter │ ───────────────────────> │  * accounts (Balances & OCC version)  │
+ │ 3. HMAC Sign    │                          │  * transactions (Ingress lifecycle)   │
+ └─────────────────┘                          │  * journal_entries (Double-entry)     │
+                                              │  * outbox (Kafka relay queue)         │
+                                              ├───────────────────────────────────────┤
+                                              │ DAY 5: FRAUD & FEATURE ARCHIVE        │
+                                              │  * fraud_reviews (Analyst verdicts)   │
+                                              │  * feature_snapshots (JSONB features) │
+                                              └───────────────────────────────────────┘
 ```
 
-### The Concrete Payoff: Why These Two Tables Exist
-To a junior engineer, creating database tables for features that won't be actively written until Week 7 or Week 9 might feel like premature optimization. In distributed systems engineering, it is **load-bearing architectural planning**:
+### Why Stepping Back to the Database is Essential
+To a junior engineer, switching from writing high-performance Go middleware back to writing SQL DDL files might feel like a pause in momentum. In industrial software engineering, the exact opposite is true:
+> **The two database tables we create today (`fraud_reviews` and `feature_snapshots`) are the load-bearing pillars upon which all future machine learning retraining (Weeks 7–8) and human analyst dashboards (Weeks 9–10) are built.**
 
-1. **`fraud_reviews` is a Machine Learning Dataset in Disguise:**
-   When an incoming payment is assigned a risk score between $30$ and $70$ by our machine learning model, it is neither auto-approved nor auto-declined; it is routed to a human fraud analyst. When that human analyst inspects the transaction and clicks *"Confirmed Fraud"* or *"False Positive"*, where does that decision go?
-   It is written to `fraud_reviews`.  
-   **Crucially, on Day 66, when Apache Airflow triggers our automated nightly model retraining DAG, it will query this exact table.** Without `fraud_reviews`, our AI engine could never learn from human feedback!
-
-2. **`feature_snapshots` Freezes Ephemeral Time:**
-   On Day 20, we will build real-time velocity counters in Redis. Redis is blazingly fast, but it is **ephemeral and state-destructive**: Redis can tell you a merchant's transaction count in the *current* 5-minute window; it cannot tell you what that velocity was three weeks ago at 2:14 PM when a disputed charge occurred!
-   `feature_snapshots` provides an immutable, point-in-time audit log of the exact feature values present when a decision was made.
-
-### The Physical Analogy: The Medical Chart & The Biopsy Archive
-* **`transactions` and `journal_entries`** are like an emergency room admission log. It records who walked in, what time, and what treatment was billed.
-* **`feature_snapshots`** is the patient's **vital signs monitor printout** taken at the exact second of cardiac distress (heart rate, blood pressure, oxygen saturation).
-* **`fraud_reviews`** is the **pathology biopsy report** signed by the chief surgeon confirming whether the tumor was malignant (Fraud) or benign (False Positive).
+### The Physical Analogy: The Judicial Court Record & The Frozen Crime Scene
+* **`fraud_reviews` is the Judicial Court Record:** When a transaction is flagged by AI because it looks suspicious (Risk Score 65), the payment cannot simply be thrown away. A human fraud analyst must investigate. The verdict the analyst renders (`CONFIRMED_FRAUD` or `FALSE_POSITIVE`) along with their detailed rationale is recorded permanently in `fraud_reviews`. This table becomes the **authoritative, human-verified training dataset** that Day 66's automated Apache Airflow retraining DAG will query to retrain the XGBoost and Graph Neural Network models!
+* **`feature_snapshots` is the Frozen Crime Scene:** In Week 3 (Day 20), we build in-memory Redis velocity counters to detect card-testing attacks (e.g. 5 transactions in 1 minute). But Redis is an ephemeral in-memory cache: once an hour passes, the counter resets. Redis can tell you what an account's velocity is *right now*; it cannot tell you what it was three months ago when a disputed transaction occurred. `feature_snapshots` freezes the exact microsecond state of all ML features into a queryable binary JSON (`JSONB`) record forever.
 
 ---
 
-## 2. Chapter 0: The Plain-English Database & Schema Engineering Lexicon
+## 2. Chapter 0: The Plain-English Database & Schema Design Lexicon
 
-To ensure engineers from any background (software engineering, computer science, or data science) master these concepts, here is every term explained from first principles:
+For software engineers, data scientists, and computer science students, relational database indexing and semi-structured storage can seem deceptively simple until poor design brings a production cluster to a halt. Here is every concept explained in intuitive, first-principles terms:
 
-### 1. What is a Database Schema?
-* **Plain English:** The formal blueprint of a relational database. It dictates what tables exist, what columns they contain, what data types are permitted (e.g., integers, text, timestamps), and how tables relate to one another.
-* **The Architectural Blueprint Analogy:** Before constructing a skyscraper, architects draft blueprints showing where load-bearing pillars, electrical conduits, and plumbing pipes must run. You cannot pour concrete without a blueprint.
+### 1. What is Database Normalization?
+* **Plain English:** The process of organizing data into separate, specialized tables so that every piece of information is stored in exactly one place, eliminating redundant duplicates and preventing inconsistent data.
+* **The Messy Garage Analogy:** You could throw all your wrenches, paint cans, and car parts into one giant cardboard box (un-normalized). It's easy to dump things in, but searching for a 10mm socket takes 40 minutes. Normalization is sorting your tools into dedicated, labeled drawers: sockets in drawer 1, screwdrivers in drawer 2.
 
-### 2. Relational Foreign Keys & Referential Integrity
-* **Plain English:** A constraint that links a column in one table to the primary key of another table. It guarantees that child records cannot reference non-existent parent records.
-* **The Parent-Child String Analogy:** Imagine tying a child's wrist to their parent's wrist with a string. A child record (`fraud_reviews.transaction_id`) cannot exist in the playground unless the parent record (`transactions.id`) exists first!
-* **`ON DELETE RESTRICT`:** If someone tries to delete the parent transaction, the database refuses, protecting financial audit trails from accidental destruction.
+### 2. What is Semi-Structured Data?
+* **Plain English:** Data that does not conform to a rigid, predetermined tabular structure where every row has the exact same columns, but still contains internal tags, key-value pairs, or hierarchies.
+* **The Flexible Invoice Analogy:** A standardized receipt has rigid fields: Date, Total, Tax. But underneath, you might want to store optional custom notes, airline seat numbers, or gift messages. Semi-structured formats (like JSON) let you store varying metadata without modifying the receipt's physical template.
 
-### 3. Database Migrations & The Immutable Commit History Principle
-* **Plain English:** Version-controlled scripts (usually numbered SQL files like `001_initial.sql`, `002_features.sql`) that describe incremental changes to the database structure over time.
-* **The Git Analogy:** Just as Git tracks changes to code via a chain of immutable commits, migrations track changes to database structure via a chain of immutable scripts.
+### 3. JSON vs. JSONB in PostgreSQL
+PostgreSQL offers two distinct column types for storing JSON documents:
+* **`JSON` (Plain Text Storage):** Stores an exact textual copy of the JSON input string, including whitespace and key ordering. Every time you query inside it, PostgreSQL must re-parse the raw text from scratch. It is slow for filtering.
+* **`JSONB` (Decomposed Binary Storage - NOVARIS Standard):** Parses the JSON on insertion and translates it into a structured, indexed binary format. Whitespace is stripped, duplicate keys are eliminated, and keys are sorted alphabetically. Querying inside `JSONB` is blazing fast because PostgreSQL can traverse the binary tree without text parsing, and it supports **GIN indexes**.
 
-### 4. Migration Discipline: Why We Never Edit Past Migrations
-* **Plain English:** Once a migration script (like `001_initial_ledger_schema.sql`) has been executed on any running environment (development, staging, or production), **it must never be altered**.
-* **Why:** If Developer Alice modifies `001` on her machine, but the production database already executed the original `001` three weeks ago, the production database and Alice's database will silently diverge! Any new tables must be added in a brand-new file: `002_fraud_and_features.sql`.
+```
+    PLAIN JSON COLUMN ──► Stores raw string " { \"risk\": 0.95 } " ──► Re-parsed on every query!
+    JSONB COLUMN      ──► Stores compiled binary tree of keys/values ──► Fast indexable traversal!
+```
 
-### 5. JSON vs. JSONB in PostgreSQL
-* **Plain Text JSON (`json`):** Stores an exact text replica of the JSON string, including whitespace and duplicate keys. Every time you query a field, PostgreSQL must re-parse the raw text from scratch.
-* **Binary JSON (`jsonb`):** Decomposes the JSON string into an optimized, pre-parsed binary format with internal lookup tables. It discards whitespace and normalizes keys.
-* **Why JSONB Wins:** Querying a nested key inside JSONB is up to **100 times faster** than plain JSON, and JSONB supports indexing via GIN (Generalized Inverted Indexes).
+### 4. JSONB Operators (`->`, `->>`, `@>`) Explained Simply
+PostgreSQL provides specialized operators to query inside JSONB columns directly in SQL:
+* **`->` (Extract as JSON):** Returns the child element as a `JSONB` object (preserving quotes and JSON types).
+  * Example: `feature_data->'device'` $\rightarrow$ `{"os": "iOS", "trust": 0.95}`
+* **`->>` (Extract as Plain Text):** Returns the child element as a raw SQL `text` string (unquoted).
+  * Example: `feature_data->>'ip_country'` $\rightarrow$ `JP`
+* **`@>` (Contains Operator):** Checks whether the left JSONB document contains the exact key-value structure of the right JSONB document.
+  * Example: `feature_data @> '{"is_vpn": true}'::jsonb` $\rightarrow$ Evaluates to `TRUE` if `is_vpn` is true!
 
-### 6. What is a B-Tree Index?
-* **Plain English:** A balanced tree data structure that PostgreSQL builds on disk to allow searches, range queries, and sorted order lookups in logarithmic time $O(\log N)$ instead of scanning every single row in the table.
-* **The Library Catalog Analogy:** Imagine walking into a library with 10,000,000 books. Without an index, finding "War and Peace" requires walking down every aisle, looking at every book one by one (Sequential Scan). With a card catalog organized alphabetically (B-Tree Index), you can find the book in 5 steps!
+### 5. What is a Database Index?
+* **Plain English:** A separate, auxiliary data structure maintained by the database engine that allows it to find specific rows in $O(\log N)$ time without scanning every single row on disk.
+* **The Textbook Index Analogy:** If a 1,200-page book has no index, finding where "HMAC-SHA256" is mentioned requires reading every single page from 1 to 1,200 (a **Sequential Scan** / `Seq Scan`). An index at the back lists `"HMAC-SHA256: page 42, 118, 512"`, allowing you to flip directly to the answer in 2 seconds (an **Index Scan**).
 
-### 7. What is a Composite (Multi-Column) Index?
-* **Plain English:** A single B-Tree index built on **two or more columns** simultaneously (e.g., `ON feature_snapshots(account_id, computed_at DESC)`).
-* **The Phonebook Analogy:** A printed telephone book is a composite index on `(Last Name, First Name)`. It sorts entries first by Last Name, and then by First Name within each last name group:
-  ```
-  Smith, Alice
-  Smith, Bob
-  Smith, Charlie
-  Williams, Alice
-  ```
+### 6. What is a Composite Index (Multi-Column Index)?
+* **Plain English:** A single database index constructed across **two or more columns** simultaneously, sorting rows in a strict hierarchical order: first by column 1, then by column 2 within matching groups of column 1.
+* **The Telephone Directory Analogy:** A phone book is a composite index on `(Last Name, First Name)`. It is sorted first by Last Name (Smith, Smyth, Williams), and within each last name, it is sorted by First Name (Adam, Bob, Charlie).
 
-### 8. Column Ordering in Composite Indexes: The March Birthday Paradox
-* In a composite index on `(Column A, Column B)`, the index can accelerate:
-  1. Queries filtering on `Column A` alone.
-  2. Queries filtering on `Column A` AND `Column B` together.
-* **It CANNOT accelerate queries filtering on `Column B` alone!**
-* **The Proof:** If a phonebook is sorted by `(Last Name, First Name)`, can you quickly find everyone whose first name is "Alice"? No! "Alice" is scattered across every single page under Adams, Baker, Clark, Smith, and Williams. You would have to read the entire phonebook from cover to cover!
+### 7. The Left-to-Right Index Prefix Rule
+Because a composite index on `(A, B)` is physically sorted by `A` first and then `B`:
+* **Fast Queries:** It can instantly accelerate a query filtering on `WHERE A = '...'` or `WHERE A = '...' AND B = '...'`.
+* **Useless Queries:** It CANNOT accelerate a query filtering ONLY on `WHERE B = '...'`!
+* **The Analogy:** Searching a phone book for everyone named "David" (First Name only) requires reading every single page from cover to cover because Davids are scattered under Adams, Baker, Clark, and Smith! The phone book's sort order is completely useless for searching by first name alone.
 
-### 9. CHECK Constraints: Database-Enforced Business Invariants
-* **Plain English:** A database rule that validates data before allowing an `INSERT` or `UPDATE`. If the data violates the rule, PostgreSQL aborts the write with an error.
-* **The Security Turnstile Analogy:** An office turnstile that only allows employees with blue badges. If someone with an orange badge swipes, the turnstile physically locks.
-* **In NOVARIS:** We enforce `CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))`. Even if an engineer writes a buggy Go script that attempts to insert `"MAYBE"`, the database itself refuses the write.
+### 8. B-Tree Index vs. GIN Index
+* **B-Tree (Balanced Tree - Default):** Best for scalar values (numbers, timestamps, strings, UUIDs) that support comparison operators (`=`, `<`, `>`, `BETWEEN`, `ORDER BY`). It maintains a self-balancing tree sorted in ascending or descending order.
+* **GIN (Generalized Inverted Index):** Designed for multi-value containers (arrays, full-text search, and `JSONB` documents). Instead of indexing the whole row, a GIN index creates an inverted index mapping **every individual key and value** inside the JSONB document to the rows that contain it.
 
-### 10. PostgreSQL ENUM vs. VARCHAR + CHECK
-* **Native ENUM (`CREATE TYPE verdict_enum AS ENUM (...)`):** Creates a static type in PostgreSQL. Highly compact, but altering it later (e.g., adding a third verdict) requires `ALTER TYPE`, which can trigger table locks in older PostgreSQL versions or break ORMs.
-* **VARCHAR(16) + CHECK:** Standard text column guarded by a boolean check constraint. Extremely easy to evolve in future migrations by simply replacing the check constraint. NOVARIS standardizes on VARCHAR + CHECK for maximum architectural agility.
+### 9. What is a Foreign Key (`REFERENCES`) and Referential Integrity?
+* **Plain English:** A database constraint that guarantees a relationship between two tables remains valid. It dictates that a column in a child table must contain a value that actually exists in the primary key of a parent table.
+* **The Parent-Child Guardian Analogy:** A school enrollment system will not let you register a child unless a valid, verified parent record exists in the system. If you try to enter an orphan child with a fake parent ID, the database rejects the write.
 
-### 11. `EXPLAIN ANALYZE`: The X-Ray of Database Query Execution
-* **Plain English:** A PostgreSQL command that takes an SQL query, executes it, and outputs a detailed execution plan showing the exact physical algorithms the database engine used to find the data, how much memory was spent, and how many milliseconds each step took.
+### 10. Referential Actions: `RESTRICT` vs. `CASCADE` vs. `SET NULL`
+When a row in the parent table is deleted, what happens to its child rows?
+* **`ON DELETE RESTRICT` (NOVARIS Financial Standard):** The database **blocks and cancels the deletion** of the parent row if any child row references it. You cannot delete a transaction if a ledger journal entry or fraud review points to it!
+* **`ON DELETE CASCADE`:** Deleting the parent automatically deletes all child rows. (Dangerous in financial systems; used only for ephemeral caches).
+* **`ON DELETE SET NULL`:** Deleting the parent leaves the child row intact, but sets the foreign key column to `NULL`.
 
-### 12. Sequential Scan (`Seq Scan`) vs. Index Scan (`Index Scan`)
-* **Sequential Scan (`Seq Scan`):** The database reads every single disk block of the table from start to finish. Efficient for tables with 10 rows; catastrophically slow for tables with 50,000,000 rows.
-* **Index Scan (`Index Scan`):** The database navigates the B-Tree index to locate only the exact matching row pointers, fetching only the required disk blocks. Sub-millisecond execution.
+### 11. What is a Database `CHECK` Constraint?
+* **Plain English:** A rule enforced directly by the database engine verifying that any value inserted or updated into a column satisfies a Boolean expression. If the expression evaluates to `FALSE`, the transaction is rolled back with a `check_violation` error.
+* **The Rollercoaster Height Gauge Analogy:** A physical wooden sign at a theme park: *"You must be at least 48 inches tall to ride."* It doesn't matter what the ride operator wants; the physical barrier refuses entry.
+* **In NOVARIS:** `CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))` guarantees that no buggy service can ever write `'PENDING'` or `'MAYBE'` into the verdict column.
 
-### 13. Ground-Truth Labels in Machine Learning
-* **Plain English:** In supervised machine learning, "ground truth" represents the verified, objective reality (the true target label $y$) that a model is trained to predict.
-* **In NOVARIS:** A model's initial prediction is just a hypothesis (e.g., "78% probability of fraud"). The human analyst's verdict in `fraud_reviews` is the verified **ground truth** used to compute loss functions and update neural weights during retraining.
+### 12. PostgreSQL Native `ENUM` vs. `VARCHAR + CHECK`
+* **Native `ENUM`:** Creates an explicit database type (`CREATE TYPE review_verdict AS ENUM (...)`). It is compact and strongly typed, but adding or modifying values later requires complex `ALTER TYPE` migrations that can lock tables.
+* **`VARCHAR + CHECK` (NOVARIS Standard):** Uses a standard string column guarded by a `CHECK` constraint. Extending the allowed values in the future only requires updating the constraint, avoiding table rewrite locks.
 
-### 14. Ephemeral vs. Persistent Features
-* **Ephemeral Features:** Transient values computed in fast RAM (e.g., Redis counters) that represent the instantaneous present.
-* **Persistent Features:** Point-in-time immutable records archived in PostgreSQL JSONB that preserve the exact historical context forever.
+### 13. What is "Schema Drift"?
+* **Plain English:** A dangerous condition where the schema described in your documentation, repository code, or blueprints no longer matches the actual columns, types, and indexes deployed on the production database.
+* **The Construction Analogy:** The architect draws blueprints for a 3-bedroom house, but the builders added a sunroom and removed a bathroom without telling anyone. When the plumber arrives, the pipes don't align.
 
-### 15. Schema Drift: The Danger of Divergent Environments
-* **Plain English:** A critical operational defect where the database schema deployed in production differs from the schema defined in source code or local development.
-* **Our Defense:** Numbered SQL migration files and automated Go schema verification CLI tools (`cmd/verifyschema`) executed in CI pipelines.
+### 14. Migration Immutability & Numbering Discipline
+* **The Cardinal Rule:** **Once a migration script (e.g. `001_initial_ledger_schema.sql`) has been deployed to any running database, it is PERMANENTLY IMMUTABLE.**
+* You NEVER go back and edit `001`. If you need to add tables, alter columns, or add indexes, you write `002_fraud_and_features.sql`.
+* **Why:** If Developer A runs edited `001` on a new container, but Production already ran old `001`, Production and Development now have permanently different database schemas, triggering production outages!
+
+### 15. Hot In-Memory Caching vs. Cold Durable Storage
+* **Hot Storage (Redis):** Ultra-fast sub-millisecond RAM. Ideal for transient counters (how many transactions in the last 60 seconds). Data is ephemeral and historical trends are lost.
+* **Cold Storage (PostgreSQL):** Disk-backed, ACID-compliant relational persistence. Slower than RAM, but guarantees that historical feature snapshots survive server restarts and remain queryable for years.
 
 ---
 
 ## 3. Chapter 0.5: Complete Software Components, Tooling & Dependency Directory
 
-Every software package, database engine, and technical standard utilized in Day 5 is detailed below:
+Every software package, standard library module, and protocol specification utilized in Day 5 is detailed below:
 
-### 0.5.1 Relational Engine & Database Types
+### 0.5.1 Relational Engine & Storage Primitives
 
-| Component / Type | Engine / Source | Architectural Role in NOVARIS |
+| Component / Library | Version / Source | Primary Role in Day 5 |
+| :--- | :---: | :--- |
+| **PostgreSQL 16 Alpine** | `postgres:16-alpine` | Official Docker Hub container image running our ACID database cluster. |
+| **`uuid-ossp` / `pgcrypto`** | Built-in Extension | Provides `gen_random_uuid()` to mint collision-free RFC 4122 Version 4 UUID primary keys natively inside PostgreSQL. |
+| **JSONB Binary Engine** | PostgreSQL Core | Parses, decomposes, sorts, and indexes arbitrary semi-structured feature vectors into 32-bit JEntry binary format. |
+| **BIGINT Monetary Columns** | ANSI SQL Standard | Retained from Day 1 across `accounts` and `transactions` to prevent IEEE-754 binary floating-point drift. |
+
+### 0.5.2 Indexing Engines & Query Planners
+
+| Index Type / Command | Underlying Data Structure | Purpose & Query Acceleration |
 | :--- | :--- | :--- |
-| **PostgreSQL 16** | Relational RDBMS (Alpine) | Primary ACID storage engine for accounts, transactions, ledgers, outbox, and audit logs. |
-| **`UUID` (`gen_random_uuid()`)**| PostgreSQL Built-in | Universally unique, unguessable 128-bit identifiers preventing ID enumeration attacks. |
-| **`JSONB`** | PostgreSQL Binary JSON | Decomposed binary JSON storage format enabling fast key lookups and flexible feature vectors. |
-| **`TIMESTAMPTZ`** | PostgreSQL Timestamp | UTC timezone-aware microsecond timestamps preventing multi-region clock ambiguity. |
-| **`VARCHAR(16)` + `CHECK`**| ANSI SQL Standard | Extensible string type guarded by database-enforced enumeration constraints. |
+| **B-Tree Composite Index** | Self-balancing $m$-way search tree | Orders `feature_snapshots` by `(account_id, computed_at DESC)` for sub-millisecond single-merchant time-series retrieval. |
+| **GIN (Inverted Index)** | B-Tree of keys with posting lists | Indexes individual keys and values inside `feature_data JSONB` for microsecond containment queries (`@>`). |
+| **`EXPLAIN (COSTS OFF)`** | PostgreSQL Query Optimizer | Inspects the internal query execution plan to confirm that PostgreSQL executes an `Index Scan` rather than a sequential table scan. |
 
-### 0.5.2 Indexing & Query Optimization Primitives
+### 0.5.3 Database Administration & CLI Tooling
 
-| Primitive | Mechanism | Architectural Role in NOVARIS |
+| Tool | Command Invocation | Purpose in Day 5 |
 | :--- | :--- | :--- |
-| **Composite B-Tree** | Multi-column B-Tree Index | Hierarchically indexes `(account_id, computed_at DESC)` for sub-millisecond account histories. |
-| **Partial Index** | `WHERE transaction_id IS NOT NULL` | Indexes optional foreign keys while saving disk space on null values. |
-| **`EXPLAIN ANALYZE`** | PostgreSQL Query Planner | Measures actual runtime execution costs and confirms index utilization over sequential scans. |
-| **Containment (`@>`)** | JSONB Binary Operator | Evaluates whether a JSONB document contains a specific sub-structure (e.g. `feature_data @> '{"device_known": true}'`). |
-
-### 0.5.3 Go Database Drivers & Schema Verification Stack
-
-| Package / Module | Version / Source | Architectural Role in NOVARIS |
-| :--- | :--- | :--- |
-| **`database/sql`** | Go Standard Library | Generic SQL database interface providing connection pooling, statement preparation, and transactions. |
-| **`github.com/lib/pq`** | Pure Go Postgres Driver | Low-level wire protocol driver connecting Go microservices to PostgreSQL 16. |
-| **`cmd/verifyschema`** | Custom Developer CLI | Automated utility checking `information_schema.tables` and `information_schema.columns` for drift. |
-| **`testing`** | Go Standard Library | Automated test harness executing offline SQL schema parsing and constraint assertions. |
+| **`psql` CLI** | `docker exec -it novaris-postgres psql ...` | Interactive PostgreSQL command-line shell used to apply migrations and query table catalog metadata (`\dt`, `\d`). |
+| **`docker cp`** | `docker cp migrations/002_... novaris-postgres:/tmp/` | Copies migration files from the developer host into the running Docker container file system. |
+| **`docker exec`** | `docker exec -i novaris-postgres psql ...` | Executes commands non-interactively inside the running PostgreSQL container. |
 
 ### 0.5.4 Standards & Specifications
 
 | Standard | Full Title | Why NOVARIS Adheres to It |
 | :--- | :--- | :--- |
-| **SQL:2016** | ISO/IEC 9075:2016 Information Technology — Database Languages — SQL | Governs core relational syntax, constraints, foreign keys, and JSON functionality. |
-| **RFC 8259** | The JavaScript Object Notation (JSON) Data Interchange Format | Governs structure and data types allowed inside `feature_data` documents. |
-| **ISO 8601** | Data elements and interchange formats — Representation of dates and times | Formats `TIMESTAMPTZ` columns to guarantee unambiguous UTC serialization. |
+| **SQL:2016** | ISO/IEC 9075:2016 (JSON Features) | Standardizes JSON data types, operators (`->`, `->>`), and path expressions across modern relational engines. |
+| **ISO 8601** | Data elements and interchange formats — Representation of dates and times | Enforced via `TIMESTAMPTZ` storing all review and snapshot dates in coordinated universal time (UTC). |
+| **RFC 4122** | A Universally Unique Identifier (UUID) URN Namespace | Governs the generation of 128-bit version-4 random UUID primary keys across all financial entities. |
 
 ---
 
-## 4. Chapter 1: The Theoretical Foundations of Relational Ledger Systems
+## 4. Chapter 1: The Theoretical Foundations of Schema Evolution in Financial AI Systems
 
-### 1.1 The Missing Pieces: Why Days 1–4 Left Two Tables Open
-On Day 1, our primary goal was proving that the **core double-entry ledger** worked:
-* We needed `accounts` to hold balances.
-* We needed `transactions` to represent payment transfers.
-* We needed `journal_entries` to enforce balanced debits and credits.
-* We needed `outbox` to eliminate dual-write vulnerabilities with Kafka.
+### 1.1 The Lifecycle of a Disputed Transaction: The 30-70 Ambiguity Band
+In Phase 4 (Weeks 7–8), NOVARIS deploys an XGBoost and TreeSHAP fraud scoring engine. Every incoming transaction receives a risk score from $0$ to $100$.
 
-At that early stage, adding tables for human fraud review queues and machine learning feature snapshots would have created unnecessary cognitive overload. However, the SRS Capstone Blueprint always required them:
-
+The financial platform enforces three distinct decision bands:
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        NOVARIS FULL RELATIONAL DATABASE BLUEPRINT                      │
-├──────────────────────────┬──────────────────────────┬──────────────────────────────────┤
-│ TABLE NAME               │ PHASE / DAY ADDED        │ DOMAIN RESPONSIBILITY           │
-├──────────────────────────┼──────────────────────────┼──────────────────────────────────┤
-│ accounts                 │ Day 01                   │ Financial wallets, balances & OCC│
-│ transactions             │ Day 01                   │ Payment requests & risk scores   │
-│ journal_entries          │ Day 01                   │ Immutable double-entry ledger    │
-│ outbox                   │ Day 01                   │ Transactional Kafka event relay  │
-│ fraud_reviews            │ Day 05 (Today)           │ Human analyst review decisions   │
-│ feature_snapshots        │ Day 05 (Today)           │ Point-in-time fraud features     │
-└──────────────────────────┴──────────────────────────┴──────────────────────────────────┘
-```
-
-### 1.2 The Human-in-the-Loop Triage Architecture
-In industrial payment processing, automated machine learning models make rapid initial determinations, but high-value financial networks never rely solely on black-box AI:
-
-```
-                         TRANSACTION ARRIVES WITH RISK SCORE (0 - 100)
-                                              │
-                    ┌─────────────────────────┼─────────────────────────┐
-                    ▼                         ▼                         ▼
-            Score < 30                30 <= Score <= 70             Score > 70
-         ┌──────────────┐          ┌──────────────────────┐      ┌──────────────┐
-         │ AUTO-APPROVE │          │ HUMAN ANALYST REVIEW │      │ AUTO-DECLINE │
-         │ Instant      │          │ (fraud_reviews)      │      │ Immediate    │
-         │ Settlement   │          │ Suspended in Escrow  │      │ Rejection    │
-         └──────────────┘          └──────────┬───────────┘      └──────────────┘
-                                              │
-                             ┌────────────────┴────────────────┐
-                             ▼                                 ▼
-                     CONFIRMED_FRAUD                    FALSE_POSITIVE
-                 (Funds Returned to User)          (Funds Settled to Merchant)
+                              TRANSACTION SCORING TRIAGE
+                              
+   Risk Score 0 - 29             Risk Score 30 - 70              Risk Score 71 - 100
+ ┌─────────────────────┐       ┌─────────────────────┐         ┌─────────────────────┐
+ │    AUTO-APPROVE     │       │    HUMAN REVIEW     │         │    AUTO-DECLINE     │
+ │ Immediately settles │       │ Suspended in REVIEW │         │ Rejected at gateway │
+ │ into ledger         │       │ Routed to Analyst   │         │ Kafka: tx.declined  │
+ └─────────────────────┘       └──────────┬──────────┘         └─────────────────────┘
+                                          │
+                                          ▼
+                                ┌───────────────────┐
+                                │   fraud_reviews   │
+                                │ Analyst submits:  │
+                                │ CONFIRMED_FRAUD   │
+                                │ or FALSE_POSITIVE │
+                                └───────────────────┘
 ```
 
-The table `fraud_reviews` is the permanent, legally audited anchor for the middle band ($30 \le \text{score} \le 70$).
+When a transaction scores between $30$ and $70$, it is ambiguous:
+* An auto-decline might alienate a wealthy, high-volume customer making an unusual purchase (a **False Positive**).
+* An auto-approve might allow a fraudster to drain stolen credit cards (a **False Negative**).
 
-### 1.3 The Temporal Decay of In-Memory State: Why Redis Needs an RDBMS Archive
-Redis is an in-memory key-value store optimized for ultra-low latency ($< 1\text{ms}$). During live payment ingestion on Day 20, the gateway reads and writes Redis keys like:
-* `account:acc_101:velocity_5m` $\rightarrow$ `14`
-* `account:acc_101:last_ip` $\rightarrow$ `"192.168.1.1"`
+The transaction is placed into status `'REVIEW'`. In Weeks 9–10, our React dashboard presents this flagged transaction to a human security analyst.
+When the analyst makes their determination, that decision **must be recorded in `fraud_reviews`**.
 
-However, Redis has two fatal limitations for machine learning and auditability:
-1. **Destructive Mutation:** When the 5-minute window slides forward, the counter decrements. The historical fact that the account had 14 transactions at 2:14 PM is permanently erased.
-2. **Volatile Memory:** Redis is not designed to retain 5 years of historical feature vectors across billions of payment operations.
+### 1.2 The Cold-Start Dilemma: Why Boring Backend Work IS Exciting ML Work
+Machine learning models do not train on thin air. An AI model is only as smart as the **labeled ground-truth data** it learns from.
+Where do the labels come from?
+* A bank cannot ask fraudsters to mark their own transactions as fraud.
+* The labels come directly from the human decisions stored in **`fraud_reviews`**!
 
-`feature_snapshots` permanently serializes these ephemeral Redis values into PostgreSQL `JSONB` rows at the exact moment a transaction is evaluated.
+On Day 66, when we build the automated nightly retraining DAG in Apache Airflow, the pipeline executes this query:
+```sql
+SELECT 
+    t.amount_cents,
+    s.feature_data,
+    CASE WHEN r.verdict = 'CONFIRMED_FRAUD' THEN 1 ELSE 0 END AS label
+FROM transactions t
+JOIN fraud_reviews r ON t.id = r.transaction_id
+JOIN feature_snapshots s ON t.id = s.transaction_id
+WHERE r.reviewed_at >= NOW() - INTERVAL '30 days';
+```
+If we did not build `fraud_reviews` and `feature_snapshots` today, our future machine learning engine would have zero training data!
+
+### 1.3 Freezing Ephemeral Time: Why Redis Cannot Act as an Offline Feature Store
+In modern machine learning architectures (such as Feast, which we integrate on Day 51), feature stores are split into two halves:
+1. **The Online Feature Store (Hot / Low Latency):** Backed by Redis. It answers: *"What is the transaction velocity for Account X over the last 5 minutes?"* with sub-millisecond response times.
+2. **The Offline Feature Store (Cold / Historical Persistence):** Backed by PostgreSQL or Parquet data lakes. It answers: *"What were the exact feature values of Account X on October 14th at 14:02:18 UTC?"*
+
+Redis cannot be your offline feature store. Redis keys expire via TTL (Time to Live) or are overwritten in place. If an analyst investigates a dispute three months later, Redis has long since forgotten the signals.
+`feature_snapshots` permanently archives those ephemeral Redis values into a structured JSONB record.
+
+### 1.4 How Real-World Gateways Store Reviews and Features
+* **Stripe Radar:** Maintains an internal audit table recording manual rule reviews, analyst overrides, and radar risk factors (`radar_options`, `risk_level`).
+* **Adyen Score:** Emits historical feature snapshots capturing device fingerprints, IP velocity, and card-issuer country mismatches into an offline relational store for chargeback reconciliation.
 
 ---
 
-## 5. Chapter 2: The Structural & Mathematical Architecture of JSONB and Composite Indexes
+## 5. Chapter 2: The Mathematical & Structural Architecture of JSONB and Index Trees
 
-### 2.1 The Mathematics of B-Trees: Depth $O(\log N)$ and Hierarchical Sorting
-A B-Tree (Balanced Tree) of order $m$ satisfies the following properties:
-* Every node has at most $m$ children.
-* Every non-leaf node (except root) has at least $\lceil m/2 \rceil$ children.
-* All leaves appear at the exact same depth.
+### 2.1 The Internal Representation of JSONB: Binary Header & JEntry Offsets
+When PostgreSQL stores plain text `JSON`, it stores raw characters on disk.
+When PostgreSQL stores `JSONB`, it transforms the object into a binary header followed by an array of 32-bit descriptors called **JEntries**:
 
-For a table containing $N = 10,000,000$ rows, the tree height $h$ is:
-$$h \le \left\lceil \log_{\lceil m/2 \rceil} \left( \frac{N+1}{2} \right) \right\rceil$$
+```
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │                      INTERNAL POSTGRESQL JSONB LAYOUT                  │
+ ├───────────────────┬───────────────────┬────────────────────────────────┤
+ │ 32-bit Header     │ JEntry Descriptors│ Raw Data Storage Segment       │
+ │ Total item count  │ Type & Byte Offset│ Sorted Keys, then Values       │
+ └───────────────────┴───────────────────┴────────────────────────────────┘
+```
+1. **Header (4 bytes):** Records whether the root container is an Object or Array, and the total count of elements.
+2. **JEntry Array:** Each entry occupies 4 bytes, encoding:
+   * Is it a Key or a Value?
+   * Is it a String, Number, Boolean, or Null?
+   * The exact byte length and relative offset inside the data segment.
+3. **Data Segment:** All keys are sorted lexicographically (`a-z`), followed by all values.
 
-With typical PostgreSQL index page sizes ($m \approx 100$), the height of the B-Tree is **only 3 or 4 levels**. This means PostgreSQL can locate any single record among 10 million rows in **just 4 disk page reads**!
+### 2.2 Mathematical Complexity of Lookups: $O(N)$ vs. $O(\log K)$
+* In a plain `JSON` text column: To find `"velocity_5m"`, the engine must read character-by-character from byte 0 to the end of the text. Time complexity is linear:
+  $$\text{Complexity}_{\text{JSON}} = O(N) \quad (\text{where } N = \text{total characters})$$
+* In a compiled `JSONB` column: Because keys in the JEntry array are pre-sorted alphabetically, PostgreSQL performs a **Binary Search** over the keys:
+  $$\text{Complexity}_{\text{JSONB}} = O(\log K) \quad (\text{where } K = \text{number of keys})$$
+For a feature vector containing 50 signals, searching in `JSONB` takes at most $\approx \lceil \log_2(50) \rceil = 6\text{ comparisons}$!
 
-### 2.2 Hierarchical Column Ordering in Composite B-Trees
-When creating a composite index on two columns:
+### 2.3 The Geometry of Composite B-Trees: Hierarchical Sorting on $(A, B)$
+A B-Tree (Balanced Tree) is a self-balancing search tree where each node holds multiple keys and children, maintaining an invariant depth across all leaves.
+When you define:
 ```sql
 CREATE INDEX idx_feature_snapshots_account_time 
-    ON feature_snapshots(account_id, computed_at DESC);
+ON feature_snapshots(account_id, computed_at DESC);
 ```
-PostgreSQL creates a composite key $(K_1, K_2)$ where:
-$$K_1 = \text{account\_id}, \quad K_2 = \text{computed\_at}$$
+PostgreSQL creates a composite key:
+$$K = (\text{account\_id}, \text{computed\_at})$$
 
-The sort ordering $\prec$ is defined lexicographically:
-$$(a_1, t_1) \prec (a_2, t_2) \iff (a_1 < a_2) \lor (a_1 = a_2 \land t_1 > t_2)$$
+The B-Tree sorts rows using a **Lexicographical Comparator**:
+$$\text{Row}_1 < \text{Row}_2 \iff (\text{account\_id}_1 < \text{account\_id}_2) \lor \Big(\text{account\_id}_1 = \text{account\_id}_2 \land \text{computed\_at}_1 > \text{computed\_at}_2\Big)$$
 
 ```
-                                 COMPOSITE B-TREE ROOT NODE
-                                             │
-             ┌───────────────────────────────┴───────────────────────────────┐
-             ▼                                                               ▼
-   Entries for Account A                                           Entries for Account B
-   (Pre-sorted by Time DESC)                                       (Pre-sorted by Time DESC)
-  ┌─────────────────────────────────┐                             ┌─────────────────────────────────┐
-  │ (Account_A, 2026-11-24 18:00)   │                             │ (Account_B, 2026-11-24 17:55)   │
-  │ (Account_A, 2026-11-24 17:30)   │                             │ (Account_B, 2026-11-24 16:40)   │
-  │ (Account_A, 2026-11-24 16:15)   │                             │ (Account_B, 2026-11-24 15:10)   │
-  └─────────────────────────────────┘                             └─────────────────────────────────┘
+                                  [ROOT NODE]
+                         account_id = 'c0000000...02'
+                                 /          \
+                                /            \
+                [LEFT LEAF]                       [RIGHT LEAF]
+        account_id = 'c0000000...01'       account_id = 'c0000000...03'
+        ├── 2026-11-24 18:30:00 (Row 1)    ├── 2026-11-24 18:32:00 (Row 5)
+        ├── 2026-11-24 18:25:00 (Row 2)    └── 2026-11-24 18:31:00 (Row 6)
+        └── 2026-11-24 18:20:00 (Row 3)
 ```
 
-### 2.3 The Phonebook Proof: Why `(computed_at, account_id)` Fails
-Why can't we place `computed_at` first?
-Let us inspect the query executed by our feature retrieval engine:
+### 2.4 Mathematical Proof: Why Filtering on $B$ Alone Cannot Utilize a $(A, B)$ B-Tree
+Suppose an engineer writes:
 ```sql
-SELECT * FROM feature_snapshots 
-WHERE account_id = 'c0a80101-0000-0000-0000-000000000001' 
-ORDER BY computed_at DESC 
-LIMIT 10;
+SELECT * FROM feature_snapshots WHERE computed_at > '2026-11-01';
 ```
-1. **With `(account_id, computed_at DESC)` (Our Architecture):**
-   * The database performs a B-Tree binary search on `account_id` in $O(\log N)$ time.
-   * It lands directly on the first entry for that account.
-   * Because entries within that account are already sorted by `computed_at DESC`, the database reads the top 10 items directly off the leaf node.
-   * **Result:** Instant `Index Scan` with zero sorting overhead!
+Can the database use `idx_feature_snapshots_account_time(account_id, computed_at)`?
 
-2. **With `(computed_at DESC, account_id)` (Bad Architecture):**
-   * The tree is sorted primarily by timestamp across all accounts.
-   * Account `c0a8...` appears scattered at random intervals throughout the entire tree.
-   * The database cannot jump to the account; it must scan the entire index.
-   * **Result:** The index is ignored, and PostgreSQL falls back to an expensive, slow `Seq Scan`!
+**Proof by Contradiction:**
+1. Assume the index can locate all rows where `computed_at > '2026-11-01'` in sub-linear logarithmic time.
+2. The index tree is physically partitioned and ordered by `account_id` at the top level.
+3. Rows matching `computed_at > '2026-11-01'` exist inside Account 1, Account 2, Account 3, ..., Account 100,000.
+4. Because matching timestamps are scattered across every leaf node of the tree, the engine would have to visit every single leaf page in the entire B-Tree.
+5. Visiting every leaf page has time complexity $O(N)$, which is identical to scanning the table sequentially.
+6. Therefore, the B-Tree sort order provides zero search pruning, and the query planner correctly abandons the index in favor of a `Seq Scan`. $\blacksquare$
 
-### 2.4 Internal Storage Layout of JSONB
-In PostgreSQL storage internals, `JSONB` values are stored in a contiguous binary container:
+### 2.5 Inverted Indexing (GIN) Mechanics: How Postgres Indexes Internal JSONB Keys
+To make queries like `WHERE feature_data @> '{"ip_country": "US"}'` fast, we added a **GIN (Generalized Inverted Index)**:
+```sql
+CREATE INDEX idx_feature_snapshots_data_gin 
+ON feature_snapshots USING GIN (feature_data);
 ```
-┌──────────────┬──────────────────────────────┬────────────────────────────────────────┐
-│ HEADER (4B)  │ JEntry ARRAY (Offsets/Types) │ RAW DATA PAYLOAD                       │
-│ 32-bit flags │ [Length & Type for Key 1]    │ "velocity_5m"                          │
-│ count of keys│ [Length & Type for Val 1]    │ 12                                     │
-│              │ [Length & Type for Key 2]    │ "geo_hop_km"                           │
-│              │ [Length & Type for Val 2]    │ 0.0                                    │
-└──────────────┴──────────────────────────────┴────────────────────────────────────────┘
+A GIN index splits the JSONB document into individual `(path, value)` tuples and builds an inverted list:
 ```
-Because the `JEntry` array stores the exact byte offset and length of every key, PostgreSQL searches for keys using binary search on sorted keys without decoding the entire document.
+   KEY-VALUE ENTRY                        MATCHING ROW IDS
+   "ip_country": "US"              ──►    [Row 1, Row 4, Row 12, Row 98]
+   "is_vpn": true                  ──►    [Row 3, Row 4, Row 55]
+   "device_trust_score": 0.94      ──►    [Row 1, Row 8]
+```
+When querying `WHERE feature_data @> '{"ip_country": "US", "is_vpn": true}'`, PostgreSQL takes the intersection of the two row lists ($[4]$) in microsecond time!
 
 ---
 
-## 6. Chapter 3: Critical Database Engineering Gotchas & Schema Discipline
+### 2.6 PostgreSQL Page Layout, Buffer Cache & TOAST (Oversized-Attribute Storage)
+Understanding where and how PostgreSQL physically places `feature_snapshots` on disk separates senior systems architects from junior developers.
 
-### 3.1 Migration Discipline: Why Editing `001_initial_ledger_schema.sql` Causes Fatal Drift
-A common temptation for junior engineers is to open `migrations/001_initial_ledger_schema.sql`, add the two new tables at the bottom, and re-save the file.
-**This is a critical violation of database engineering discipline:**
-* In production, `001_initial_ledger_schema.sql` was already executed on Day 1.
-* Production databases maintain a migration history table (e.g. `schema_migrations`). Once a migration hash is recorded as applied, the database engine **will never re-read that file**.
-* If you edit an old migration, your local database (which might run from scratch) will have the new tables, while the production database will be completely missing them, leading to catastrophic runtime crashes (`relation "fraud_reviews" does not exist`).
-* **Rule:** Never edit applied migrations. Always create a new, numbered file: `migrations/002_fraud_and_features.sql`.
+PostgreSQL manages all table storage in fixed-size blocks called **Pages** (default: $8\text{ KB} = 8,192\text{ bytes}$). Every page contains a header, an array of line pointers (`ItemIdData`) growing from the top down, free space in the middle, and actual row data tuples (`HeapTupleHeaderData` + columns) growing from the bottom up:
 
-### 3.2 The `docker-entrypoint-initdb.d` Trap
-PostgreSQL's official Docker image includes a feature: any `.sql` files placed in `/docker-entrypoint-initdb.d/` are automatically executed on container startup.
-**HOWEVER, this occurs ONLY ONCE when the database cluster is completely empty:**
-* If the Docker container has already created its data volume (in our case, `pgdata`), PostgreSQL detects existing database files and skips `/docker-entrypoint-initdb.d/` entirely!
-* Simply dropping `002_fraud_and_features.sql` into the folder does nothing to an existing database.
-* The migration must be executed explicitly against the running container via `docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f ...`.
-
-### 3.3 The ENUM vs. VARCHAR+CHECK Dilemma
-PostgreSQL supports native enumerated types:
-```sql
-CREATE TYPE review_verdict AS ENUM ('CONFIRMED_FRAUD', 'FALSE_POSITIVE');
 ```
-While visually elegant, native enums carry a hidden operational cost:
-* If our compliance team later requires a third status (e.g., `'SUSPECTED_CHARGEBACK'`), altering an enum requires running `ALTER TYPE ... ADD VALUE ...`.
-* In older PostgreSQL engines, `ALTER TYPE` cannot be executed inside a multi-statement transaction block, complicating automated rollback tooling.
-* By using `VARCHAR(16)` with a `CHECK` constraint:
-  ```sql
-  verdict VARCHAR(16) NOT NULL CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))
-  ```
-  Updating the rule in a future migration is as simple as:
-  ```sql
-  ALTER TABLE fraud_reviews DROP CONSTRAINT fraud_reviews_verdict_check;
-  ALTER TABLE fraud_reviews ADD CONSTRAINT fraud_reviews_verdict_check 
-      CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE', 'SUSPECTED_CHARGEBACK'));
-  ```
-  It executes within a standard ACID transaction with zero table locks.
-
-### 3.4 Nullable vs. Required Foreign Keys
-Notice the design of `feature_snapshots`:
-```sql
-account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
-transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL,
+               POSTGRESQL 8 KB DISK PAGE ARCHITECTURE
+┌────────────────────────────────────────────────────────────┐  0 bytes
+│ PageHeaderData (24 bytes): LSN, checksum, flags, free start│
+├────────────────────────────────────────────────────────────┤
+│ Line Pointers: [Item 1 (Offset A)] [Item 2 (Offset B)] ... │  Top -> Down
+├────────────────────────────────────────────────────────────┤
+│                    <--- FREE SPACE --->                    │
+├────────────────────────────────────────────────────────────┤
+│ HeapTuple 2: Header (23B) + NULL bitmap + Column Values    │  Bottom -> Up
+├────────────────────────────────────────────────────────────┤
+│ HeapTuple 1: Header (23B) + NULL bitmap + Column Values    │
+└────────────────────────────────────────────────────────────┘  8192 bytes
 ```
-* `account_id` is `NOT NULL`: A feature snapshot is meaningless if we don't know whose account it describes.
-* `transaction_id` is **nullable**: Why? Because not all feature calculations are triggered by an immediate payment transaction!
-  * For example, a background cron job might compute daily behavioral feature snapshots for high-risk merchants at 00:00:00 UTC. Making `transaction_id` nullable supports both transaction-triggered and periodic snapshots cleanly.
+
+#### The TOAST Threshold ($2\text{ KB}$):
+Because database pages are strictly $8\text{ KB}$, PostgreSQL cannot store a row larger than a single page in the main heap table. Furthermore, to maximize buffer cache efficiency, PostgreSQL strives to fit at least **4 row tuples per page**.
+* When a `feature_data` JSONB payload exceeds **$2\text{ KB}$ (2,048 bytes)** (known as `TOAST_TUPLE_THRESHOLD`), PostgreSQL activates **TOAST** (*The Oversized-Attribute Storage Technique*).
+* **Compression Step:** The engine first compresses the JSONB binary using `pglz` or `lz4` compression.
+* **Out-of-Line Moving:** If compressed data is still larger than the target threshold, PostgreSQL moves the data out-of-line into an auxiliary table called `pg_toast_<table_oid>`.
+* **In-Table Pointer:** In the main `feature_snapshots` table, the `feature_data` column is replaced with an 18-byte **TOAST Pointer** referencing chunks in the TOAST table.
+
+```
+       MAIN HEAP TABLE PAGE (feature_snapshots)
+ ┌─────────────────────────────────────────────────────────┐
+ │ id: 'f000...01' | account_id: 'c000...01' | ...         │
+ │ feature_data: [TOAST POINTER: chunk_id=9821, size=4500] │ ──┐
+ └─────────────────────────────────────────────────────────┘   │
+                                                               │ References
+       AUXILIARY TOAST TABLE (pg_toast_16422)                  │
+ ┌─────────────────────────────────────────────────────────┐   │
+ │ Chunk 0: [bytes 0 - 1999]                               │ <─┘
+ │ Chunk 1: [bytes 2000 - 3999]                            │
+ │ Chunk 2: [bytes 4000 - 4499]                            │
+ └─────────────────────────────────────────────────────────┘
+```
+
+#### Why This is Critical for NOVARIS Query Performance:
+When an analytics query executes `SELECT id, account_id, computed_at FROM feature_snapshots WHERE account_id = ?`, PostgreSQL reads **only the main heap page**. It **never touches the TOAST table** because `feature_data` is not in the `SELECT` list. This keeps the active working set small, maximizing PostgreSQL's `shared_buffers` cache hit ratio.
 
 ---
 
-## 7. Chapter 4: The Closed MLOps Feedback Loop: Bridging Relational DBs to AI
+### 2.7 Write Amplification, MVCC Tuple Dynamics & Immutability in Feature Stores
+Under PostgreSQL's **Multi-Version Concurrency Control (MVCC)**:
+* PostgreSQL **never updates a row in place**.
+* When an `UPDATE` is issued, PostgreSQL writes a completely new physical row version (tuple), sets `t_xmax` on the old tuple to mark it dead, and sets `t_xmin` on the new tuple.
+* If a table has multiple indexes, updating a column in that row requires adding new entries to all indexes (unless HOT — Heap-Only Tuples — optimization applies, which cannot occur if indexed columns or page space are exhausted).
+
+#### Why `feature_snapshots` Must Be Append-Only:
+If an engineer designed an `account_features` table where each transaction updated a single mutable row per account:
+$$\text{Update Cost} = \text{Write New Heap Tuple} + \text{Write TOAST Chunk} + \text{Update B-Tree} + \text{Update GIN}$$
+At 10,000 transactions/second, this causes massive **Write Amplification**, bloating the database and overwhelming the background `VACUUM` worker.
+By architecting `feature_snapshots` as an **immutable, append-only time series table**, rows are strictly `INSERT`-only. Old snapshots are never updated. They are either retained for ML model training or eventually pruned by dropping historical partitions, achieving maximum sequential write throughput.
+
+---
+
+## 6. Chapter 3: Critical Database Engineering Obstacles & Defense Science
+
+### 3.1 Migration Discipline: Why Modifying `001_initial_ledger_schema.sql` Causes Divergent Reality
+A common anti-pattern among novice developers is editing `001_initial_ledger_schema.sql` to add today's new tables, under the belief that "keeping all tables in one file is cleaner."
+This causes a fatal production catastrophe known as **Divergent Schema History**:
+1. When Docker started on Day 1, PostgreSQL ran `001_initial_ledger_schema.sql` and marked its data directory as initialized.
+2. If you edit `001` today, your running database **will not re-run it**. It still only has Day 1's tables.
+3. Meanwhile, if another developer clones the repository tomorrow, their Docker will run the edited `001` and create all 6 tables in one go.
+4. Now, the two environments have different migration histories that can never be reconciled!
+5. **The Immutable Migration Rule:** Never rewrite history. Always create `002_fraud_and_features.sql`.
+
+### 3.2 The Docker Entrypoint Initialization Trap
+In `deployments/docker-compose.yml`, the volume mapping is configured as:
+```yaml
+volumes:
+  - pgdata:/var/lib/postgresql/data
+  - ../migrations:/docker-entrypoint-initdb.d:ro
+```
+Beginners often assume that dropping `002_fraud_and_features.sql` into `migrations/` means Docker will automatically execute it on restart.
+**It will not.**
+The official PostgreSQL Docker image checks if `/var/lib/postgresql/data/PG_VERSION` exists. If that file exists, it assumes initialization has already occurred and **completely ignores `/docker-entrypoint-initdb.d/`**!
+
+#### The Proper Operational Procedure:
+You must explicitly apply new migrations to an existing container using `docker cp` and `docker exec`:
+```bash
+docker cp migrations/002_fraud_and_features.sql novaris-postgres:/tmp/
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
+```
+
+### 3.3 Foreign Key Cascading Hazards in Auditable Financial Systems
+Notice the foreign key configuration on `fraud_reviews`:
+```sql
+transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT
+```
+Why `ON DELETE RESTRICT` instead of `ON DELETE CASCADE`?
+* If a rogue developer or buggy background script executes: `DELETE FROM transactions WHERE status = 'FAILED';`
+* Under `ON DELETE CASCADE`, PostgreSQL would silently delete the corresponding rows in `fraud_reviews` and `journal_entries`!
+* In financial compliance (PCI-DSS, SOC 2, SOX), deleting historical audit logs or review records is a criminal compliance violation.
+* Under `ON DELETE RESTRICT`, the database engine refuses the transaction deletion with an error, protecting the audit trail.
+
+### 3.4 Why Nullable `transaction_id` in `feature_snapshots` is a Strategic Architectural Choice
+In `fraud_reviews`, `transaction_id` is `NOT NULL` because a review cannot exist without a specific transaction.
+In `feature_snapshots`, however, `transaction_id` is deliberately **nullable**:
+```sql
+transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL
+```
+**Why?**
+Because in Week 7 (Feature Engineering), we build periodic background enrichment workers that calculate account-level rolling profiles (e.g. 30-day velocity drift) once every 6 hours, independent of any immediate transaction. By making `transaction_id` nullable, the schema naturally supports both:
+1. Transaction-triggered feature snapshots.
+2. Scheduled, periodic account behavioral snapshots.
+
+---
+
+## 7. Chapter 4: Defense in Depth & Schema Integration Architecture
+
+### 4.1 The Complete 6-Table Entity-Relationship Model
+With Day 5 complete, NOVARIS possesses a unified, relational persistence engine:
+
+```mermaid
+erDiagram
+    accounts ||--o{ transactions : "initiates / receives"
+    accounts ||--o{ journal_entries : "audited balance"
+    accounts ||--o{ feature_snapshots : "behavioral profile"
+    transactions ||--o{ journal_entries : "settlement legs"
+    transactions ||--o{ fraud_reviews : "analyst verdict"
+    transactions ||--o{ feature_snapshots : "scoring context"
+
+    accounts {
+        uuid id PK
+        uuid user_id
+        varchar account_type
+        varchar currency
+        bigint balance_cents
+        int version
+        timestamptz created_at
+    }
+
+    transactions {
+        uuid id PK
+        varchar idempotency_key UK
+        uuid sender_account_id FK
+        uuid recipient_account_id FK
+        bigint amount_cents
+        varchar status
+        int fraud_risk_score
+        jsonb risk_factors
+        timestamptz created_at
+    }
+
+    journal_entries {
+        uuid id PK
+        uuid transaction_id FK
+        uuid account_id FK
+        varchar entry_type
+        bigint amount_cents
+        timestamptz created_at
+    }
+
+    outbox {
+        uuid id PK
+        varchar aggregate_type
+        uuid aggregate_id
+        varchar event_type
+        jsonb payload
+        varchar status
+        timestamptz created_at
+    }
+
+    fraud_reviews {
+        uuid id PK
+        uuid transaction_id FK
+        uuid analyst_id
+        varchar verdict
+        text notes
+        timestamptz reviewed_at
+    }
+
+    feature_snapshots {
+        uuid id PK
+        uuid account_id FK
+        uuid transaction_id FK
+        jsonb feature_data
+        timestamptz computed_at
+    }
+```
+
+### 4.2 The Cross-Phase Dependency Graph
+Here is the exact map of which future weeks read from and write to Day 5's tables:
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                   THE NOVARIS MLOPS FEEDBACK LOOP                                      │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                        │
-│   1. TRANSACTION INGESTION (Gateway & Kafka)                                                           │
-│      A payment arrives. Real-time signals are computed in Redis (velocity, IP hops).                   │
-│                                      │                                                                 │
-│                                      ▼                                                                 │
-│   2. POINT-IN-TIME FEATURE ARCHIVAL (Day 25)                                                           │
-│      Features are saved to feature_snapshots table (JSONB).                                            │
-│      -> {"velocity_5m": 12, "geo_hop_km": 1420.5, "device_known": false}                               │
-│                                      │                                                                 │
-│                                      ▼                                                                 │
-│   3. INFERENCE & TRIAGE (FastAPI / XGBoost - Week 7-8)                                                 │
-│      Model predicts risk score = 58. Transaction is routed to review queue.                            │
-│                                      │                                                                 │
-│                                      ▼                                                                 │
-│   4. HUMAN ANALYST VERDICT (React 19 Dashboard - Week 9-10)                                            │
-│      Analyst reviews the case, confirms stolen credentials, and writes verdict to fraud_reviews:       │
-│      -> verdict: 'CONFIRMED_FRAUD', analyst_id: 'usr_analyst_99'                                       │
-│                                      │                                                                 │
-│                                      ▼                                                                 │
-│   5. NIGHTLY RETRAINING DAG (Apache Airflow / MLflow - Day 66)                                         │
-│      Airflow executes training dataset generation SQL:                                                 │
-│      SELECT fs.feature_data, fr.verdict                                                                │
-│      FROM feature_snapshots fs                                                                         │
-│      JOIN fraud_reviews fr ON fs.transaction_id = fr.transaction_id                                    │
-│      WHERE fr.reviewed_at >= NOW() - INTERVAL '30 days';                                               │
-│                                      │                                                                 │
-│                                      ▼                                                                 │
-│   6. MODEL RETRAINING & DRIFT MONITORING                                                               │
-│      XGBoost retrains on fresh, ground-truth human labels. New ONNX weights deployed!                  │
-│                                                                                                        │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────┬───────────────────────────────┬──────────────────────────────────────────┐
+│ TABLE NAME              │ WRITTEN BY                    │ READ BY                                  │
+├─────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
+│ fraud_reviews           │ Analyst UI Dashboard          │ Day 66 Nightly Airflow Retraining DAG    │
+│                         │ (Weeks 9–10)                  │ (Ground-truth training dataset labels)   │
+├─────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
+│ feature_snapshots       │ Feature Enrichment Service    │ Model Training Pipelines (Weeks 7–8) &   │
+│                         │ (Day 25)                      │ Feast Offline Feature Store (Day 51)     │
+└─────────────────────────┴───────────────────────────────┴──────────────────────────────────────────┘
 ```
 
 ---
 
 ## 8. Chapter 5: The Data Science → Full-Stack Schema Rosetta Stone
 
-For machine learning engineers and data scientists, relational schema design translates directly into familiar dataset concepts:
+For data scientists and machine learning engineers, database DDL constructs have exact 1-to-1 counterparts in Python data analysis libraries:
 
 ```
 ┌───────────────────────────────────────┬───────────────────────────────────────┬───────────────────────────────────────┐
-│ CONCEPT                               │ DATA SCIENCE & MACHINE LEARNING       │ NOVARIS RELATIONAL SCHEMA (POSTGRES)  │
+│ CONCEPT                               │ DATA SCIENCE & MACHINE LEARNING       │ NOVARIS POSTGRESQL PERSISTENCE        │
 ├───────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
-│ Unstructured / Flexible Features      │ Dict / JSON column in pandas          │ PostgreSQL JSONB Data Type            │
-│                                       │ (e.g. metadata dict in DataFrame)     │ (Stores feature vectors flexibly      │
-│                                       │                                       │ without rigid column migrations).     │
+│ JSONB Column                          │ A dictionary / JSON column in a       │ `feature_data JSONB NOT NULL`         │
+│                                       │ pandas DataFrame for nested metadata. │ Decomposed binary JSON column.        │
 ├───────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
-│ Hierarchical Index                    │ pandas MultiIndex                     │ Composite B-Tree Index                │
-│                                       │ (df.set_index(['account', 'time']))   │ ON feature_snapshots(account, time)   │
-│                                       │ (Sorts rows by multiple keys).        │ (Enables fast multi-key scans).       │
+│ Composite B-Tree Index                │ A pandas MultiIndex on a DataFrame    │ `idx_feature_snapshots_account_time`  │
+│                                       │ (`df.set_index(['account', 'time'])`) │ B-Tree sorted hierarchically on       │
+│                                       │ sorted lexicographically.             │ `(account_id, computed_at DESC)`.     │
 ├───────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
-│ Ground-Truth Labels                   │ The target array `y_train`            │ The `fraud_reviews` Table             │
-│                                       │ (Verified 0/1 outcome labels).        │ (Human verdicts on flagged payments). │
+│ Labeled Training Dataset              │ Ground-truth target vector `y`        │ `fraud_reviews` table storing human   │
+│                                       │ for supervised binary classification. │ analyst verdicts for retraining.      │
 ├───────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
-│ Offline Feature Store                 │ Feast / Hopsworks Offline Store       │ The `feature_snapshots` Table         │
-│                                       │ (Historical feature values for        │ (Preserves point-in-time features     │
-│                                       │ point-in-time correct training).      │ for offline training and audit).      │
+│ Offline Feature Store                 │ Parquet partition directory on S3     │ `feature_snapshots` table archiving   │
+│                                       │ storing frozen training features.     │ historical Redis ML input vectors.    │
 ├───────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
-│ Data Validation Schema                │ Pandera / Great Expectations check    │ PostgreSQL CHECK Constraint           │
-│                                       │ (schema.validate(df) at pipeline edge)│ (verdict IN ('CONFIRMED_FRAUD', ...)) │
-│                                       │                                       │ (Rejects invalid values on disk).     │
+│ CHECK Constraint                      │ Pandera or Great Expectations schema  │ `CHECK (verdict IN ('CONFIRMED_FRAUD',│
+│                                       │ validation check on pipeline output.  │ 'FALSE_POSITIVE'))` enforced at write.│
 ├───────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
-│ Query Execution Plan                  │ Spark Catalyst physical query plan    │ PostgreSQL EXPLAIN ANALYZE            │
-│                                       │ (df.explain() showing physical ops).  │ (Inspects Index Scan vs. Seq Scan).   │
+│ Left-to-Right Index Rule              │ Slicing a MultiIndex DataFrame:       │ A composite index on `(A, B)` only    │
+│                                       │ `df.loc['acc_1']` is fast, but        │ accelerates queries filtering on `A`  │
+│                                       │ slicing on level 1 alone is a scan.   │ or `A AND B`, never `B` alone.        │
 └───────────────────────────────────────┴───────────────────────────────────────┴───────────────────────────────────────┘
 ```
 
@@ -512,896 +636,729 @@ For machine learning engineers and data scientists, relational schema design tra
 
 ## 9. Chapter 6: Architectural Trade-Off Analysis ("Why This and Not That")
 
-### 6.1 JSONB Column vs. Fully Normalized Relational Table
+### 6.1 Fully Normalized Relational Columns vs. Semi-Structured JSONB
 
-| Architecture Option | Write Latency | Schema Rigidity | Future Proofing | Best Used For |
-| :--- | :--- | :--- | :--- | :--- |
-| **JSONB Column (NOVARIS)** | **$< 1\text{ms}$** | **Extremely Flexible** | **High (Zero migrations as features grow)** | **Evolving ML feature sets** |
-| Normalized Columns | $< 1\text{ms}$ | Rigid (1 column per feature) | Low (Requires `ALTER TABLE` for every new ML signal) | Stable financial balances |
-| Separate Key-Value Table | $5-10\text{ms}$ (Many rows) | Semi-Flexible | Low (Huge row multiplication overhead) | Dynamic user profile tags |
+| Dimension | Fully Normalized Columns (One per feature) | Semi-Structured JSONB (`feature_data`) | NOVARIS Choice & Rationale |
+| :--- | :--- | :--- | :--- |
+| **Schema Agility** | Extremely rigid; adding a feature requires `ALTER TABLE` migrations. | Highly agile; application code adds new keys on the fly. | **JSONB Selected:** Feature engineering across Weeks 7–8 involves rapid experimentation. |
+| **Write Latency** | Fast; binary column packing. | Slightly higher parsing overhead on insert. | Acceptable trade-off; feature snapshots are written asynchronously. |
+| **Query Indexing** | Instant B-Tree indexing on any column. | Requires GIN index or expression indexes for sub-keys. | **JSONB with GIN:** Gives both schema flexibility and fast sub-key filtering. |
 
-* **Why JSONB Wins for Features:** Our fraud data science team will add 30 new features between Day 20 and Day 60 (device fingerprinting, IP subnet velocity, card BIN anomalies). If each feature required a dedicated SQL column, we would execute 30 table migrations. With `JSONB`, new features are added seamlessly to the payload dictionary.
-
-### 6.2 VARCHAR + CHECK vs. Native PostgreSQL ENUM
-
-* **Native ENUM:** Enforced at the engine type level. However, adding values requires lock-prone `ALTER TYPE` statements that cannot be safely rolled back in transaction blocks.
-* **VARCHAR(16) + CHECK (NOVARIS):** Delivers identical database-level rejection of invalid strings while maintaining zero-downtime migration flexibility.
+### 6.2 PostgreSQL Native ENUM vs. VARCHAR + CHECK Constraint
+* **PostgreSQL Native ENUM:**
+  * Syntax: `CREATE TYPE review_verdict AS ENUM ('CONFIRMED_FRAUD', 'FALSE_POSITIVE');`
+  * Pros: Compact 4-byte storage on disk; self-documenting type.
+  * Cons: Removing or reordering values requires rebuilding the type. Adding values cannot be executed safely inside transactional migration blocks in older versions.
+* **`VARCHAR(16) + CHECK` (NOVARIS Standard):**
+  * Syntax: `verdict VARCHAR(16) NOT NULL CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))`
+  * Pros: Extremely simple to extend via `ALTER TABLE ... DROP CONSTRAINT / ADD CONSTRAINT`. Consistent with `transactions.status` from Day 1.
+  * Cons: Consumes 17 bytes per row (trivial difference for millions of rows).
 
 ---
 
 ## 10. Chapter 7: Line-by-Line Code Masterclass (Complete Dissections)
 
-### 7.1 `migrations/002_fraud_and_features.sql` (The Complete Day 5 Migration)
+### 7.1 `migrations/002_fraud_and_features.sql` (The Complete DDL Migration)
 
 ```sql
 -- ==============================================================================
--- NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
--- MIGRATION 002: Human Fraud Review Logs & Point-in-Time Feature Snapshots (Day 5)
--- FILE: migrations/002_fraud_and_features.sql
--- ==============================================================================
-
--- ------------------------------------------------------------------------------
 -- 1. FRAUD_REVIEWS TABLE
--- Stores human analyst review decisions on transactions scored in the review band (30-70).
--- ------------------------------------------------------------------------------
+-- Stores human analyst review decisions on flagged transactions (Score 30-70).
+-- ==============================================================================
 CREATE TABLE IF NOT EXISTS fraud_reviews (
+    -- Unique primary identifier for this review record
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    -- Foreign Key: Links directly to the specific transaction evaluated.
+    -- Foreign Key binding this review directly to the underlying financial transaction.
+    -- ON DELETE RESTRICT: Prevents accidental deletion of a transaction with an active audit log.
     transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT,
 
-    -- Identifier of the human fraud analyst who reviewed the flagged transaction.
+    -- Identifier of the security analyst or automated compliance officer who made the determination
     analyst_id UUID NOT NULL,
 
-    -- Verdict outcome: Restricted by a strict CHECK constraint.
-    verdict VARCHAR(16) NOT NULL
-        CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE')),
+    -- The human verdict. Strictly constrained at the database engine level via CHECK constraint.
+    -- VARCHAR + CHECK is chosen over native Postgres ENUM for consistency with Day 1's
+    -- `transactions.status` and to allow friction-free future additions via ALTER TABLE.
+    verdict VARCHAR(16) NOT NULL CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE')),
 
-    -- Free-form text notes detailing the analyst's investigative reasoning.
+    -- Free-form textual reasoning entered by the analyst explaining why the flag was confirmed or overturned
     notes TEXT,
 
-    -- Timestamp when the human verdict was finalized.
+    -- ISO-8601 UTC timestamp of when the analyst submitted their final determination
     reviewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_fraud_reviews_tx_id ON fraud_reviews(transaction_id);
-CREATE INDEX IF NOT EXISTS idx_fraud_reviews_analyst_id ON fraud_reviews(analyst_id);
-CREATE INDEX IF NOT EXISTS idx_fraud_reviews_verdict_time ON fraud_reviews(verdict, reviewed_at DESC);
+-- Index for looking up all reviews associated with a specific transaction
+CREATE INDEX IF NOT EXISTS idx_fraud_reviews_tx 
+    ON fraud_reviews(transaction_id);
 
--- ------------------------------------------------------------------------------
+-- Index for auditing analyst workload and productivity over time
+CREATE INDEX IF NOT EXISTS idx_fraud_reviews_analyst 
+    ON fraud_reviews(analyst_id, reviewed_at DESC);
+
+-- Composite index for Day 66's retraining pipeline: quickly extract training batches by verdict and date
+CREATE INDEX IF NOT EXISTS idx_fraud_reviews_verdict_time 
+    ON fraud_reviews(verdict, reviewed_at DESC);
+
+
+-- ==============================================================================
 -- 2. FEATURE_SNAPSHOTS TABLE
--- Point-in-time archive of ephemeral Redis fraud features and real-time signals.
--- ------------------------------------------------------------------------------
+-- Permanent historical archive of ephemeral Redis fraud signals captured at scoring time.
+-- ==============================================================================
 CREATE TABLE IF NOT EXISTS feature_snapshots (
+    -- Unique primary identifier for this feature snapshot
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    -- Foreign Key: Identifies the account/wallet whose features are being snapshotted.
+    -- The account whose behavioral profile and velocity signals are being snapshotted
     account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
 
-    -- Foreign Key (NULLABLE): The transaction that triggered this feature snapshot.
+    -- The specific transaction that triggered this feature extraction.
+    -- Nullable by architectural design: allows non-transactional periodic background snapshots.
     transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL,
 
-    -- Flexible JSONB document containing arbitrary feature vectors.
+    -- De-normalized, semi-structured feature vector stored as binary JSON (JSONB).
     feature_data JSONB NOT NULL,
 
-    -- Monotonic timestamp recording exactly when the features were computed.
+    -- Exact microsecond timestamp when the feature vector was computed by the enrichment worker
     computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Index for looking up features captured for a specific transaction
+CREATE INDEX IF NOT EXISTS idx_feature_snapshots_tx 
+    ON feature_snapshots(transaction_id) 
+    WHERE transaction_id IS NOT NULL;
+
 -- ------------------------------------------------------------------------------
--- 3. COMPOSITE INDEX DESIGN: (account_id, computed_at DESC)
+-- COMPOSITE INDEX: (account_id, computed_at DESC)
 -- ------------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_feature_snapshots_account_time 
     ON feature_snapshots(account_id, computed_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_feature_snapshots_tx_id 
-    ON feature_snapshots(transaction_id) 
-    WHERE transaction_id IS NOT NULL;
+-- GIN (Generalized Inverted Index) on the JSONB payload:
+CREATE INDEX IF NOT EXISTS idx_feature_snapshots_data_gin 
+    ON feature_snapshots USING GIN (feature_data);
 ```
 
 #### Detailed Line-by-Line Breakdown:
-1. **`id UUID PRIMARY KEY DEFAULT gen_random_uuid()`:** Generates non-sequential UUIDv4 primary keys natively in PostgreSQL.
-2. **`transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT`:** Strict foreign key constraint. Prevents transactions from being deleted if a human review record exists.
-3. **`verdict VARCHAR(16) NOT NULL CHECK (verdict IN (...))`:** Restricts allowed string values at the database engine level. Rejects any invalid verdicts immediately.
-4. **`account_id UUID NOT NULL REFERENCES accounts(id)`:** Foreign key tying the feature vector to a specific financial wallet or merchant account.
-5. **`transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL`:** Nullable foreign key. If a referenced transaction is purged, the feature snapshot remains intact with `transaction_id = NULL`.
-6. **`feature_data JSONB NOT NULL`:** High-speed binary JSON column holding arbitrary feature vectors.
-7. **`CREATE INDEX ... ON feature_snapshots(account_id, computed_at DESC)`:** High-performance composite B-Tree index supporting sub-millisecond chronological queries for a given account.
+1. **Lines 6–8:** `id UUID PRIMARY KEY DEFAULT gen_random_uuid()` generates cryptographically random version-4 UUIDs natively inside PostgreSQL without application-level dependencies.
+2. **Line 12:** `transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT`. Establishes foreign key referential integrity. `ON DELETE RESTRICT` guarantees that no one can delete a transaction if an active review record points to it.
+3. **Lines 18–19:** `verdict VARCHAR(16) NOT NULL CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))`. Implements a database-level domain constraint. If an application bug attempts to insert `'PENDING'` or `'UNKNOWN'`, PostgreSQL immediately aborts the transaction with `check_violation`.
+4. **Lines 31–36:** `CREATE INDEX idx_fraud_reviews_verdict_time ON fraud_reviews(verdict, reviewed_at DESC)`. A composite index enabling Day 66's nightly training pipeline to retrieve the latest 5,000 confirmed fraud rows in under $2\text{ms}$.
+5. **Lines 44–50:** `feature_snapshots` table definition. `account_id` is mandatory (`NOT NULL`).
+6. **Line 54:** `transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL`. Nullable by design to support scheduled, non-transactional account behavioral profiling.
+7. **Line 57:** `feature_data JSONB NOT NULL`. Binary JSON storage holding arbitrary machine learning features (`velocity_5m`, `geo_hop_speed`, `device_trust_score`).
+8. **Lines 70–73:** `CREATE INDEX idx_feature_snapshots_account_time ON feature_snapshots(account_id, computed_at DESC)`. The composite B-Tree index. `account_id` is the leading column to partition by merchant, while `computed_at DESC` returns historical time series with zero sorting cost.
+9. **Lines 75–77:** `CREATE INDEX idx_feature_snapshots_data_gin ON feature_snapshots USING GIN (feature_data)`. A Generalized Inverted Index allowing JSONB containment queries (`@>`) to run in sub-millisecond time.
 
 ---
 
-### 7.2 `services/gateway/cmd/verifyschema/main.go` (The Go Schema Verifier CLI)
+### 7.2 `migrations/verify_day05_schema.sql` (Deterministic Test & Diagnostic Harness)
 
-```go
-package main
+```sql
+\echo '--- 1. Confirming Table Registration ---'
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+  AND table_name IN ('accounts', 'transactions', 'journal_entries', 'outbox', 'fraud_reviews', 'feature_snapshots')
+ORDER BY table_name;
 
-import (
-	"database/sql"
-	"flag"
-	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
-)
+\echo '--- 2. Seeding Deterministic Test Account & Transaction ---'
+DO $$
+DECLARE
+    v_user_id UUID := 'a0000000-0000-0000-0000-000000000001';
+    v_sender_account_id UUID;
+    v_recipient_account_id UUID;
+    v_tx_id UUID;
+    v_analyst_id UUID := 'b0000000-0000-0000-0000-000000000099';
+BEGIN
+    -- 1. Create test sender account
+    INSERT INTO accounts (id, user_id, account_type, currency, balance_cents, version)
+    VALUES ('c0000000-0000-0000-0000-000000000001', v_user_id, 'WALLET', 'USD', 100000, 1)
+    ON CONFLICT (id) DO NOTHING;
+    v_sender_account_id := 'c0000000-0000-0000-0000-000000000001';
 
-// RequiredTables lists all 6 load-bearing tables required by the NOVARIS SRS Blueprint.
-var RequiredTables = []string{
-	"accounts",
-	"transactions",
-	"journal_entries",
-	"outbox",
-	"fraud_reviews",
-	"feature_snapshots",
-}
+    -- 2. Create test recipient account
+    INSERT INTO accounts (id, user_id, account_type, currency, balance_cents, version)
+    VALUES ('c0000000-0000-0000-0000-000000000002', v_user_id, 'MERCHANT_PAYOUT', 'USD', 50000, 1)
+    ON CONFLICT (id) DO NOTHING;
+    v_recipient_account_id := 'c0000000-0000-0000-0000-000000000002';
 
-// RequiredIndexes lists the mission-critical composite and partial indexes.
-var RequiredIndexes = []string{
-	"idx_feature_snapshots_account_time",
-	"idx_fraud_reviews_verdict_time",
-	"idx_outbox_pending",
-}
+    -- 3. Create test transaction
+    INSERT INTO transactions (id, idempotency_key, sender_account_id, recipient_account_id, amount_cents, status, fraud_risk_score, risk_factors)
+    VALUES (
+        'd0000000-0000-0000-0000-000000000001',
+        'idemp_day05_verification_probe_001',
+        v_sender_account_id,
+        v_recipient_account_id,
+        25000,
+        'REVIEW',
+        65,
+        '{"velocity_score": 0.85, "geo_distance_miles": 1200}'::jsonb
+    )
+    ON CONFLICT (idempotency_key) DO UPDATE SET status = 'REVIEW'
+    RETURNING id INTO v_tx_id;
 
-func main() {
-	offlineMode := flag.Bool("offline", false, "Run static SQL schema analysis without connecting to PostgreSQL")
-	sqlFilePath := flag.String("sql", "", "Path to migration SQL file for static parsing")
-	flag.Parse()
+    -- 4. Insert Verified Fraud Review Row
+    INSERT INTO fraud_reviews (id, transaction_id, analyst_id, verdict, notes, reviewed_at)
+    VALUES (
+        'e0000000-0000-0000-0000-000000000001',
+        v_tx_id,
+        v_analyst_id,
+        'CONFIRMED_FRAUD',
+        'Abnormal geo-hop velocity: transaction in Tokyo 15 minutes after card swipe in London. Device IP blacklisted.',
+        NOW()
+    )
+    ON CONFLICT (id) DO NOTHING;
 
-	log.Println("==================================================================")
-	log.Println(" 🔍 NOVARIS Database Schema & Migration Verifier (Day 5)")
-	log.Println("==================================================================")
-
-	if *offlineMode || *sqlFilePath != "" {
-		runOfflineVerification(*sqlFilePath)
-		return
-	}
-
-	connStr := os.Getenv("DATABASE_URL")
-	if connStr == "" {
-		connStr = "postgres://novaris_admin:dev_password_change_me@localhost:5432/novaris_db?sslmode=disable"
-	}
-
-	// Mask password in logs
-	maskedURL := maskConnectionURL(connStr)
-	log.Printf("[DB] Target Connection: %s\n", maskedURL)
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Printf("[WARN] Failed to initialize database driver: %v\n", err)
-		log.Println("[INFO] Falling back to offline static migration verification...")
-		runOfflineVerification("")
-		return
-	}
-	defer db.Close()
-
-	// Verify database connectivity with 2-second timeout
-	db.SetConnMaxLifetime(2 * time.Second)
-	if err := db.Ping(); err != nil {
-		log.Printf("[INFO] Live PostgreSQL connection unavailable (%v)\n", err)
-		log.Println("[INFO] Performing static migration file verification instead...")
-		runOfflineVerification("")
-		return
-	}
-
-	// Live database verification
-	runLiveVerification(db)
-}
-```
-
-#### Detailed Line-by-Line Breakdown:
-1. **Lines 17–28:** `RequiredTables` and `RequiredIndexes` constants define the target ground-truth schema state mandated by the blueprint.
-2. **Lines 34–40:** CLI flags `-offline` and `-sql` allow headless CI/CD pipelines to validate schema integrity without booting database containers.
-3. **Lines 44–55:** Connects to PostgreSQL using `DATABASE_URL` with a safety timeout and masks the plaintext database password in log outputs.
-4. **Lines 60–66:** Graceful fallback: if a live PostgreSQL container is offline, it automatically switches to deterministic static file analysis.
-
----
-
-### 7.3 `services/gateway/cmd/verifyschema/main_test.go` (Automated Schema Test Suite)
-
-```go
-package main
-
-import (
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
-)
-
-func findMigrationsDir(t *testing.T) string {
-	t.Helper()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("failed to get working directory: %v", err)
-	}
-
-	curr := wd
-	for i := 0; i < 5; i++ {
-		candidate := filepath.Join(curr, "migrations")
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			return candidate
-		}
-		parent := filepath.Dir(curr)
-		if parent == curr {
-			break
-		}
-		curr = parent
-	}
-	t.Fatalf("could not locate 'migrations' directory starting from %s", wd)
-	return ""
-}
-
-func TestMigrationFiles_ExistenceAndNaming(t *testing.T) {
-	migDir := findMigrationsDir(t)
-
-	// 1. Verify 001_initial_ledger_schema.sql exists
-	file001 := filepath.Join(migDir, "001_initial_ledger_schema.sql")
-	if _, err := os.Stat(file001); os.IsNotExist(err) {
-		t.Fatalf("expected migration file %s to exist, but was missing", file001)
-	}
-
-	// 2. Verify 002_fraud_and_features.sql exists
-	file002 := filepath.Join(migDir, "002_fraud_and_features.sql")
-	if _, err := os.Stat(file002); os.IsNotExist(err) {
-		t.Fatalf("expected migration file %s to exist, but was missing", file002)
-	}
-}
-
-func TestMigration002_SchemaCompleteness(t *testing.T) {
-	migDir := findMigrationsDir(t)
-	target := filepath.Join(migDir, "002_fraud_and_features.sql")
-
-	content, err := os.ReadFile(target)
-	if err != nil {
-		t.Fatalf("could not read %s: %v", target, err)
-	}
-
-	sqlUpper := strings.ToUpper(string(content))
-
-	// Verify required tables
-	expectedTables := []string{"FRAUD_REVIEWS", "FEATURE_SNAPSHOTS"}
-	for _, table := range expectedTables {
-		if !strings.Contains(sqlUpper, "TABLE IF NOT EXISTS "+table) && !strings.Contains(sqlUpper, "TABLE "+table) {
-			t.Errorf("migration 002 missing CREATE TABLE statement for %s", table)
-		}
-	}
-
-	// Verify CHECK constraint on verdict
-	if !strings.Contains(sqlUpper, "CHECK (VERDICT IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))") {
-		t.Error("missing strict CHECK constraint on fraud_reviews.verdict")
-	}
-
-	// Verify JSONB data type for feature_data
-	if !strings.Contains(sqlUpper, "FEATURE_DATA JSONB NOT NULL") {
-		t.Error("feature_snapshots.feature_data must be defined as JSONB NOT NULL")
-	}
-
-	// Verify Composite Index with correct column ordering: account_id first, then computed_at DESC
-	if !strings.Contains(sqlUpper, "INDEX IF NOT EXISTS IDX_FEATURE_SNAPSHOTS_ACCOUNT_TIME") {
-		t.Error("missing composite index idx_feature_snapshots_account_time")
-	}
-	if !strings.Contains(sqlUpper, "ON FEATURE_SNAPSHOTS(ACCOUNT_ID, COMPUTED_AT DESC)") {
-		t.Error("composite index must place account_id before computed_at DESC")
-	}
-
-	// Verify Foreign Key references
-	if !strings.Contains(sqlUpper, "REFERENCES TRANSACTIONS(ID)") {
-		t.Error("missing foreign key reference to transactions(id)")
-	}
-	if !strings.Contains(sqlUpper, "REFERENCES ACCOUNTS(ID)") {
-		t.Error("missing foreign key reference to accounts(id)")
-	}
-}
-
-func TestMaskConnectionURL(t *testing.T) {
-	raw := "postgres://novaris_admin:super_secret_pwd@localhost:5432/novaris_db?sslmode=disable"
-	masked := maskConnectionURL(raw)
-
-	if strings.Contains(masked, "super_secret_pwd") {
-		t.Errorf("maskConnectionURL leaked plaintext password in: %s", masked)
-	}
-	if !strings.Contains(masked, "*****@localhost:5432") {
-		t.Errorf("unexpected masked format: %s", masked)
-	}
-}
+    -- 5. Insert Rich Feature Snapshot Row
+    INSERT INTO feature_snapshots (id, account_id, transaction_id, feature_data, computed_at)
+    VALUES (
+        'f0000000-0000-0000-0000-000000000001',
+        v_sender_account_id,
+        v_tx_id,
+        '{
+            "velocity_1m": 4,
+            "velocity_5m": 14,
+            "velocity_1h": 42,
+            "amount_ratio_30d": 5.82,
+            "geo_hop_speed_mph": 4800.0,
+            "ip_country": "JP",
+            "device_trust_score": 0.12,
+            "card_country": "GB",
+            "is_vpn": true
+        }'::jsonb,
+        NOW()
+    )
+    ON CONFLICT (id) DO NOTHING;
+END $$;
 ```
 
 ---
 
-### 7.4 `services/gateway/cmd/README.md` (Updated CLI Documentation)
+### 7.2 `migrations/verify_day05_schema.sql` (Deterministic Test & Diagnostic Harness)
+
+```sql
+-- ==============================================================================
+-- NOVARIS: Schema Verification & Diagnostic Harness (Day 5)
+-- FILE: migrations/verify_day05_schema.sql
+-- ==============================================================================
+-- Tests:
+--   1. Referential integrity across accounts -> transactions -> fraud_reviews & feature_snapshots.
+--   2. Strict enforcement of CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE')).
+--   3. Querying inside JSONB feature_data using ->, ->>, and @> operators.
+--   4. Query plan inspection (EXPLAIN) verifying the composite B-Tree index scan.
+-- ==============================================================================
+
+\echo '--- 1. Confirming Table Registration ---'
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+  AND table_name IN ('accounts', 'transactions', 'journal_entries', 'outbox', 'fraud_reviews', 'feature_snapshots')
+ORDER BY table_name;
+
+\echo '--- 2. Seeding Deterministic Test Account & Transaction ---'
+DO $$
+DECLARE
+    v_user_id UUID := 'a0000000-0000-0000-0000-000000000001';
+    v_sender_account_id UUID;
+    v_recipient_account_id UUID;
+    v_tx_id UUID;
+    v_analyst_id UUID := 'b0000000-0000-0000-0000-000000000099';
+BEGIN
+    -- 1. Create or get test sender account
+    INSERT INTO accounts (id, user_id, account_type, currency, balance_cents, version)
+    VALUES ('c0000000-0000-0000-0000-000000000001', v_user_id, 'WALLET', 'USD', 100000, 1)
+    ON CONFLICT (id) DO NOTHING;
+    v_sender_account_id := 'c0000000-0000-0000-0000-000000000001';
+
+    -- 2. Create or get test recipient account
+    INSERT INTO accounts (id, user_id, account_type, currency, balance_cents, version)
+    VALUES ('c0000000-0000-0000-0000-000000000002', v_user_id, 'MERCHANT_PAYOUT', 'USD', 50000, 1)
+    ON CONFLICT (id) DO NOTHING;
+    v_recipient_account_id := 'c0000000-0000-0000-0000-000000000002';
+
+    -- 3. Create or get test transaction
+    INSERT INTO transactions (id, idempotency_key, sender_account_id, recipient_account_id, amount_cents, status, fraud_risk_score, risk_factors)
+    VALUES (
+        'd0000000-0000-0000-0000-000000000001',
+        'idemp_day05_verification_probe_001',
+        v_sender_account_id,
+        v_recipient_account_id,
+        25000,
+        'REVIEW',
+        65,
+        '{"velocity_score": 0.85, "geo_distance_miles": 1200}'::jsonb
+    )
+    ON CONFLICT (idempotency_key) DO UPDATE SET status = 'REVIEW'
+    RETURNING id INTO v_tx_id;
+
+    -- 4. Insert Verified Fraud Review Row
+    INSERT INTO fraud_reviews (id, transaction_id, analyst_id, verdict, notes, reviewed_at)
+    VALUES (
+        'e0000000-0000-0000-0000-000000000001',
+        v_tx_id,
+        v_analyst_id,
+        'CONFIRMED_FRAUD',
+        'Abnormal geo-hop velocity: transaction in Tokyo 15 minutes after card swipe in London. Device IP blacklisted.',
+        NOW()
+    )
+    ON CONFLICT (id) DO NOTHING;
+
+    -- 5. Insert Rich Feature Snapshot Row
+    INSERT INTO feature_snapshots (id, account_id, transaction_id, feature_data, computed_at)
+    VALUES (
+        'f0000000-0000-0000-0000-000000000001',
+        v_sender_account_id,
+        v_tx_id,
+        '{
+            "velocity_1m": 4,
+            "velocity_5m": 14,
+            "velocity_1h": 42,
+            "amount_ratio_30d": 5.82,
+            "geo_hop_speed_mph": 4800.0,
+            "ip_country": "JP",
+            "device_trust_score": 0.12,
+            "card_country": "GB",
+            "is_vpn": true
+        }'::jsonb,
+        NOW()
+    )
+    ON CONFLICT (id) DO NOTHING;
+END $$;
+
+\echo '--- 3. Verifying Seeded fraud_reviews Entry ---'
+SELECT id, transaction_id, analyst_id, verdict, notes, reviewed_at 
+FROM fraud_reviews 
+WHERE id = 'e0000000-0000-0000-0000-000000000001';
+
+\echo '--- 4. Querying Inside JSONB (feature_data Operators ->, ->>, @>) ---'
+SELECT 
+    id,
+    account_id,
+    feature_data->>'ip_country' AS extracted_country,
+    (feature_data->>'velocity_5m')::int AS extracted_velocity_5m,
+    (feature_data->>'is_vpn')::boolean AS is_vpn,
+    computed_at
+FROM feature_snapshots
+WHERE feature_data @> '{"is_vpn": true}'::jsonb;
+
+\echo '--- 5. Inspecting Query Plan for Composite Index (account_id, computed_at DESC) ---'
+EXPLAIN (COSTS OFF)
+SELECT id, feature_data, computed_at
+FROM feature_snapshots
+WHERE account_id = 'c0000000-0000-0000-0000-000000000001'
+ORDER BY computed_at DESC
+LIMIT 10;
+
+\echo '--- 6. Verifying CHECK Constraint Rejection on Invalid Verdict ---'
+-- Attempting to insert an invalid verdict must fail with check_violation (23514)
+DO $$
+BEGIN
+    BEGIN
+        INSERT INTO fraud_reviews (transaction_id, analyst_id, verdict)
+        VALUES ('d0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000099', 'MAYBE_FRAUD');
+        RAISE EXCEPTION 'CHECK constraint failed to reject invalid verdict!';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'SUCCESS: Database rejected invalid verdict with check_violation as designed.';
+    END;
+END $$;
+```
+
+#### Detailed Breakdown of the Verification Harness:
+1. **Lines 13–18 (Step 1):** Queries `information_schema.tables` to confirm that all 6 core tables are registered in the public schema.
+2. **Lines 20–83 (Step 2):** Uses an anonymous PL/pgSQL block (`DO $$ ... $$`) to populate a clean, deterministic chain of dependencies: User $\rightarrow$ Sender & Receiver Accounts $\rightarrow$ Transaction (Score 65) $\rightarrow$ Fraud Review $\rightarrow$ Feature Snapshot.
+3. **Lines 85–89 (Step 3):** Fetches the newly seeded `fraud_reviews` record, demonstrating that foreign keys resolved successfully.
+4. **Lines 91–101 (Step 4):** Exercises PostgreSQL's JSONB operators: `->>` extracts text unquoted, casting `(feature_data->>'velocity_5m')::int` performs numeric conversions, and `@>` filters rows containing `{"is_vpn": true}`.
+5. **Lines 103–110 (Step 5):** Generates the query execution plan using `EXPLAIN (COSTS OFF)` to verify that `idx_feature_snapshots_account_time` is selected by the optimizer for single-merchant chronological queries.
+6. **Lines 112–126 (Step 6):** Tests domain constraint enforcement. Attempts to write an illegal verdict (`'MAYBE_FRAUD'`). Catches the expected `check_violation` exception and logs confirmation.
+
+---
+
+### 7.3 `migrations/001_initial_ledger_schema.sql` (Reviewing Foreign Key Foundations)
+
+To understand how Migration 002 cleanly extends the system, let us review the exact foundation established on Day 1:
+
+```sql
+-- ACCOUNTS: Wallets, merchant payout destinations, and escrow pools
+CREATE TABLE IF NOT EXISTS accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    account_type VARCHAR(32) NOT NULL,
+    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+    balance_cents BIGINT NOT NULL DEFAULT 0,
+    version INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- TRANSACTIONS: Ingress payment lifecycle records
+CREATE TABLE IF NOT EXISTS transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    idempotency_key VARCHAR(64) UNIQUE NOT NULL,
+    sender_account_id UUID REFERENCES accounts(id) ON DELETE RESTRICT,
+    recipient_account_id UUID REFERENCES accounts(id) ON DELETE RESTRICT,
+    amount_cents BIGINT NOT NULL CHECK (amount_cents > 0),
+    status VARCHAR(24) NOT NULL DEFAULT 'PENDING',
+    fraud_risk_score INT CHECK (fraud_risk_score >= 0 AND fraud_risk_score <= 100),
+    risk_factors JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- JOURNAL_ENTRIES: Immutable double-entry ledger entries
+CREATE TABLE IF NOT EXISTS journal_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT,
+    account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
+    entry_type VARCHAR(6) NOT NULL CHECK (entry_type IN ('DEBIT', 'CREDIT')),
+    amount_cents BIGINT NOT NULL CHECK (amount_cents > 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- OUTBOX: Atomic event relay to Apache Kafka
+CREATE TABLE IF NOT EXISTS outbox (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_type VARCHAR(64) NOT NULL,
+    aggregate_id UUID NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    payload JSONB NOT NULL,
+    status VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+    retry_count INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    published_at TIMESTAMPTZ
+);
+```
+
+Notice the design harmony:
+* `fraud_reviews` attaches directly to `transactions.id`.
+* `feature_snapshots` attaches directly to `accounts.id` and optionally to `transactions.id`.
+* Every primary key is a UUID generated via `gen_random_uuid()`.
+* Every timestamp is a `TIMESTAMPTZ` defaulting to `NOW()`.
+* Every discrete status or verdict uses `VARCHAR + CHECK`.
+* Zero existing lines in `001_initial_ledger_schema.sql` were modified, preserving absolute migration immutability.
+
+---
+
+### 7.4 `deployments/docker-compose.yml` (Reviewing Persistence Volume Architecture)
+
+```yaml
+  # PostgreSQL 16 Service from Day 1
+  postgres:
+    image: postgres:16-alpine
+    container_name: novaris-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: novaris_db
+      POSTGRES_USER: novaris_admin
+      POSTGRES_PASSWORD: dev_password_change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Automatically executes migrations on initial container initialization
+      - ../migrations:/docker-entrypoint-initdb.d:ro
+```
+* **Line 31:** `pgdata:/var/lib/postgresql/data` stores the physical database pages on disk. Once initialized, the database retains all data across container restarts.
+* **Line 33:** `../migrations:/docker-entrypoint-initdb.d:ro` mounts our migrations folder. On first boot, PostgreSQL runs all `.sql` files alphabetically. On subsequent boots, the folder is ignored, necessitating our Day 5 manual migration execution commands.
+
+---
+
+### 7.5 `migrations/README.md` (Updated Database Persistence Documentation)
 
 ```markdown
-## 3. `verifyschema` — Database Schema & Migration Verifier
+## 🗃️ Migration Files Index
 
-Located at `cmd/verifyschema/main.go`, this utility validates that the live PostgreSQL instance or offline SQL migration files strictly match the NOVARIS SRS Capstone Blueprint:
-* Confirms the existence of all 6 core tables: `accounts`, `transactions`, `journal_entries`, `outbox`, `fraud_reviews`, `feature_snapshots`.
-* Checks column data types, JSONB binary storage format, and CHECK constraints.
-* Validates composite B-Tree indexes (`idx_feature_snapshots_account_time`).
-
-### Usage Examples:
-```bash
-# Run static migration verification (ideal for CI/CD and offline development)
-go run cmd/verifyschema/main.go -offline
-
-# Verify live schema against running PostgreSQL container
-go run cmd/verifyschema/main.go
-
-# Run automated Go unit test suite
-go test -v ./cmd/verifyschema
-```
+| File | Migration Name | Applied In | Core Entities Created | Status |
+| :--- | :--- | :---: | :--- | :---: |
+| **`001_initial_ledger_schema.sql`** | Initial Ledger & Outbox Schema | **Day 1** | `accounts`, `transactions`, `journal_entries`, `outbox` | ✅ Active |
+| **`002_fraud_and_features.sql`** | Human Reviews & Feature Snapshots | **Day 5** | `fraud_reviews`, `feature_snapshots` | ✅ Active |
+| **`verify_day05_schema.sql`** | Day 5 Verification & Diagnostics | **Day 5** | Deterministic Seed Data, Constraint & Index Tests | 🧪 Test Suite |
 ```
 
 ---
 
 ## 11. Chapter 8: Verification Laboratory: Execution Proof & Complete Runbook
 
-### 8.1 Complete Automated Test Suite Output
-Execution of all 21 unit, integration, and schema tests across the gateway:
+### 8.1 Schema Verification Matrix: Column-by-Column Diff with the SRS Blueprint
 
-```bash
-$ go test -v ./...
-=== RUN   TestPipeline_BurstAllowanceAndRateLimitEnforcement
---- PASS: TestPipeline_BurstAllowanceAndRateLimitEnforcement (0.00s)
-=== RUN   TestPipeline_FailFastSecurityOrdering
---- PASS: TestPipeline_FailFastSecurityOrdering (0.00s)
-PASS
-ok  	github.com/charan21042005/novaris/services/gateway	(cached)
+| SRS Blueprint Requirement | Migration Implementation | Data Type / Constraint | Status |
+| :--- | :--- | :--- | :---: |
+| **`fraud_reviews.id`** | `fraud_reviews.id` | `UUID PRIMARY KEY DEFAULT gen_random_uuid()` | ✅ MATCH |
+| **`fraud_reviews.transaction_id`**| `fraud_reviews.transaction_id` | `UUID NOT NULL REFERENCES transactions(id)` | ✅ MATCH |
+| **`fraud_reviews.analyst_id`** | `fraud_reviews.analyst_id` | `UUID NOT NULL` | ✅ MATCH |
+| **`fraud_reviews.verdict`** | `fraud_reviews.verdict` | `VARCHAR(16) CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))` | ✅ MATCH |
+| **`fraud_reviews.notes`** | `fraud_reviews.notes` | `TEXT` | ✅ MATCH |
+| **`fraud_reviews.reviewed_at`** | `fraud_reviews.reviewed_at` | `TIMESTAMPTZ DEFAULT NOW()` | ✅ MATCH |
+| **`feature_snapshots.id`** | `feature_snapshots.id` | `UUID PRIMARY KEY DEFAULT gen_random_uuid()` | ✅ MATCH |
+| **`feature_snapshots.account_id`**| `feature_snapshots.account_id` | `UUID NOT NULL REFERENCES accounts(id)` | ✅ MATCH |
+| **`feature_snapshots.transaction_id`**| `feature_snapshots.transaction_id`| `UUID REFERENCES transactions(id) (Nullable)` | ✅ MATCH |
+| **`feature_snapshots.feature_data`** | `feature_snapshots.feature_data` | `JSONB NOT NULL` | ✅ MATCH |
+| **`feature_snapshots.computed_at`** | `feature_snapshots.computed_at` | `TIMESTAMPTZ DEFAULT NOW()` | ✅ MATCH |
+| **Composite Index** | `idx_feature_snapshots_account_time` | `B-Tree (account_id, computed_at DESC)` | ✅ MATCH |
+| **JSONB Inverted Index** | `idx_feature_snapshots_data_gin` | `GIN (feature_data)` | ✅ MATCH |
 
-=== RUN   TestMigrationFiles_ExistenceAndNaming
---- PASS: TestMigrationFiles_ExistenceAndNaming (0.00s)
-=== RUN   TestMigration002_SchemaCompleteness
---- PASS: TestMigration002_SchemaCompleteness (0.00s)
-=== RUN   TestMaskConnectionURL
---- PASS: TestMaskConnectionURL (0.00s)
-PASS
-ok  	github.com/charan21042005/novaris/services/gateway/cmd/verifyschema	(cached)
+---
 
-=== RUN   TestComputeAndVerifyHMAC_Success
---- PASS: TestComputeAndVerifyHMAC_Success (0.00s)
-=== RUN   TestVerifyHMAC_TamperedBody
---- PASS: TestVerifyHMAC_TamperedBody (0.00s)
-=== RUN   TestVerifyHMAC_StaleTimestamp
---- PASS: TestVerifyHMAC_StaleTimestamp (0.00s)
-=== RUN   TestVerifyHMAC_FutureTimestamp
---- PASS: TestVerifyHMAC_FutureTimestamp (0.00s)
-=== RUN   TestVerifyHMAC_WrongSecret
---- PASS: TestVerifyHMAC_WrongSecret (0.00s)
-=== RUN   TestHMACMiddleware
---- PASS: TestHMACMiddleware (0.00s)
-=== RUN   TestGenerateAndValidateToken
---- PASS: TestGenerateAndValidateToken (0.00s)
-=== RUN   TestExpiredToken
---- PASS: TestExpiredToken (0.00s)
-=== RUN   TestTamperedToken
---- PASS: TestTamperedToken (0.00s)
-=== RUN   TestJWTMiddleware
---- PASS: TestJWTMiddleware (0.00s)
-PASS
-ok  	github.com/charan21042005/novaris/services/gateway/internal/auth	(cached)
+### 8.2 Real-World SQL Verification Scenarios
 
-=== RUN   TestTokenBucket_BurstAndExhaustion
---- PASS: TestTokenBucket_BurstAndExhaustion (0.00s)
-=== RUN   TestTokenBucket_RefillOverTime
---- PASS: TestTokenBucket_RefillOverTime (0.15s)
-=== RUN   TestTokenBucket_CapacityCeiling
---- PASS: TestTokenBucket_CapacityCeiling (0.05s)
-=== RUN   TestBucketStore_PerMerchantIsolation
---- PASS: TestBucketStore_PerMerchantIsolation (0.00s)
-=== RUN   TestTokenBucket_ConcurrentRaceConditions
---- PASS: TestTokenBucket_ConcurrentRaceConditions (0.00s)
-=== RUN   TestRateLimitMiddleware
---- PASS: TestRateLimitMiddleware (0.00s)
-PASS
-ok  	github.com/charan21042005/novaris/services/gateway/internal/ratelimit	(cached)
+Execution of [`migrations/verify_day05_schema.sql`](file:///C:/Users/Tokachichu%20SriCharan/OneDrive/Documents/GitHub/novaris/migrations/verify_day05_schema.sql) validates all 6 database scenarios:
+
+```sql
+-- 1. Table Registration Verification
+SELECT table_name FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
+-- Expected output: accounts, feature_snapshots, fraud_reviews, journal_entries, outbox, transactions
+
+-- 2. Querying Inside JSONB (feature_data)
+SELECT 
+    id,
+    feature_data->>'ip_country' AS country,
+    (feature_data->>'velocity_5m')::int AS velocity,
+    (feature_data->>'is_vpn')::boolean AS vpn_flag
+FROM feature_snapshots
+WHERE feature_data @> '{"is_vpn": true}'::jsonb;
+-- Expected: Successfully filters by internal JSONB key with country = 'JP', velocity = 14, vpn_flag = true
+
+-- 3. Composite Index Execution Plan Inspection
+EXPLAIN (COSTS OFF)
+SELECT id, feature_data, computed_at
+FROM feature_snapshots
+WHERE account_id = 'c0000000-0000-0000-0000-000000000001'
+ORDER BY computed_at DESC
+LIMIT 10;
+-- Expected Output Plan:
+-- -> Index Scan using idx_feature_snapshots_account_time on feature_snapshots
+--    Index Cond: (account_id = 'c0000000-0000-0000-0000-000000000001'::uuid)
+-- (PROVES INDEX SCAN IS UTILIZED, NOT A SLOW SEQ SCAN!)
+
+-- 4. Constraint Enforcement (Rejection of Invalid Verdict)
+INSERT INTO fraud_reviews (transaction_id, analyst_id, verdict)
+VALUES ('d0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000099', 'MAYBE_FRAUD');
+-- Expected Output: ERROR: new row for relation "fraud_reviews" violates check constraint "fraud_reviews_verdict_check"
 ```
 
 ---
 
-### 8.2 Live Docker & PostgreSQL Command Matrix
+### 8.3 Complete Step-by-Step CLI Runbook
 
-To verify that the migration functions seamlessly on live database infrastructure, the following commands execute the migration and assert table creation, index registration, and constraint behavior inside the running Docker container:
+To reproduce and apply Day 5's schema migrations locally, execute the following commands:
 
-#### 1. Copy and Apply Migration to PostgreSQL Container:
+#### Option A: Running Migration on Running PostgreSQL Docker Container
 ```bash
-# Copy migration file into the container's temporary filesystem
+# 1. Start the container infrastructure if not already running
+docker compose -f deployments/docker-compose.yml up -d
+
+# 2. Copy the Day 5 migration script into the running container
 docker cp migrations/002_fraud_and_features.sql novaris-postgres:/tmp/002_fraud_and_features.sql
 
-# Execute the migration script using psql
-docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
+# 3. Apply the migration using psql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
+
+# 4. Copy and execute the verification test harness
+docker cp migrations/verify_day05_schema.sql novaris-postgres:/tmp/verify_day05_schema.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day05_schema.sql
 ```
 
-#### 2. Confirm Schema Table Creation:
-```bash
-# List all relations (all 6 tables must now appear)
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "\dt"
-```
-*Expected Output:*
-```text
-               List of relations
- Schema |       Name        | Type  |     Owner     
---------+-------------------+-------+---------------
- public | accounts          | table | novaris_admin
- public | feature_snapshots | table | novaris_admin
- public | fraud_reviews     | table | novaris_admin
- public | journal_entries   | table | novaris_admin
- public | outbox            | table | novaris_admin
- public | transactions      | table | novaris_admin
-(6 rows)
-```
-
-#### 3. Inspect Composite Index on `feature_snapshots`:
-```bash
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "\d+ feature_snapshots"
-```
-*Expected Output:*
-```text
-                                                 Table "public.feature_snapshots"
-     Column     |           Type           | Collation | Nullable |      Default      | Storage  | Compression | Stats target | Description 
-----------------+--------------------------+-----------+----------+-------------------+----------+-------------+--------------+-------------
- id             | uuid                     |           | not null | gen_random_uuid() | plain    |             |              | 
- account_id     | uuid                     |           | not null |                   | plain    |             |              | 
- transaction_id | uuid                     |           |          |                   | plain    |             |              | 
- feature_data   | jsonb                    |           | not null |                   | extended |             |              | 
- computed_at    | timestamp with time zone |           | not null | now()             | plain    |             |              | 
-Indexes:
-    "feature_snapshots_pkey" PRIMARY KEY, btree (id)
-    "idx_feature_snapshots_account_time" btree (account_id, computed_at DESC)
-    "idx_feature_snapshots_tx_id" btree (transaction_id) WHERE transaction_id IS NOT NULL
-Foreign-key constraints:
-    "feature_snapshots_account_id_fkey" FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT
-    "feature_snapshots_transaction_id_fkey" FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL
-```
-
-#### 4. Test Strict CHECK Constraint on `fraud_reviews`:
-Attempting to insert an unauthorized verdict string (e.g. `'PENDING_INSPECTION'`):
-```bash
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-INSERT INTO fraud_reviews (transaction_id, analyst_id, verdict, notes) 
-VALUES ('c0a80101-0000-0000-0000-000000000001', 'a0a80101-0000-0000-0000-000000000001', 'SUSPICIOUS_ONLY', 'Analyst flag');"
-```
-*Expected Database Rejection:*
-```text
-ERROR:  new row for relation "fraud_reviews" violates check constraint "fraud_reviews_verdict_check"
-DETAIL:  Failing row contains (..., SUSPICIOUS_ONLY, Analyst flag, 2026-11-24 ...).
-```
-The database engine directly defends domain invariants!
-
-#### 5. Verify JSONB Containment (`@>`) & Text Extraction (`->>`):
-```bash
-# Insert valid test feature snapshot
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-INSERT INTO feature_snapshots (account_id, feature_data) 
-VALUES ('a1111111-1111-1111-1111-111111111111', '{\"velocity_5m\": 14, \"geo_hop_km\": 1820.4, \"device_known\": false, \"vpn_detected\": true}');"
-
-# Query 1: Extract velocity_5m as text
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-SELECT id, account_id, feature_data->>'velocity_5m' AS velocity, feature_data->>'vpn_detected' AS vpn FROM feature_snapshots;"
-
-# Query 2: Filter with JSONB containment operator (@>)
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-SELECT id, computed_at FROM feature_snapshots WHERE feature_data @> '{\"vpn_detected\": true}';"
-```
-
-#### 6. Confirm B-Tree Index Utilization with `EXPLAIN ANALYZE`:
-```bash
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-EXPLAIN ANALYZE 
-SELECT * FROM feature_snapshots 
-WHERE account_id = 'a1111111-1111-1111-1111-111111111111' 
-ORDER BY computed_at DESC 
-LIMIT 5;"
-```
-*Expected Output:*
-```text
-                                                                    QUERY PLAN
---------------------------------------------------------------------------------------------------------------------------------------------------
- Limit  (cost=0.15..8.17 rows=1 width=116) (actual time=0.015..0.016 rows=1 loops=1)
-   ->  Index Scan using idx_feature_snapshots_account_time on feature_snapshots  (cost=0.15..8.17 rows=1 width=116) (actual time=0.014..0.014 rows=1 loops=1)
-         Index Cond: (account_id = 'a1111111-1111-1111-1111-111111111111'::uuid)
- Planning Time: 0.082 ms
- Execution Time: 0.035 ms
-(5 rows)
-```
-Notice: `Index Scan using idx_feature_snapshots_account_time` executed in **0.035 ms**! Zero disk sort, zero sequential scan.
-
----
-
-### 8.3 Complete Step-by-Step CLI Runbook
-
-#### For Linux / macOS (Bash):
-```bash
-# 1. Run automated offline schema tests in Go
-cd services/gateway
-go test -v ./cmd/verifyschema
-
-# 2. Run schema verifier CLI in offline mode
-go run cmd/verifyschema/main.go -offline
-
-# 3. Apply migration to PostgreSQL container
-docker cp ../../migrations/002_fraud_and_features.sql novaris-postgres:/tmp/002.sql
-docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002.sql
-
-# 4. Verify live schema through Go CLI utility
-go run cmd/verifyschema/main.go
-
-# 5. Run full gateway test suite
-go test -v ./...
-```
-
-#### For Windows (PowerShell):
+#### Option B: Windows PowerShell Script
 ```powershell
-# 1. Run automated offline schema tests in Go
-Set-Location services\gateway
-go test -v ./cmd/verifyschema
-
-# 2. Run schema verifier CLI in offline mode
-go run cmd/verifyschema/main.go -offline
-
-# 3. Apply migration to PostgreSQL container
-docker cp ..\..\migrations\002_fraud_and_features.sql novaris-postgres:/tmp/002.sql
-docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002.sql
-
-# 4. Verify live schema through Go CLI utility
-go run cmd/verifyschema/main.go
-
-# 5. Run full gateway test suite
-go test -v ./...
-```
-
----
-
-## 12. Chapter 9: The Interview Defense Compendium (10 High-Stakes Tier-1 Q&As)
-
-When discussing distributed ledger architecture and database schema design with principal engineers at companies like Stripe, Adyen, Block, or Brex, the following ten technical questions frequently arise:
-
-### Q1: Why did NOVARIS choose PostgreSQL JSONB instead of spinning up MongoDB or a separate NoSQL document store for feature vectors?
-> **Candidate Answer:**  
-> Introducing a dedicated NoSQL cluster like MongoDB creates substantial operational overhead: dual-database operations, divergent backup lifecycles, and most dangerously, the **dual-write problem**. If a transaction is committed in PostgreSQL but the feature write fails in MongoDB, our ledger state and ML training state become permanently decoupled.  
-> PostgreSQL's `JSONB` gives us the exact schema flexibility of document stores inside an ACID-compliant engine. In NOVARIS, the payment record, the double-entry journal entries, and the point-in-time feature snapshot can be written inside a **single atomic transaction (`BEGIN ... COMMIT`)**. If anything fails, the entire transaction rolls back, guaranteeing 100% data consistency between financial ledger records and offline ML training sets without managing extra infrastructure.
-
----
-
-### Q2: Walk me through the mathematical B-Tree structure and explain why `(account_id, computed_at DESC)` was chosen instead of `(computed_at DESC, account_id)`.
-> **Candidate Answer:**  
-> A composite B-Tree sorts lexicographically according to its leading key. In our index `(account_id, computed_at DESC)`, `account_id` is the primary partition key, and `computed_at DESC` sorts records within that account's leaf segment.  
-> Our feature retrieval pattern is: *"Given account $A$, retrieve its most recent 10 feature snapshots."*  
-> With our index, PostgreSQL executes a B-Tree search on `account_id` in $O(\log N)$ steps, lands directly at the head of account $A$'s pre-sorted timeline, and reads the top 10 rows sequentially off the disk page.  
-> If we reversed the columns to `(computed_at DESC, account_id)`, the B-Tree would be ordered globally by timestamp. Account $A$'s snapshots would be scattered across millions of different timestamp nodes across the entire tree. To find 10 rows for Account $A$, PostgreSQL would have to scan the entire index or abandon it for a full table `Seq Scan`. The leading column must always match the highest-cardinality equality filter of the query.
-
----
-
-### Q3: Why did you use `VARCHAR(16) + CHECK` instead of native PostgreSQL `ENUM`?
-> **Candidate Answer:**  
-> PostgreSQL native `ENUM` types are internally represented as separate engine catalog types (`pg_type`). While compact (4 bytes on disk), they introduce significant operational friction during schema evolution:  
-> 1. In standard PostgreSQL, `ALTER TYPE ... ADD VALUE` cannot be executed inside a multi-statement transaction block, meaning automated database migration pipelines (like Liquibase, Flyway, or Golang Migrate) fail if they wrap migrations in `BEGIN ... COMMIT`.  
-> 2. Removing or renaming an enum value requires dropping and recreating the type or rewriting the table, which requires an exclusive table lock that blocks all reads and writes.  
-> 3. By using `VARCHAR(16)` with a `CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))`, we achieve identical data integrity at the storage layer while keeping migrations fully transactional and zero-downtime. Modifying the allowed set in a future migration is an instantaneous metadata update that safely rolls back if aborted.
-
----
-
-### Q4: Why is `feature_snapshots.transaction_id` nullable while `fraud_reviews.transaction_id` is `NOT NULL`?
-> **Candidate Answer:**  
-> This directly reflects the real-world domain life-cycle:  
-> A `fraud_review` only occurs because a specific payment transaction was flagged by the risk pipeline (scoring 30–70) and queued for a human analyst. A review without an associated transaction is conceptually impossible, so `transaction_id` is strictly `NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT`.  
-> Conversely, `feature_snapshots` captures point-in-time state vectors. While many snapshots are triggered by incoming payment transactions, others are computed on a scheduled cadence (e.g. nightly merchant risk aggregations, or pre-computed profile updates upon user login). Setting `transaction_id` to nullable allows the same table to support both transaction-bound snapshots and ambient account snapshots without artificial dummy transactions.
-
----
-
-### Q5: What is the `docker-entrypoint-initdb.d` trap and how did your migration strategy prevent schema drift?
-> **Candidate Answer:**  
-> In PostgreSQL Docker images, scripts in `/docker-entrypoint-initdb.d` only execute when the database cluster is initialized for the first time (an empty volume). Once a data directory exists (e.g. from Day 1), Docker skips that directory on subsequent container boots.  
-> A common developer mistake is editing `001_initial_ledger_schema.sql` or adding `002_*.sql` to that directory and wondering why the tables don't exist.  
-> In NOVARIS, we enforce strict migration discipline:  
-> 1. Existing migrations are immutable.  
-> 2. New changes are authored in incremental, numbered files (`002_fraud_and_features.sql`).  
-> 3. In running environments, migrations are applied explicitly using standard migration tooling or `psql -f`.  
-> 4. We built a dedicated Go CLI tool (`cmd/verifyschema`) that interrogates PostgreSQL's `information_schema` directly to verify table and index presence in CI pipelines, catching schema drift before any code is merged.
-
----
-
-### Q6: Explain how `fraud_reviews` acts as the ground-truth training set for Day 66's nightly XGBoost retraining pipeline.
-> **Candidate Answer:**  
-> Supervised machine learning algorithms require high-quality labeled data. In payment fraud, the model's output at inference time ($P(\text{fraud}) = 0.62$) is merely a probabilistic estimate, not a ground truth.  
-> The true outcome is determined later: either by a cardholder chargeback dispute, or by a human fraud investigator who analyzes user behavior, device logs, and merchant receipts.  
-> When an investigator completes an investigation, their verdict (`CONFIRMED_FRAUD` $\rightarrow 1$, `FALSE_POSITIVE` $\rightarrow 0$) is recorded in `fraud_reviews`.  
-> On Day 66, our Apache Airflow retraining DAG executes a SQL query joining `feature_snapshots` and `fraud_reviews` on `transaction_id` over a rolling 30-day window. This produces the feature matrix $\mathbf{X}$ and the ground-truth target vector $\mathbf{y}$ used to train the next iteration of our XGBoost model, closing the MLOps feedback loop.
-
----
-
-### Q7: Why not store features exclusively in Redis where reads are sub-millisecond?
-> **Candidate Answer:**  
-> Redis is an exceptional in-memory cache for the **instantaneous present**, but it is structurally unsuitable as a feature archive:  
-> 1. **Temporal Overwrite:** Redis velocity keys (like a sliding window counter) mutate constantly. Once a 5-minute window passes, the count from 10 minutes ago is overwritten. Redis cannot tell you what a user's velocity was during a specific transaction three weeks ago.  
-> 2. **Cost of In-Memory Retention:** Storing billions of historical feature snapshots in RAM would require hundreds of gigabytes of expensive memory.  
-> 3. **ACID Joins:** Redis cannot perform relational joins with transaction settlement records or analyst audit tables.  
-> In NOVARIS, Redis serves real-time reads during the sub-12ms inference path, but every evaluated feature vector is asynchronously written to `feature_snapshots` in PostgreSQL `JSONB` for permanent storage, auditability, and offline training.
-
----
-
-### Q8: How does the JSONB containment operator `@>` work internally in PostgreSQL?
-> **Candidate Answer:**  
-> The containment operator `@>` checks whether the left JSONB document contains the entirety of the right JSONB document (e.g. `feature_data @> '{"vpn_detected": true}'`).  
-> Internally, because `JSONB` is stored in decomposed binary format with sorted keys and pre-calculated offset headers, PostgreSQL does not parse text. It performs a binary search on the `JEntry` header array to check if the key `"vpn_detected"` exists. If found, it jumps directly to the value bytes to assert equality with `true`.  
-> Furthermore, when indexed with a GIN (Generalized Inverted Index) using `jsonb_path_ops`, queries using `@>` achieve logarithmic lookup speeds across millions of JSON documents.
-
----
-
-### Q9: What happens if someone tries to delete a transaction that has an existing `fraud_reviews` entry? Explain `ON DELETE RESTRICT`.
-> **Candidate Answer:**  
-> The foreign key is configured as:  
-> `transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT`.  
-> If an administrator or service attempts to execute `DELETE FROM transactions WHERE id = '...'`, the PostgreSQL query planner checks the referential integrity catalog. Because an active row in `fraud_reviews` references that transaction's primary key, the database engine **aborts the transaction and raises error code 23503 (`foreign_key_violation`)**.  
-> This is a mandatory compliance requirement in FinTech: financial transactions and their corresponding fraud investigations must never be deleted. `ON DELETE RESTRICT` guarantees that no application bug or erroneous script can destroy historical financial records.
-
----
-
-### Q10: How does your Go CLI tool (`cmd/verifyschema`) enforce automated schema governance in CI/CD without requiring a live database connection?
-> **Candidate Answer:**  
-> In fast continuous integration environments, spinning up a full Docker container mesh for every commit adds latency and consumes runner resources.  
-> We designed `cmd/verifyschema` with a dual-mode verification engine:  
-> 1. **Live Mode:** Connects to PostgreSQL, checks `information_schema.tables`, validates column data types, and inspects `pg_indexes` for composite index definitions.  
-> 2. **Offline Static Mode (`-offline`):** When no database is reachable, the tool automatically parses the repository's `.sql` migration files. It validates that files follow monotonic naming conventions (`001`, `002`), scans the AST/SQL tokens for required `CREATE TABLE` and `CREATE INDEX` statements, verifies that `CHECK` constraints match exact regex patterns, and confirms composite index column ordering.  
-> This allows CI pipelines to run schema assertions in **under 5 milliseconds** during pull request checks while maintaining live verification in staging environments.
-
----
-
-## 13. Chapter 10: The Roadmap Horizon (Day 6 Preview: Atomic Double-Entry Settlement)
-
-With Day 5 complete, our relational foundation is 100% aligned with the NOVARIS Capstone Blueprint:
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                            NOVARIS SCHEMA COMPLETE (DAY 5)                       │
-├────────────────────┬─────────────────────────────────────────────────────────────┤
-│ Table              │ Role                                                        │
-├────────────────────┼─────────────────────────────────────────────────────────────┤
-│ accounts           │ User & merchant balance tracking with version OCC           │
-│ transactions       │ Ingress payment requests, risk scores & settlement status   │
-│ journal_entries    │ Immutable double-entry ledger (Debits = Credits)            │
-│ outbox             │ Transactional Kafka event relay table                       │
-│ fraud_reviews      │ Human investigator decisions for middle-band risk scores    │
-│ feature_snapshots  │ Point-in-time JSONB features with composite B-Tree indexing │
-└────────────────────┴─────────────────────────────────────────────────────────────┘
-```
-
-### 10.1 Day 6 Architectural Objectives
-Tomorrow, on **Day 6**, we shift our focus from schema definitions to **transactional business logic**:
-1. **The Double-Entry Settlement Engine:**
-   * Implementing atomic money movement between accounts.
-   * Ensuring that for every transaction, $\sum \text{Debits} \equiv \sum \text{Credits}$.
-2. **ACID Transaction Boundaries:**
-   * Wrapping account balance deductions and journal entry creation inside single atomic PostgreSQL transactions (`BEGIN`, `COMMIT`, `ROLLBACK`).
-3. **Concurrency Defense & Negative Balance Rejections:**
-   * Using Optimistic Concurrency Control (`version` checks) to reject overdraft attempts and prevent race conditions when two simultaneous charges hit the same wallet.
-
----
-
-### 10.2 Hands-On Mastery Exercises for the Reader
-
-To solidify your mastery of Day 5 concepts, complete the following three exercises:
-
-1. **Exercise 1: GIN Index Creation on JSONB:**
-   * Add a Generalized Inverted Index (GIN) using `jsonb_path_ops` on `feature_snapshots.feature_data`:
-     ```sql
-     CREATE INDEX idx_feature_snapshots_gin ON feature_snapshots USING GIN (feature_data jsonb_path_ops);
-     ```
-   * Use `EXPLAIN ANALYZE` to compare query speed between a B-Tree composite query and a GIN containment query (`feature_data @> '{"vpn_detected": true}'`).
-
-2. **Exercise 2: Write a Python Feature Extraction Script:**
-   * Using `psycopg2` or `asyncpg`, write a 20-line Python script that connects to `novaris_db`, queries the most recent 100 `feature_snapshots`, and converts the `feature_data` JSONB column directly into a `pandas.DataFrame`.
-
-3. **Exercise 3: Test Cascading Foreign Key Behavior:**
-   * Create a dummy transaction and an associated `feature_snapshots` record.
-   * Delete the transaction (`DELETE FROM transactions WHERE id = '...'`).
-   * Observe how `ON DELETE SET NULL` automatically nulls the `transaction_id` column while preserving the feature vector for historical analytics!
-
----
-
-<div align="center">
-
-<!-- High-Definition Native Static Footer -->
-<p align="center">
-  <img src="../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
-</p>
-
-### 🎓 NOVARIS Engineering Curriculum • Volume 01: Foundations & Ledgers
-**Authored by Tokachichu Sri Charan**  
-*Distributed Systems Engineer & FinTech Architect*
-
-[GitHub Repository](https://github.com/charan21042005/novaris) • [Documentation Hub](https://github.com/charan21042005/novaris/tree/main/bin/Daily_Actions) • [Day 06 Preview](./Day_06_Action_Log.md)
-
-</div>
-ok  	github.com/charan21042005/novaris/services/gateway/internal/auth	(cached)
-
-=== RUN   TestTokenBucket_BurstAndExhaustion
---- PASS: TestTokenBucket_BurstAndExhaustion (0.00s)
-=== RUN   TestTokenBucket_RefillOverTime
---- PASS: TestTokenBucket_RefillOverTime (0.15s)
-=== RUN   TestTokenBucket_CapacityCeiling
---- PASS: TestTokenBucket_CapacityCeiling (0.05s)
-=== RUN   TestBucketStore_PerMerchantIsolation
---- PASS: TestBucketStore_PerMerchantIsolation (0.00s)
-=== RUN   TestTokenBucket_ConcurrentRaceConditions
---- PASS: TestTokenBucket_ConcurrentRaceConditions (0.00s)
-=== RUN   TestRateLimitMiddleware
---- PASS: TestRateLimitMiddleware (0.00s)
-PASS
-ok  	github.com/charan21042005/novaris/services/gateway/internal/ratelimit	(cached)
-```
-
----
-
-### 8.2 Real-World Database Verification Matrix
-
-The table below catalogs every concrete probe scenario verified for Day 5:
-
-| Scenario | Actions Performed | Database Observation | Result |
-| :--- | :--- | :--- | :--- |
-| **Probe 1: Migration Execution** | Apply `002_fraud_and_features.sql` to PostgreSQL | `CREATE TABLE` and `CREATE INDEX` executed without errors | ✅ PASS |
-| **Probe 2: Table Existence** | Query `information_schema.tables` | All 6 tables (`accounts`, `transactions`, `journal_entries`, `outbox`, `fraud_reviews`, `feature_snapshots`) exist | ✅ PASS |
-| **Probe 3: CHECK Constraint** | Attempt inserting verdict `'MAYBE'` into `fraud_reviews` | Rejected by database with check constraint violation | ✅ PASS |
-| **Probe 4: Valid Verdict** | Insert row with verdict `'CONFIRMED_FRAUD'` | Row accepted and committed with UUIDv4 primary key | ✅ PASS |
-| **Probe 5: JSONB Querying** | Query `feature_snapshots` using `feature_data->>'velocity_5m'` | Extracted integer value without full document parsing | ✅ PASS |
-| **Probe 6: Composite Index** | Run `EXPLAIN ANALYZE` filtering by `account_id` | Query plan utilizes `Index Scan using idx_feature_snapshots_account_time` | ✅ PASS |
-
----
-
-### 8.3 Complete Step-by-Step CLI Runbook
-
-To apply and verify Day 5's database schema locally, run the following commands:
-
-#### Option A: Running Automated Go Schema Tests
-```bash
-cd services/gateway
-
-# Run automated schema parser and test suite
-go test -v ./cmd/verifyschema
-
-# Run full gateway test suite
-go test -v ./...
-
-# Run static schema verification CLI
-go run cmd/verifyschema/main.go -offline
-```
-
-#### Option B: Live PostgreSQL Application (Docker / Bash)
-```bash
-# 1. Copy migration into the running PostgreSQL container
-docker cp migrations/002_fraud_and_features.sql novaris-postgres:/tmp/
+# 1. Copy migration to container
+docker cp migrations/002_fraud_and_features.sql novaris-postgres:/tmp/002_fraud_and_features.sql
 
 # 2. Execute migration inside container
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
+docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
 
 # 3. Verify all 6 tables exist
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "\dt"
+docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -c "\dt"
 
-# 4. Insert test fraud review
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-  INSERT INTO fraud_reviews (transaction_id, analyst_id, verdict, notes)
-  SELECT id, gen_random_uuid(), 'FALSE_POSITIVE', 'Verified legitimate via customer call'
-  FROM transactions LIMIT 1;
-"
-
-# 5. Insert test feature snapshot
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-  INSERT INTO feature_snapshots (account_id, feature_data)
-  SELECT id, '{\"velocity_5m\": 4, \"geo_hop_km\": 0.0, \"device_known\": true}'::jsonb
-  FROM accounts LIMIT 1;
-"
-
-# 6. Verify JSONB containment query
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "
-  SELECT id, feature_data->>'velocity_5m' AS velocity 
-  FROM feature_snapshots 
-  WHERE feature_data @> '{\"device_known\": true}';
-"
+# 4. Run the automated verification harness
+docker cp migrations/verify_day05_schema.sql novaris-postgres:/tmp/verify_day05_schema.sql
+docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day05_schema.sql
 ```
 
-#### Option C: Live PostgreSQL Application (Windows PowerShell)
+#### Option C: Native Host PostgreSQL Client (Direct Port 5432 Connection)
+If connecting directly from the host workstation (e.g. via local `psql`, pgAdmin, or DBeaver):
+```bash
+# Connection parameters:
+# Host: localhost
+# Port: 5432
+# Database: novaris_db
+# Username: novaris_admin
+# Password: novaris_secure_password_2026
+
+# Connect and apply migration 002
+PGPASSWORD='novaris_secure_password_2026' psql -h localhost -p 5432 -U novaris_admin -d novaris_db -f migrations/002_fraud_and_features.sql
+
+# Run diagnostic verification suite
+PGPASSWORD='novaris_secure_password_2026' psql -h localhost -p 5432 -U novaris_admin -d novaris_db -f migrations/verify_day05_schema.sql
+```
+
+---
+
+### 8.4 Production Database Diagnostics, Index Performance & Troubleshooting Runbook
+
+In a Tier-1 financial institution, database migrations must be audited for locking overhead, index usage, and dead tuple accumulation.
+
+#### 1. Inspecting Live Index Usage and Scans
+To verify that queries in production are actually hitting our B-Tree and GIN indexes rather than falling back to sequential table scans:
+```sql
+SELECT 
+    schemaname,
+    relname AS table_name,
+    indexrelname AS index_name,
+    idx_scan AS number_of_scans,
+    idx_tup_read AS tuples_read,
+    idx_tup_fetch AS tuples_fetched
+FROM pg_stat_user_indexes
+WHERE relname IN ('fraud_reviews', 'feature_snapshots')
+ORDER BY relname, indexrelname;
+```
+
+#### 2. Checking Table Bloat and Dead Tuples
+Because `feature_snapshots` receives continuous streaming writes, monitoring dead tuple accumulation ensures PostgreSQL's autovacuum daemon is operating efficiently:
+```sql
+SELECT 
+    relname AS table_name,
+    n_live_tup AS live_tuples,
+    n_dead_tup AS dead_tuples,
+    ROUND(n_dead_tup * 100.0 / NULLIF(n_live_tup + n_dead_tup, 0), 2) AS dead_tuple_percent,
+    last_vacuum,
+    last_autovacuum
+FROM pg_stat_user_tables
+WHERE relname IN ('fraud_reviews', 'feature_snapshots');
+```
+
+#### 3. Inspecting Lock Contention During DDL Migrations
+If an `ALTER TABLE` or `CREATE INDEX` hangs in production, inspect `pg_stat_activity` to detect lock contention:
+```sql
+SELECT 
+    pid,
+    usename,
+    pg_blocking_pids(pid) AS blocked_by,
+    query_start,
+    state,
+    wait_event_type,
+    wait_event,
+    query
+FROM pg_stat_activity
+WHERE wait_event_type = 'Lock' OR pg_blocking_pids(pid) != '{}';
+```
+
+#### 4. PostgreSQL Docker Container Health Diagnostics
 ```powershell
-# 1. Copy migration into container
-docker cp migrations\002_fraud_and_features.sql novaris-postgres:/tmp/
+# Verify container uptime and health status
+docker inspect --format='{{json .State.Health}}' novaris-postgres
 
-# 2. Execute migration script
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
+# View live container database logs
+docker logs --tail 50 novaris-postgres
 
-# 3. Verify tables
-docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -c "\dt"
-
-# 4. Run Go Schema Verifier against live DB
-cd services\gateway
-go run cmd\verifyschema\main.go
+# Check PostgreSQL port listening status on Windows host
+Get-NetTCPConnection -LocalPort 5432 -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State, OwningProcess
 ```
 
 ---
 
-## 12. Chapter 9: The Interview Defense Compendium (10 High-Stakes Tier-1 Q&As)
+## 12. Chapter 9: The Interview Defense Compendium (15 High-Stakes Tier-1 Q&As)
 
-### Q1: Why did you choose JSONB over traditional normalized columns for `feature_snapshots`?
-> **Answer:** Machine learning feature sets in fraud detection are highly volatile. Between Days 20 and 60, our data science team will introduce dozens of experimental signals (device hashes, IP velocity, card attempt counters). Normalizing every feature into a dedicated column would require dozens of schema migrations, schema locking, and complex ORM refactors. `JSONB` stores features in pre-parsed binary format, supporting sub-millisecond key lookups and GIN containment indexes while allowing the feature set to evolve dynamically without database downtime.
+### Q1: Why did you choose JSONB instead of traditional normalized relational columns for `feature_data`?
+> **Answer:** In fraud detection, feature sets are volatile. As data scientists experiment with new velocity windows, device attributes, and graph embeddings across model iterations, adding typed columns would require continuous, disruptive DDL schema migrations that lock tables in production. `JSONB` provides binary-indexed semi-structured flexibility, allowing application and ML pipelines to add or deprecate features dynamically while retaining sub-millisecond query performance via GIN indexing.
 
-### Q2: Why does column order in a composite index matter, and why is `account_id` placed before `computed_at`?
-> **Answer:** A composite B-Tree index sorts rows lexicographically by the first column, and then by the second column within matching first-column values. In NOVARIS, our query pattern is strictly: *"Fetch the historical feature snapshots for Account X, ordered by time"*. Placing `account_id` first allows PostgreSQL to binary-search directly to that account's branch in $O(\log N)$ time and stream the pre-sorted timestamps. If `computed_at` came first, finding Account X would require scanning every timestamp entry across all accounts, rendering the index useless.
+### Q2: Why did you order the composite index as `(account_id, computed_at DESC)` instead of `(computed_at DESC, account_id)`?
+> **Answer:** Query patterns in financial platforms are tenant-centric. The access pattern is almost universally: *"Fetch the recent feature snapshots for Account X ordered by time."* A composite B-Tree sorts lexicographically left-to-right. Placing `account_id` first allows the query planner to isolate the B-Tree search to that specific account's sub-tree immediately, and retrieve descending chronological history with zero sorting cost. Reversing the columns would force the query planner to scan every timestamp bucket across all accounts, rendering the index useless for single-account lookups.
 
-### Q3: Why did you use `VARCHAR(16) + CHECK` instead of a native PostgreSQL `ENUM` for `verdict`?
-> **Answer:** Native PostgreSQL ENUMs are static database types. Modifying an enum to add a new verdict (e.g. `SUSPECTED_CHARGEBACK`) requires `ALTER TYPE`, which cannot be executed inside a multi-statement transaction in older engines and can trigger table-level locks. `VARCHAR(16) + CHECK` provides identical database-level type safety while allowing the allowed verdict list to be modified seamlessly within an ACID transaction migration.
+### Q3: Why did you use `VARCHAR + CHECK` instead of a native PostgreSQL `ENUM` for the `verdict` column?
+> **Answer:** Native PostgreSQL `ENUM` types are rigid. Modifying, reordering, or removing enum values requires complex `ALTER TYPE` statements that cannot always be safely wrapped in transactional migrations and can acquire exclusive table locks. Using `VARCHAR(16)` with a database-level `CHECK (verdict IN ('CONFIRMED_FRAUD', 'FALSE_POSITIVE'))` enforces identical data integrity at the database engine level, matches the existing `status` column pattern in `transactions`, and can be extended seamlessly via metadata-only constraint alters.
 
-### Q4: Why is `transaction_id` nullable in `feature_snapshots`?
-> **Answer:** Not all feature snapshots are generated during a payment checkout. Our architecture anticipates scheduled background evaluations (e.g., hourly account risk scoring, nightly fraud batch runs) where feature vectors are recorded when no immediate payment is taking place. Making `transaction_id` nullable supports both transaction-triggered and periodic snapshots cleanly.
+### Q4: Why is `transaction_id` mandatory in `fraud_reviews` but nullable in `feature_snapshots`?
+> **Answer:** Semantic necessity dictates this distinction. A fraud review is fundamentally an audit decision on a specific disputed transaction; an orphan review with no transaction is nonsensical. Conversely, feature snapshots capture behavioral account profiles. While most snapshots are triggered by incoming transactions, the architecture also requires scheduled, non-transactional periodic snapshots (e.g., 6-hour baseline velocity updates). Making `transaction_id` nullable supports both transactional and scheduled profiling without schema alters.
 
-### Q5: Why did we create `002_fraud_and_features.sql` instead of editing `001_initial_ledger_schema.sql`?
-> **Answer:** It is a core principle of **Migration Discipline**. Once a migration script has executed against any persistent environment, it becomes an immutable historical record. If an engineer edits an already-applied migration file, existing databases will never re-execute it, causing silent schema drift where developer environments and production environments permanently disagree.
+### Q5: Why is editing `001_initial_ledger_schema.sql` strictly forbidden in production engineering?
+> **Answer:** Migration scripts are immutable historical records. If you modify `001` after it has already run on a database, that running database will never re-execute it, but any fresh database created from scratch will run the edited version. This causes **Schema Drift**, where development, staging, and production environments permanently disagree on database reality. Numbered, immutable migrations (`001`, `002`) guarantee deterministic schema evolution across all environments.
 
-### Q6: How does `fraud_reviews` serve as the bridge between human operations and machine learning?
-> **Answer:** It represents the **authoritative ground-truth dataset** for supervised model training. When an analyst reviews a transaction in the 30–70 score band and selects `CONFIRMED_FRAUD` or `FALSE_POSITIVE`, that verified human verdict is written to `fraud_reviews`. On Day 66, our Apache Airflow retraining pipeline will join `feature_snapshots` with `fraud_reviews` to extract verified training samples, allowing the XGBoost model to continuously learn from new fraud tactics.
+### Q6: What is the difference between a B-Tree index and a GIN index on a JSONB column?
+> **Answer:** A B-Tree index indexes the entire JSONB object as an opaque binary blob, useful only for sorting or exact equality comparisons of the entire document. A GIN (Generalized Inverted Index) decomposes the internal JSON structure, building an inverted posting list mapping every individual key and value to matching row IDs. GIN enables microsecond containment queries using the `@>` operator, such as `WHERE feature_data @> '{"ip_country": "US"}'`.
 
-### Q7: Why is `ON DELETE RESTRICT` specified on foreign keys in financial schemas?
-> **Answer:** In financial and audit architectures, historical records must be legally preserved. `ON DELETE RESTRICT` prevents foreign key cascades from accidentally deleting transactions or journal entries if a user or account is removed. Any attempt to delete referenced records will be rejected by the relational engine.
+### Q7: Why did you use `ON DELETE RESTRICT` for foreign keys in `fraud_reviews`?
+> **Answer:** In financial and regulatory environments (SOX, PCI-DSS, SOC 2), data immutability and auditability are non-negotiable. If a parent transaction row were accidentally deleted, an `ON DELETE CASCADE` rule would silently destroy the corresponding human analyst review record. `ON DELETE RESTRICT` forces the database engine to abort the deletion, preserving the forensic audit trail.
 
-### Q8: What is the difference between JSON and JSONB in PostgreSQL?
-> **Answer:** Plain `JSON` stores data as an exact raw text representation, preserving whitespace but requiring full string parsing on every read. `JSONB` parses the text upon insertion and stores it in an optimized, decomposed binary format with internal key offset arrays. Reading a key from `JSONB` is dramatically faster, and `JSONB` supports GIN indexes and containment operators (`@>`).
+### Q8: How does `fraud_reviews` relate to Day 66's automated model retraining pipeline?
+> **Answer:** In supervised fraud machine learning, models require labeled ground truth (0 for legitimate, 1 for fraud). Because fraudsters do not label their own crimes, human analyst decisions in `fraud_reviews` (`CONFIRMED_FRAUD` vs `FALSE_POSITIVE`) constitute the literal ground-truth target vector $y$. Day 66's nightly Airflow DAG queries `fraud_reviews` joined with `feature_snapshots` to assemble the training dataset for incremental XGBoost model updates.
 
-### Q9: Why does `docker-entrypoint-initdb.d` fail to apply new migrations on existing Docker containers?
-> **Answer:** PostgreSQL's entrypoint script only executes files in `/docker-entrypoint-initdb.d` during initial database cluster bootstrapping (when the data directory is completely empty). If the persistent volume already exists, initialization is skipped. New migrations must be applied explicitly via client connections or automated migration runners like `golang-migrate`.
+### Q9: Why didn't Docker automatically run `002_fraud_and_features.sql` when dropped into `migrations/`?
+> **Answer:** The official PostgreSQL Docker entrypoint script only executes files in `/docker-entrypoint-initdb.d/` if the database data directory (`/var/lib/postgresql/data`) is completely empty. Because the database was initialized on Day 1, the presence of `PG_VERSION` signals to PostgreSQL that initialization is complete, causing it to ignore new scripts. New migrations on an existing container must be applied explicitly via `docker exec` or an automated migration CLI.
 
-### Q10: How do you verify that an index is actually being utilized rather than a sequential scan?
-> **Answer:** By running `EXPLAIN ANALYZE <query>`. The output reveals the query planner's execution tree: if an index is active, the node type will read `Index Scan using <index_name>` or `Bitmap Index Scan`. If the table is small, PostgreSQL may choose a `Seq Scan` (because sequential reading is faster for a few pages), but forcing `SET enable_seqscan = off;` verifies that the index path is structurally valid.
+### Q10: What is the difference between JSONB `->` and `->>` operators?
+> **Answer:** The `->` operator extracts a JSON element and returns it as a `JSONB` data type, preserving internal JSON structure, quotes, and nested capabilities. The `->>` operator extracts the element and converts it to a raw SQL `text` string, stripping outer quotation marks so it can be cast directly to standard SQL types (e.g. `(feature_data->>'velocity_5m')::int`).
+
+### Q11: How does PostgreSQL's TOAST storage mechanism protect memory and buffer cache hit rates when storing large JSONB documents?
+> **Answer:** When a JSONB document exceeds $2\text{ KB}$, PostgreSQL's TOAST mechanism compresses the binary representation and moves it out-of-line into an auxiliary `pg_toast` table, leaving an 18-byte pointer in the main heap table page. When queries filter or retrieve columns that do not include `feature_data` (e.g., `SELECT id, account_id, computed_at WHERE account_id = ?`), PostgreSQL never loads the TOAST chunks from disk or buffer memory. This allows the main table's 8 KB pages to hold hundreds of row headers rather than just one, keeping the active working set small and maximizing the `shared_buffers` cache hit ratio.
+
+### Q12: Why is `feature_snapshots` designed as an append-only time series table rather than mutating a single `account_features` row with the latest state?
+> **Answer:** Updating a mutable row under PostgreSQL's MVCC creates a new physical tuple and dead-marks the old one, forcing index updates across both the B-Tree and GIN indexes, and requiring continuous background `VACUUM` cleanup. At high transaction volumes, this causes massive write amplification and table bloat. More critically, mutating the current state destroys historical point-in-time training fidelity. By making `feature_snapshots` append-only, writes are purely sequential, vacuum overhead is minimized, and machine learning models can reconstruct exact feature vectors at the precise microsecond of any past transaction.
+
+### Q13: What is the indexing maintenance overhead of having both a B-Tree composite index and a GIN index on `feature_snapshots`, and how does NOVARIS balance read vs write latency?
+> **Answer:** Every index on a table incurs an insertion cost. A B-Tree insertion is $O(\log N)$, requiring a leaf page lock and split if full. A GIN index has higher overhead because it breaks down the JSONB document into multiple key-value tokens and updates an inverted posting list for each distinct element. In NOVARIS, this trade-off is deliberate: feature snapshots are written asynchronously by background workers (off the critical payment authorization path), meaning the ingestion pipeline can comfortably absorb the millisecond index maintenance cost in exchange for sub-millisecond query performance during real-time fraud scoring and bulk ML training extraction.
+
+### Q14: How does PostgreSQL decide whether to execute an Index Scan, a Bitmap Index Scan, or a Sequential Scan when querying composite indexes?
+> **Answer:** PostgreSQL's cost-based optimizer uses table statistics gathered by `ANALYZE` (number of pages, tuples, and column value distribution / null fraction). If the query filter is highly selective (matching $< 5-10\%$ of total table rows), the planner chooses a direct **Index Scan**, traversing the B-Tree directly to heap pages. If the query matches a moderate fraction of rows, it uses a **Bitmap Index Scan**, creating an in-memory bitmap of candidate pages to access disk blocks sequentially rather than making random I/O seeks. If the table is small (e.g. under 10 pages) or the predicate matches a large portion of the table, random I/O cost exceeds sequential reading, and the optimizer chooses a **Sequential Scan**.
+
+### Q15: Why is `CREATE INDEX CONCURRENTLY` essential when applying migrations to a running high-volume payment database, and why did we omit it in initial local migrations?
+> **Answer:** Standard `CREATE INDEX` acquires an `ACCESS EXCLUSIVE` lock on the target table, blocking all concurrent `INSERT`, `UPDATE`, and `DELETE` operations until the index build completes — a catastrophic event on a production payment gateway processing hundreds of requests per second. `CREATE INDEX CONCURRENTLY` builds the index using two separate transaction snapshots without acquiring exclusive write locks, allowing normal payment traffic to continue uninterrupted. However, `CREATE INDEX CONCURRENTLY` cannot be executed inside a standard `BEGIN ... COMMIT` transactional migration block. In our Day 5 development migration, standard `CREATE INDEX IF NOT EXISTS` is used for deterministic local reproducibility, with the documented runbook instructing DevOps to invoke `CONCURRENTLY` outside transactions in production deployments.
 
 ---
 
-## 13. Chapter 10: The Roadmap Horizon (Day 6 Preview: Atomic Double-Entry Settlement)
+## 13. Chapter 10: The Roadmap Horizon (Day 6 Preview: Atomic Settlement & Concurrency Rollbacks)
 
-With the relational schema fully aligned with the SRS Capstone Blueprint:
-1. `accounts` (Balances, Currencies & OCC Version)
-2. `transactions` (Ingress Lifecycles & Risk Scores)
-3. `journal_entries` (Double-Entry Debit/Credit Invariants)
-4. `outbox` (Atomic Kafka Streaming Relay)
-5. `fraud_reviews` (Human Ground-Truth Audit Log)
-6. `feature_snapshots` (Point-in-Time JSONB Feature Vectors)
+With Day 5 complete, the foundational data architecture of NOVARIS is fully realized:
+1. **Perimeter Defense (Days 2–4):** JWT Identity $\rightarrow$ Token-Bucket Rate Limiting $\rightarrow$ HMAC-SHA256 Integrity.
+2. **Persistence Bedrock (Days 1 & 5):** Accounts, Transactions, Double-Entry Journal Entries, Transactional Outbox, Fraud Reviews, and Feature Snapshots.
 
-Tomorrow on **Day 6**, we implement the heart of financial computation: **Atomic Double-Entry Settlement Logic**.
+Tomorrow on **Day 6**, we write the core financial transaction engine: **Atomic Settlement Logic & Concurrency Rollbacks**.
 
 ```
                 UPCOMING MILESTONE: DAY 6 SETTLEMENT CORE
                 
  ┌──────────────────────┐         ┌────────────────────────────────────────────────────────┐
- │ Ingress Gateway      │         │ Atomic Settlement Worker (Day 6)                       │
- │ (Days 1 - 4)         │         │                                                        │
- │                      │ ──────> │ * ACID Transaction: BEGIN -> COMMIT / ROLLBACK         │
- │                      │         │ * Verify Balance Sufficiency: sender_balance >= amount │
- │                      │         │ * Create Dual Journal Entries: DEBIT sender, CREDIT rcpt│
- │                      │         │ * Atomically Enforce Invariant: SUM(debit) == SUM(cred)│
- └──────────────────────┘         └────────────────────────────────────────────────────────┘
+ │ API Gateway          │         │ Settlement Worker Service                              │
+ │ (Days 1 - 4)         │         │ (Day 6)                                                │
+ │                      │         │                                                        │
+ │ 1. Ingress Request   │ ──────> │ * ACID Database Transactions (BEGIN ... COMMIT)        │
+ │ 2. JWT + HMAC + Rate │         │ * Balance Sufficiency Check (balance >= amount)        │
+ │ 3. Dispatch Event    │         │ * Atomic Ledger Write (Debit Sender + Credit Receiver) │
+ └──────────────────────┘         │ * OCC Version Increment & Rollback on Conflict         │
+                                  └────────────────────────────────────────────────────────┘
 ```
 
 ### 10.1 Day 6 Architectural Objectives:
-1. **ACID Transaction Orchestration:** Execute multi-table updates inside strict PostgreSQL transactions with automatic rollbacks on error.
-2. **Balance Sufficiency Checks:** Guarantee that accounts can never drop below zero cents.
-3. **Double-Entry Enforcement:** Ensure that every debit has an equal and opposite credit.
+1. **Atomic Multi-Table Settlement:** Execute wallet balance deductions, recipient credit increments, journal entry creation, and outbox event publishing inside a **single ACID database transaction**.
+2. **Optimistic Concurrency Control (OCC) Collision Handling:** Implement automatic retry mechanisms in Go when concurrent updates trigger an OCC version mismatch (`version = version + 1`).
+3. **Deterministic Rollback Testing:** Verify that if any intermediate step fails (e.g., negative balance check or DB connection loss), all ledger mutations roll back cleanly, leaving account balances with zero drift.
 
 ---
 
 ### 10.2 Hands-On Mastery Exercises for the Reader
 
-1. **JSONB Containment Querying Exercise:**
-   * Insert three rows into `feature_snapshots` with varying values for `device_known` (`true` vs. `false`) and `velocity_5m` ($2$, $15$, $45$).
-   * Write an SQL query using the `@>` containment operator to fetch only snapshots where `{"device_known": true}`.
-   * Write a query using `feature_data->>'velocity_5m'` casting to integer to filter snapshots where velocity exceeds $10$.
+To solidify your practical mastery of Day 5 database schema design, composite indexing, and JSONB:
 
-2. **Index Explain Analyze Exercise:**
-   * Insert 1,000 synthetic rows into `feature_snapshots` across 5 different `account_id` values.
-   * Execute:
+1. **JSONB Path Querying Exercise:**
+   * Write a SQL query against `feature_snapshots` that calculates the average `geo_hop_speed_mph` for all snapshots where `device_trust_score < 0.5`.
+   * *Hint:* Use `(feature_data->>'geo_hop_speed_mph')::float` and `AVG()`.
+
+2. **Index Selectivity Experiment:**
+   * In psql, run `SET enable_seqscan = off;` and execute an `EXPLAIN ANALYZE` on:
      ```sql
-     EXPLAIN ANALYZE SELECT * FROM feature_snapshots 
-     WHERE account_id = '<your-account-uuid>' 
-     ORDER BY computed_at DESC;
+     SELECT * FROM feature_snapshots WHERE account_id = '...' ORDER BY computed_at DESC;
      ```
-   * Verify that the plan output reports `Index Scan using idx_feature_snapshots_account_time`.
+   * Observe the `Index Scan using idx_feature_snapshots_account_time`.
+   * Now run the same query without the `account_id` filter (filtering on `computed_at` only). Observe how PostgreSQL is forced to scan the entire index tree, proving the Left-to-Right prefix rule.
 
-3. **CHECK Constraint Verification Exercise:**
-   * Execute an `INSERT` statement into `fraud_reviews` with verdict `'MAYBE_FRAUD'`.
-   * Confirm that PostgreSQL returns error code `23514` (`check_violation`).
+3. **CHECK Constraint Verification:**
+   * Attempt to execute:
+     ```sql
+     INSERT INTO fraud_reviews (transaction_id, analyst_id, verdict)
+     VALUES ('d0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000099', 'SUSPICIOUS');
+     ```
+   * Verify that PostgreSQL returns error code `23514 (check_violation)`, confirming that unapproved verdicts cannot penetrate the database layer.
 
 ---
 
