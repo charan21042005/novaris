@@ -39,6 +39,9 @@ services/gateway/cmd/
 │   └── main.go
 ├── signrequest/      # Computes canonical HMAC-SHA256 signatures over request bodies
 │   └── main.go
+├── verifyopenapi/    # Validates OpenAPI 3.0 schema conformance & status codes (Day 12)
+│   ├── main.go
+│   └── main_test.go
 ├── verifyschema/     # Verifies database schema, composite indexes & migration compliance
 │   ├── main.go
 │   └── main_test.go
@@ -157,6 +160,31 @@ go run cmd/e2eprobe/main.go -url https://staging-gateway.novaris.io
 
 # Run automated Go unit test suite
 go test -v ./cmd/e2eprobe
+```
+
+---
+
+## 5. `verifyopenapi` — OpenAPI 3.0 Contract Verification Validator
+
+Validates machine-readable OpenAPI schemas (`api/openapi.json`) statically against NOVARIS platform standards before deployment.
+
+### Features:
+1. **OAS Version Conformance:** Asserts specification version `3.0.x`.
+2. **Metadata Integrity:** Verifies title, contact details, and server specifications.
+3. **Mandatory Ingress Coverage:** Asserts presence of `/healthz`, `/`, `/openapi.json`, `/docs`, and `/v1/payments`.
+4. **Complete Status Code Taxonomy:** Enforces documentation for all 7 standard HTTP response codes (`200`, `400`, `401`, `409`, `422`, `429`, `500`).
+5. **Component Model Auditing:** Verifies presence of `PaymentRequest`, `PaymentReceipt`, `HealthResponse`, `RootDiscoveryResponse`, and `ErrorResponse`.
+
+### Usage Examples:
+```bash
+# Validate default OpenAPI JSON specification
+go run cmd/verifyopenapi/main.go
+
+# Validate custom spec path
+go run cmd/verifyopenapi/main.go -spec ../../api/openapi.json
+
+# Run unit tests
+go test -v ./cmd/verifyopenapi/...
 ```
 
 ---
