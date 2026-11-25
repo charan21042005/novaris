@@ -57,7 +57,9 @@ bin/Daily_Actions/
 │   ├── Day_09_Action_Log.md                    # Day 09: Optimistic Concurrency Control (OCC) & Version Columns
 │   ├── Day_10_Action_Log.md                    # Day 10: Idempotent API Design, Request Hashing & Cached Replays
 │   ├── Day_11_Action_Log.md                    # Day 11: Integration Wiring, End-to-End Contracts & Postman Suite
-│   └── Day_12_Action_Log.md ... Day_14_Action_Log.md (Upcoming)
+│   ├── Day_12_Action_Log.md                    # Day 12: Documentation Discipline: OpenAPI 3.0 & ADR Repository
+│   ├── Day_13_Action_Log.md                    # Day 13: Concurrency Load Scripting (k6 & Hot-Wallet Contention)
+│   └── Day_14_Action_Log.md                    # Day 14: Phase 1 Capstone Review & Final Sign-Off (Upcoming)
 │
 ├── Phase_2_Streaming_Core/                     # 🚀 Phase 2: Weeks 3-4 (Days 15–28) — [UPCOMING]
 ├── Phase_3_Fraud_Engine/                       # 🧠 Phase 3: Weeks 5-6 (Days 29–42) — [UPCOMING]

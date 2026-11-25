@@ -727,7 +727,66 @@ cat docs/adr/0002-five-layer-defense-in-depth-gateway-pipeline.md
 
 ---
 
-## 13. Master Daily Git Multi-Commit & Push Workflow
+## 13. Day 13: Concurrency Load Scripting (k6 & Hot-Wallet Contention) Runbook
+
+### 13.1 Run 100-Worker Simultaneous Concurrency Stress Test Suite:
+```powershell
+Set-Location "services/gateway"
+
+# Run all 3 Day 13 100-worker stress tests (Hot-Wallet OCC, Pipeline Spike, Idempotency Race)
+go test -v -run "TestLoadStress_" .
+
+# Verify zero race conditions over multiple iterations
+go test -v -count=5 -run "TestLoadStress_100ConcurrentWorkers_HotWalletOCC" .
+```
+
+### 13.2 Execute Native Go High-Throughput Load Testing CLI:
+```powershell
+Set-Location "services/gateway"
+
+# 1. Hot-wallet contention test: 50 concurrent workers, 250 payment transactions
+go run ./cmd/loadtest -workers 50 -requests 250 -hotwallet=true
+
+# 2. Extreme 100-worker burst test: 100 concurrent workers hitting 1 wallet
+go run ./cmd/loadtest -workers 100 -requests 1000 -hotwallet=true
+
+# 3. Distributed multi-tenant test: 50 workers across 10 distinct merchants
+go run ./cmd/loadtest -workers 50 -requests 500 -hotwallet=false -tenants 10
+
+# 4. Run loadtest CLI unit test suite
+go test -v ./cmd/loadtest/...
+```
+
+### 13.3 Execute Grafana k6 Load Scripts (When k6 is Installed or via Docker):
+```powershell
+# Run hot-wallet concurrency load test via local k6 CLI:
+k6 run loadtests/k6_hotwallet_load.js
+
+# Run distributed multi-merchant settlement load test:
+k6 run loadtests/k6_concurrent_settlement.js
+
+# Run k6 via Docker (Zero local installation):
+docker run --rm -i -v "${PWD}/loadtests:/loadtests" --net=host grafana/k6 run /loadtests/k6_hotwallet_load.js
+```
+
+### 13.4 Run PostgreSQL Concurrency & Balance Conservation Audit:
+```bash
+# Copy Day 13 verification SQL into PostgreSQL container:
+docker cp migrations/verify_day13_concurrency.sql novaris-postgres:/tmp/verify_day13_concurrency.sql
+
+# Execute SQL audit (proves SUM(Debit) == SUM(Credit) and CAS version increments):
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day13_concurrency.sql
+```
+
+### 13.5 Run Full Platform Test Suite Across All Subsystems:
+```powershell
+Set-Location "services/gateway"
+go test -v ./...
+```
+
+---
+
+## 14. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 
