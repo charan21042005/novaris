@@ -157,8 +157,8 @@ func rootHandler(cfg Config) http.HandlerFunc {
 			Description: "High-Throughput Distributed Payment Settlement & Fraud Intelligence Ingestion Gateway",
 			Status:      "online",
 			Version:     cfg.ServiceVersion,
-			Day:         13,
-			Phase:       "Phase 1 - Concurrency Load Testing (k6 & Hot-Wallet Contention)",
+			Day:         14,
+			Phase:       "Phase 1 - Capstone Review & Final Sign-Off (COMPLETED)",
 			Endpoints: map[string]string{
 				"health_check":       "/healthz (Public Liveness Probe)",
 				"openapi_spec":       "/openapi.json (Machine-Readable OpenAPI 3.0.3 Schema)",
@@ -334,7 +334,7 @@ func main() {
 	cfg := Config{
 		Port:           port,
 		ServiceName:    "novaris-gateway",
-		ServiceVersion: "0.13.0-day13",
+		ServiceVersion: "0.14.0-phase1-capstone",
 		Environment:    "development",
 	}
 
