@@ -189,6 +189,43 @@ go test -v ./cmd/verifyopenapi/...
 
 ---
 
+## 6. `loadtest` — High-Concurrency Load Testing Engine & Hot-Wallet Stress Generator (Day 13)
+
+Located at [`cmd/loadtest/main.go`](./loadtest/main.go), this high-throughput, native Go load testing utility executes concurrent stress tests against a live gateway instance:
+* **Zero External Dependencies:** Built with pure Go standard library; runs immediately without installing k6 or Node.js.
+* **Worker Pool Concurrency:** Spawns configurable worker goroutines (`-workers 50` or `-workers 100`) fed by thread-safe job channels.
+* **Hot-Wallet Database Contention:** Stresses Optimistic Concurrency Control (OCC) version increments by directing all workers at the exact same account UUID.
+* **Multi-Tenant Rate Limiting:** Simulates distinct merchant identities to evaluate per-merchant token-bucket isolation.
+* **High-Precision Telemetry:** Measures nanosecond socket turnaround times to report min, average, p50 (median), p90, p95, p99, and max latency percentiles alongside full HTTP status code distributions (200, 400, 401, 409, 422, 429, 500).
+
+### Supported CLI Flags:
+| Flag | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `-url` | `string` | `http://localhost:8080` | Target gateway base URL. |
+| `-workers` | `int` | `50` | Number of concurrent worker goroutines. |
+| `-requests` | `int` | `250` | Total number of payment transactions to dispatch. |
+| `-hotwallet` | `bool` | `true` | Direct all workers at the same hot-wallet account. |
+| `-tenants` | `int` | `1` | Number of distinct merchant tenants (when `-hotwallet=false`). |
+| `-amount` | `int64` | `100` | Transfer magnitude in integer cents ($1.00 = 100). |
+| `-timeout` | `int` | `10` | Per-request client timeout in seconds. |
+
+### Usage Examples:
+```bash
+# Quick verification: 50 concurrent workers, 250 total payment transactions
+go run cmd/loadtest/main.go -workers 50 -requests 250
+
+# Extreme hot-wallet stress test: 100 concurrent workers hitting 1 wallet
+go run cmd/loadtest/main.go -workers 100 -requests 1000 -hotwallet
+
+# Multi-tenant distributed test across 10 distinct merchants
+go run cmd/loadtest/main.go -workers 50 -requests 500 -hotwallet=false -tenants 10
+
+# Run automated unit test suite
+go test -v ./cmd/loadtest/...
+```
+
+---
+
 ## 🔒 Security Best Practices for Local Development
 
 1. **Fallback Secrets:** If `JWT_SECRET` or `HMAC_SECRET` environment variables are omitted, both utilities fall back to predefined development keys.
