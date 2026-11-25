@@ -62,9 +62,11 @@ The composite index `idx_feature_snapshots_account_time` is ordered as `(account
 | :--- | :--- | :---: | :--- | :---: |
 | **[`001_initial_ledger_schema.sql`](./001_initial_ledger_schema.sql)** | Initial Ledger & Outbox Schema | **Day 1** | `accounts`, `transactions`, `journal_entries`, `outbox` | ✅ Active |
 | **[`002_fraud_and_features.sql`](./002_fraud_and_features.sql)** | Human Reviews & Feature Snapshots | **Day 5** | `fraud_reviews`, `feature_snapshots` | ✅ Active |
+| **[`003_idempotency_keys.sql`](./003_idempotency_keys.sql)** | Idempotent Request Deduplication & Caching | **Day 10** | `idempotency_keys` | ✅ Active |
 | **[`verify_day05_schema.sql`](./verify_day05_schema.sql)** | Day 5 Verification & Diagnostics | **Day 5** | Deterministic Seed Data, Constraint & Index Tests | 🧪 Test Suite |
 | **[`verify_day06_settlement.sql`](./verify_day06_settlement.sql)** | Day 6 Settlement & Atomicity Proof | **Day 6** | Balanced Double-Entry Settlement & Rollback Trap | 🧪 Test Suite |
 | **[`verify_day09_occ.sql`](./verify_day09_occ.sql)** | Day 9 Optimistic Concurrency Proof | **Day 9** | Monotonic Version Increment & Conflicting Write Rejection | 🧪 Test Suite |
+| **[`verify_day10_idempotency.sql`](./verify_day10_idempotency.sql)** | Day 10 Idempotency & Replay Proof | **Day 10** | Primary Key Deduplication, Error 23505 & Replay Invariant | 🧪 Test Suite |
 
 ---
 
