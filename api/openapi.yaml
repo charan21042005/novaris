@@ -1,0 +1,413 @@
+openapi: 3.0.3
+info:
+  title: NOVARIS Distributed Payment Settlement & Adaptive Fraud Intelligence Gateway
+  version: 0.12.0
+  description: |
+    Production-grade distributed payment gateway API engineered with a Five-Layer Defense-in-Depth
+    perimeter (JWT RFC 7519, Token-Bucket Rate Limiting, HMAC-SHA256 RFC 2104, IETF Idempotency,
+    and Optimistic Concurrency Control double-entry consensus).
+  contact:
+    name: NOVARIS Core Systems Engineering
+    email: support@novaris.internal
+    url: https://github.com/charan21042005/novaris
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development Gateway
+  - url: https://api.novaris.internal
+    description: Internal VPC Microservice Mesh Gateway
+
+tags:
+  - name: Health & Diagnostics
+    description: Liveness, readiness, and service discovery probes
+  - name: Payment Settlement
+    description: Core financial double-entry transaction settlement routes
+  - name: Documentation
+    description: OpenAPI specifications and interactive API documentation
+
+paths:
+  /healthz:
+    get:
+      tags:
+        - Health & Diagnostics
+      summary: Public Liveness Probe
+      description: Returns service operational status. Publicly accessible without authentication.
+      operationId: getHealthz
+      responses:
+        '200':
+          description: Service is healthy and operational.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                service: novaris-gateway
+                version: 0.12.0
+                environment: development
+
+  /:
+    get:
+      tags:
+        - Health & Diagnostics
+      summary: Service Discovery Banner
+      description: Returns root service identification and API versioning metadata.
+      operationId: getRoot
+      responses:
+        '200':
+          description: Root discovery banner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootDiscoveryResponse'
+              example:
+                message: NOVARIS Distributed Payment Settlement Gateway
+                version: 0.12.0
+                docs: /docs
+                openapi: /openapi.json
+
+  /openapi.json:
+    get:
+      tags:
+        - Documentation
+      summary: OpenAPI 3.0 Specification JSON
+      description: Returns the raw machine-readable OpenAPI 3.0.3 schema for automated contract validation and client SDK generation.
+      operationId: getOpenAPISpec
+      responses:
+        '200':
+          description: OpenAPI JSON specification.
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /docs:
+    get:
+      tags:
+        - Documentation
+      summary: Interactive Swagger UI
+      description: Serves an interactive Swagger UI dashboard for testing and exploring API contracts in the browser.
+      operationId: getSwaggerUI
+      responses:
+        '200':
+          description: Interactive Swagger UI HTML page.
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /v1/payments:
+    post:
+      tags:
+        - Payment Settlement
+      summary: Settle Financial Payment
+      description: |
+        Executes an atomic double-entry payment transfer between sender and recipient accounts.
+        Enforces complete Five-Layer Defense-in-Depth:
+        1. Layer 1: RFC 7519 JWT Bearer Token Authentication
+        2. Layer 2: Token-Bucket Rate Limiter (10 burst capacity, 2 req/s refill)
+        3. Layer 3: RFC 2104 HMAC-SHA256 Payload Signature (±300s timestamp drift tolerance)
+        4. Layer 4: IETF Idempotency Deduplication (Exact-once execution, SHA-256 payload fingerprinting)
+        5. Layer 5: Optimistic Concurrency Control (OCC) double-entry consensus with monotonic version increments.
+      operationId: settlePayment
+      security:
+        - BearerAuth: []
+        - HMACAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+        - $ref: '#/components/parameters/HMACTimestampHeader'
+        - $ref: '#/components/parameters/HMACSignatureHeader'
+      requestBody:
+        required: true
+        description: Financial payment transfer details.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+            example:
+              sender_id: c0000000-0000-0000-0000-000000000001
+              recipient_id: c0000000-0000-0000-0000-000000000002
+              amount_cents: 5000
+              currency: USD
+      responses:
+        '200':
+          description: Payment settled successfully (or idempotently replayed from cache).
+          headers:
+            Idempotent-Replayed:
+              schema:
+                type: string
+                enum: ["true"]
+              description: Present and set to 'true' if the response was served from the idempotency cache rather than executing a new debit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReceipt'
+              example:
+                status: settled
+                transaction_id: 8fa8d39f-e60d-4952-b8ec-f584e44487ce
+                merchant_id: c0000000-0000-0000-0000-000000000001
+                recipient: c0000000-0000-0000-0000-000000000002
+                amount_cents: 5000
+                currency: USD
+                message: Payment settled end-to-end via OCC double-entry ledger pipeline.
+
+        '400':
+          description: |
+            Bad Request. Triggered when:
+            - Missing mandatory `Idempotency-Key` header
+            - Self-transfer attempted (`sender_id == recipient_id`)
+            - Negative or zero `amount_cents`
+            - Malformed JSON payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: missing_idempotency_key
+                message: Idempotency-Key header is mandatory for mutating payments
+                code: 400
+
+        '401':
+          description: |
+            Unauthorized. Triggered by Layer 1 or Layer 3 perimeter defenses:
+            - Missing, expired, or forged JWT Bearer token
+            - Tampered HMAC-SHA256 signature
+            - Timestamp outside ±300s drift window
+            - Shared secret mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: unauthorized
+                message: HMAC signature verification failed or timestamp drift exceeded tolerance
+                code: 401
+
+        '409':
+          description: |
+            Conflict. Triggered when:
+            - An identical `Idempotency-Key` is currently in-flight (`status = IN_PROGRESS`)
+            - High database OCC contention reached maximum retry threshold (3 retries exhausted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: conflict
+                message: Transaction currently in-flight or concurrency collision limit exceeded; retry with backoff
+                code: 409
+
+        '422':
+          description: |
+            Unprocessable Entity. Triggered by Layer 4 security defense when a client reuses an
+            existing `Idempotency-Key` with an altered body payload (SHA-256 hash mismatch).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: payload_hash_mismatch
+                message: Idempotency key reused with mismatched body payload hash
+                code: 422
+
+        '429':
+          description: |
+            Too Many Requests. Triggered by Layer 2 Token-Bucket limiter when per-merchant
+            traffic exceeds burst capacity (10 requests) or sustained refill velocity (2 req/s).
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Number of seconds the client must wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: rate_limit_exceeded
+                message: Per-merchant burst capacity exhausted; backoff required
+                code: 429
+
+        '500':
+          description: Internal Server Error. Triggered on database connection failure or transaction rollback.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: internal_server_error
+                message: Database settlement failed; transaction safely rolled back
+                code: 500
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "RFC 7519 JSON Web Token containing authenticated merchant identity claims (sub, role: merchant)."
+    HMACAuth:
+      type: apiKey
+      in: header
+      name: X-Novaris-Signature
+      description: RFC 2104 HMAC-SHA256 hexadecimal digest computed over canonical string `<X-Novaris-Timestamp>.<raw_body>`.
+
+  parameters:
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Cryptographically random RFC 4122 UUIDv4 generated per unique payment intent.
+      schema:
+        type: string
+        format: uuid
+        example: 7b3e2154-8c42-4f71-a0c3-f0d5718a9942
+
+    HMACTimestampHeader:
+      name: X-Novaris-Timestamp
+      in: header
+      required: true
+      description: Current UTC Unix epoch timestamp in seconds. Must match server clock within ±300 seconds.
+      schema:
+        type: integer
+        format: int64
+        example: 1732537200
+
+    HMACSignatureHeader:
+      name: X-Novaris-Signature
+      in: header
+      required: true
+      description: Canonical HMAC-SHA256 signature in hex format.
+      schema:
+        type: string
+        example: 6f9b2d3e1a8c4f7b2e5d8a1c3f6b9d2e1a8c4f7b2e5d8a1c3f6b9d2e1a8c4f7b
+
+  schemas:
+    PaymentRequest:
+      type: object
+      required:
+        - sender_id
+        - recipient_id
+        - amount_cents
+      properties:
+        sender_id:
+          type: string
+          format: uuid
+          description: UUIDv4 of the payer account to be debited.
+          example: c0000000-0000-0000-0000-000000000001
+        recipient_id:
+          type: string
+          format: uuid
+          description: UUIDv4 of the payee account to be credited. Must not match sender_id.
+          example: c0000000-0000-0000-0000-000000000002
+        amount_cents:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Transaction transfer amount in integer minor units (cents). Floating-point amounts are prohibited.
+          example: 5000
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+          default: USD
+          description: ISO 4217 three-letter uppercase currency code.
+          example: USD
+
+    PaymentReceipt:
+      type: object
+      required:
+        - status
+        - transaction_id
+        - merchant_id
+        - recipient
+        - amount_cents
+      properties:
+        status:
+          type: string
+          enum: [settled]
+          example: settled
+        transaction_id:
+          type: string
+          format: uuid
+          description: Permanent ledger transaction identifier aggregate.
+          example: 8fa8d39f-e60d-4952-b8ec-f584e44487ce
+        merchant_id:
+          type: string
+          description: Identifier of the authenticated payer merchant.
+          example: c0000000-0000-0000-0000-000000000001
+        recipient:
+          type: string
+          description: Identifier of the recipient payee account.
+          example: c0000000-0000-0000-0000-000000000002
+        amount_cents:
+          type: integer
+          format: int64
+          description: Amount transferred in minor currency units (cents).
+          example: 5000
+        currency:
+          type: string
+          example: USD
+        message:
+          type: string
+          example: Payment settled end-to-end via OCC double-entry ledger pipeline.
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: novaris-gateway
+        version:
+          type: string
+          example: 0.12.0
+        environment:
+          type: string
+          example: development
+
+    RootDiscoveryResponse:
+      type: object
+      required:
+        - message
+        - version
+      properties:
+        message:
+          type: string
+          example: NOVARIS Distributed Payment Settlement Gateway
+        version:
+          type: string
+          example: 0.12.0
+        docs:
+          type: string
+          example: /docs
+        openapi:
+          type: string
+          example: /openapi.json
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+          description: Machine-readable error identifier string.
+          example: missing_idempotency_key
+        message:
+          type: string
+          description: Human-readable error diagnostic explanation.
+          example: Idempotency-Key header is mandatory for mutating payments
+        code:
+          type: integer
+          description: Equivalent HTTP response status code.
+          example: 400
