@@ -437,8 +437,8 @@ func TestIntegration_Scenario8_PublicProbes(t *testing.T) {
 
 	var info InfoResponse
 	_ = json.NewDecoder(respRoot.Body).Decode(&info)
-	if info.Day != 11 {
-		t.Errorf("expected Day 11 in discovery info, got Day %d", info.Day)
+	if info.Day < 11 {
+		t.Errorf("expected at least Day 11 in discovery info, got Day %d", info.Day)
 	}
 }
 

@@ -49,6 +49,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/charan21042005/novaris/services/gateway/internal/auth"
+	"github.com/charan21042005/novaris/services/gateway/internal/openapi"
 	"github.com/charan21042005/novaris/services/gateway/internal/ratelimit"
 )
 
@@ -156,10 +157,12 @@ func rootHandler(cfg Config) http.HandlerFunc {
 			Description: "High-Throughput Distributed Payment Settlement & Fraud Intelligence Ingestion Gateway",
 			Status:      "online",
 			Version:     cfg.ServiceVersion,
-			Day:         11,
-			Phase:       "Phase 1 - Integration Wiring & End-to-End API Contracts",
+			Day:         12,
+			Phase:       "Phase 1 - Documentation Discipline (OpenAPI & ADRs)",
 			Endpoints: map[string]string{
 				"health_check":       "/healthz (Public Liveness Probe)",
+				"openapi_spec":       "/openapi.json (Machine-Readable OpenAPI 3.0.3 Schema)",
+				"swagger_docs":       "/docs (Interactive Swagger UI Documentation)",
 				"payments_protected": "/v1/payments (Protected - Requires JWT Auth + Token-Bucket Rate Limiter [10 burst, 2/s] + HMAC-SHA256 Anti-Tamper + Idempotency Deduplication + OCC Settlement)",
 				"transaction_flow":   "/v1/transactions (PostgreSQL Double-Entry Ledger Ingestion)",
 			},
@@ -299,9 +302,11 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 func SetupServerMux(cfg Config, dbConn *sql.DB, bucketStore *ratelimit.BucketStore, idempStore IdempotencyStore) http.Handler {
 	mux := http.NewServeMux()
 
-	// 1. Public Routes
+	// 1. Public Routes (Discovery, Health & Interactive Documentation)
 	mux.HandleFunc("/", rootHandler(cfg))
 	mux.HandleFunc("/healthz", healthzHandler(cfg))
+	mux.HandleFunc("/openapi.json", openapi.SpecHandler())
+	mux.HandleFunc("/docs", openapi.SwaggerUIHandler())
 
 	// 2. Protected Routes (Stacked Defense-in-Depth Middleware Pipeline)
 	// Execution order:
@@ -329,7 +334,7 @@ func main() {
 	cfg := Config{
 		Port:           port,
 		ServiceName:    "novaris-gateway",
-		ServiceVersion: "0.11.0-day11",
+		ServiceVersion: "0.12.0-day12",
 		Environment:    "development",
 	}
 
