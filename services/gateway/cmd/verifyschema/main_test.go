@@ -50,6 +50,49 @@ func TestMigrationFiles_ExistenceAndNaming(t *testing.T) {
 	if _, err := os.Stat(file002); os.IsNotExist(err) {
 		t.Fatalf("expected migration file %s to exist, but was missing", file002)
 	}
+
+	// 3. Verify 003_idempotency_keys.sql exists
+	file003 := filepath.Join(migDir, "003_idempotency_keys.sql")
+	if _, err := os.Stat(file003); os.IsNotExist(err) {
+		t.Fatalf("expected migration file %s to exist, but was missing", file003)
+	}
+}
+
+func TestMigration003_IdempotencySchemaCompleteness(t *testing.T) {
+	migDir := findMigrationsDir(t)
+	target := filepath.Join(migDir, "003_idempotency_keys.sql")
+
+	content, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("could not read %s: %v", target, err)
+	}
+
+	sqlUpper := strings.ToUpper(string(content))
+
+	// Verify idempotency_keys table
+	if !strings.Contains(sqlUpper, "TABLE IF NOT EXISTS IDEMPOTENCY_KEYS") && !strings.Contains(sqlUpper, "TABLE IDEMPOTENCY_KEYS") {
+		t.Error("migration 003 missing CREATE TABLE statement for idempotency_keys")
+	}
+
+	// Verify CHECK constraint on status
+	if !strings.Contains(sqlUpper, "CHECK (STATUS IN ('IN_PROGRESS', 'COMPLETED', 'FAILED'))") {
+		t.Error("missing strict CHECK constraint on idempotency_keys.status")
+	}
+
+	// Verify SHA-256 request_hash column
+	if !strings.Contains(sqlUpper, "REQUEST_HASH VARCHAR(64) NOT NULL") {
+		t.Error("idempotency_keys.request_hash must be defined as VARCHAR(64) NOT NULL")
+	}
+
+	// Verify response_body JSONB column
+	if !strings.Contains(sqlUpper, "RESPONSE_BODY JSONB") {
+		t.Error("idempotency_keys.response_body must support JSONB storage format")
+	}
+
+	// Verify TTL index
+	if !strings.Contains(sqlUpper, "INDEX IF NOT EXISTS IDX_IDEMP_EXPIRES_AT") {
+		t.Error("missing index idx_idemp_expires_at for automated TTL eviction")
+	}
 }
 
 func TestMigration002_SchemaCompleteness(t *testing.T) {

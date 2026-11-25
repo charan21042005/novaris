@@ -102,9 +102,9 @@ go run cmd/signrequest/main.go -tamper
 ## 3. `verifyschema` — Database Schema & Migration Verifier
 
 Located at [`cmd/verifyschema/main.go`](./verifyschema/main.go), this utility validates that the live PostgreSQL instance or offline SQL migration files strictly match the NOVARIS SRS Capstone Blueprint:
-* Confirms the existence of all 6 core tables: `accounts`, `transactions`, `journal_entries`, `outbox`, `fraud_reviews`, `feature_snapshots`.
+* Confirms the existence of all 7 core tables: `accounts`, `transactions`, `journal_entries`, `outbox`, `fraud_reviews`, `feature_snapshots`, and `idempotency_keys` (Day 10).
 * Checks column data types, JSONB binary storage format, and CHECK constraints.
-* Validates composite B-Tree indexes (`idx_feature_snapshots_account_time`).
+* Validates composite B-Tree indexes (`idx_feature_snapshots_account_time`, `idx_idemp_expires_at`).
 
 ### Supported CLI Flags:
 | Flag | Type | Default | Description |

@@ -35,7 +35,7 @@ import (
 	"time"
 )
 
-// RequiredTables lists all 6 load-bearing tables required by the NOVARIS SRS Blueprint.
+// RequiredTables lists all load-bearing tables required by the NOVARIS SRS Blueprint.
 var RequiredTables = []string{
 	"accounts",
 	"transactions",
@@ -43,6 +43,7 @@ var RequiredTables = []string{
 	"outbox",
 	"fraud_reviews",
 	"feature_snapshots",
+	"idempotency_keys",
 }
 
 // RequiredIndexes lists the mission-critical composite and partial indexes.
@@ -50,6 +51,7 @@ var RequiredIndexes = []string{
 	"idx_feature_snapshots_account_time",
 	"idx_fraud_reviews_verdict_time",
 	"idx_outbox_pending",
+	"idx_idemp_expires_at",
 }
 
 func main() {
@@ -162,10 +164,13 @@ func runOfflineVerification(explicitPath string) {
 		candidates := []string{
 			filepath.Join("migrations", "001_initial_ledger_schema.sql"),
 			filepath.Join("migrations", "002_fraud_and_features.sql"),
+			filepath.Join("migrations", "003_idempotency_keys.sql"),
 			filepath.Join("..", "migrations", "001_initial_ledger_schema.sql"),
 			filepath.Join("..", "migrations", "002_fraud_and_features.sql"),
+			filepath.Join("..", "migrations", "003_idempotency_keys.sql"),
 			filepath.Join("..", "..", "migrations", "001_initial_ledger_schema.sql"),
 			filepath.Join("..", "..", "migrations", "002_fraud_and_features.sql"),
+			filepath.Join("..", "..", "migrations", "003_idempotency_keys.sql"),
 		}
 		for _, c := range candidates {
 			if _, err := os.Stat(c); err == nil {
@@ -213,6 +218,8 @@ func runOfflineVerification(explicitPath string) {
 		{"Composite Index (account_id, computed_at DESC)", "IDX_FEATURE_SNAPSHOTS_ACCOUNT_TIME"},
 		{"Optimistic Locking version column on accounts", "VERSION INT NOT NULL DEFAULT 0"},
 		{"Financial precision integer cents on transactions", "AMOUNT_CENTS BIGINT NOT NULL"},
+		{"Idempotency status CHECK constraint", "CHECK (STATUS IN ('IN_PROGRESS', 'COMPLETED', 'FAILED'))"},
+		{"Idempotency request hash SHA-256 VARCHAR(64)", "REQUEST_HASH VARCHAR(64) NOT NULL"},
 	}
 
 	for _, c := range checks {
