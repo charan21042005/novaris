@@ -64,6 +64,7 @@ The composite index `idx_feature_snapshots_account_time` is ordered as `(account
 | **[`002_fraud_and_features.sql`](./002_fraud_and_features.sql)** | Human Reviews & Feature Snapshots | **Day 5** | `fraud_reviews`, `feature_snapshots` | ✅ Active |
 | **[`verify_day05_schema.sql`](./verify_day05_schema.sql)** | Day 5 Verification & Diagnostics | **Day 5** | Deterministic Seed Data, Constraint & Index Tests | 🧪 Test Suite |
 | **[`verify_day06_settlement.sql`](./verify_day06_settlement.sql)** | Day 6 Settlement & Atomicity Proof | **Day 6** | Balanced Double-Entry Settlement & Rollback Trap | 🧪 Test Suite |
+| **[`verify_day09_occ.sql`](./verify_day09_occ.sql)** | Day 9 Optimistic Concurrency Proof | **Day 9** | Monotonic Version Increment & Conflicting Write Rejection | 🧪 Test Suite |
 
 ---
 
@@ -85,6 +86,10 @@ docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/ver
 # 4. Execute Day 6 deterministic atomic settlement & rollback proof harness
 docker cp migrations/verify_day06_settlement.sql novaris-postgres:/tmp/verify_day06_settlement.sql
 docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day06_settlement.sql
+
+# 5. Execute Day 9 deterministic Optimistic Concurrency Control (OCC) harness
+docker cp migrations/verify_day09_occ.sql novaris-postgres:/tmp/verify_day09_occ.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day09_occ.sql
 ```
 
 ---
