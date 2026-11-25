@@ -35,6 +35,7 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 8. **Atomic Settlement Engine (Day 6):** Pure ACID multi-table writes (`transactions` + 2 `journal_entries`), automatic deferred rollback (`defer tx.Rollback()`), injection-proof parameterized SQL queries (`$1, $2, ...`), and integer-cent precision with decoupled offline fallback.
 9. **Exhaustive Table-Driven Testing Safety Net (Day 7):** Complete table-driven test suite (`TestSettleTransaction_TableDriven`) providing **100.0% statement coverage** across settlement logic with 15 parallel subtests, boundary value analysis (\$0.01, \$10M), pre-flight input validation, and in-memory execution benchmarks ($66\mu\text{s/op}$).
 10. **Concurrency Stress Testing & Race Detection (Day 8):** High-density goroutine synchronization suite (`concurrency_test.go`) testing 50-100 simultaneous requests with nanosecond channel-close barriers (`chan struct{}`), verifying atomic state isolation on identical UUIDs, full-stack HTTP pipeline race stress through `sync.RWMutex` token buckets (burst saturation), and bidirectional transfer deadlock freedom.
+11. **Optimistic Concurrency Control (OCC Engine) (Day 9):** Database-level Compare-And-Swap (CAS) balance updates (`occ.go`) preventing the lost-update anomaly and double-spending across distributed pods. Validates `WHERE id = $1 AND version = $2`, detects collisions when `RowsAffected() == 0`, rolls back partial multi-table mutations, and provides automated jittered exponential-backoff retries (`SettleWithOCCRetry`).
 
 ---
 

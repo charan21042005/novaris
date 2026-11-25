@@ -6,11 +6,11 @@
 </p>
 
 # ⚡ NOVARIS Master Verification & Testing Runbook
-### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–8+)
+### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–9+)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Runbook-Master_Testing_Suite-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Runbook" />
-  <img src="https://img.shields.io/badge/Days-01_to_08_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
+  <img src="https://img.shields.io/badge/Days-01_to_09_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
   <img src="https://img.shields.io/badge/Shell-Bash_%26_PowerShell-7C4DFF?style=flat-square&logo=powershell&logoColor=white" alt="Shell" />
   <img src="https://img.shields.io/badge/Standard-Industrial_FinTech-FFA000?style=flat-square&logo=standards&logoColor=white" alt="Standard" />
 </p>
@@ -35,7 +35,8 @@ This document is the **central command cheat sheet** for NOVARIS. Every command 
 6. [Day 06: Atomic Settlement & Double-Entry Ledger Verification Runbook](#6-day-06-atomic-settlement--double-entry-ledger-verification-runbook)
 7. [Day 07: Table-Driven Testing, Code Coverage & Benchmark Runbook](#7-day-07-table-driven-testing-code-coverage--benchmark-runbook)
 8. [Day 08: Concurrency Testing, Goroutine Collision & Race Detection Runbook](#8-day-08-concurrency-testing-goroutine-collision--race-detection-runbook)
-9. [Master Daily Git Multi-Commit & Push Workflow](#9-master-daily-git-multi-commit--push-workflow)
+9. [Day 09: Optimistic Concurrency Control (OCC) & Version Invariant Runbook](#9-day-09-optimistic-concurrency-control-occ--version-invariant-runbook)
+10. [Master Daily Git Multi-Commit & Push Workflow](#10-master-daily-git-multi-commit--push-workflow)
 
 ---
 
@@ -525,7 +526,51 @@ go test -bench=. -benchmem ./...
 
 ---
 
-## 9. Master Daily Git Multi-Commit & Push Workflow
+## 9. Day 09: Optimistic Concurrency Control (OCC) & Version Invariant Runbook
+
+### 9.1 Run All 8 Automated Day 9 OCC Test Suites:
+```powershell
+# Navigate to the API Gateway directory
+cd services\gateway
+
+# Run only the OCC test suites with verbose per-test reporting
+go test -v -run "TestOCC" ./...
+```
+
+### 9.2 Run OCC Tests Under Multi-Iteration Loop:
+```powershell
+# Verify that 50 concurrent goroutines consistently produce exactly 1 winner across multiple iterations
+go test -v -count=10 -run "TestOCC" ./...
+```
+
+### 9.3 Run All 33 Gateway Unit, Integration, and Concurrency Tests:
+```powershell
+go test -v ./...
+```
+
+### 9.4 Verify Zero Static Diagnostics Across All Gateway Code:
+```powershell
+& "C:\Users\Tokachichu SriCharan\go\bin\gopls.exe" check occ.go occ_test.go settlement.go concurrency_test.go main.go
+```
+
+### 9.5 Execute Deterministic SQL OCC Verification Harness (Docker CLI):
+```bash
+# Copy verification harness into PostgreSQL container
+docker cp migrations/verify_day09_occ.sql novaris-postgres:/tmp/verify_day09_occ.sql
+
+# Execute in psql (asserting Session 1 succeeds and Session 2 stale write modifies 0 rows)
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day09_occ.sql
+```
+
+### 9.6 Windows PowerShell Alternative (Non-Interactive Pipe):
+```powershell
+docker cp migrations/verify_day09_occ.sql novaris-postgres:/tmp/verify_day09_occ.sql
+docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day09_occ.sql
+```
+
+---
+
+## 10. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 
