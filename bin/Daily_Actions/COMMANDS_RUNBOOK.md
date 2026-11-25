@@ -6,11 +6,11 @@
 </p>
 
 # ⚡ NOVARIS Master Verification & Testing Runbook
-### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–5+)
+### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–8+)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Runbook-Master_Testing_Suite-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Runbook" />
-  <img src="https://img.shields.io/badge/Days-01_to_05_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
+  <img src="https://img.shields.io/badge/Days-01_to_08_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
   <img src="https://img.shields.io/badge/Shell-Bash_%26_PowerShell-7C4DFF?style=flat-square&logo=powershell&logoColor=white" alt="Shell" />
   <img src="https://img.shields.io/badge/Standard-Industrial_FinTech-FFA000?style=flat-square&logo=standards&logoColor=white" alt="Standard" />
 </p>
@@ -32,7 +32,10 @@ This document is the **central command cheat sheet** for NOVARIS. Every command 
 3. [Day 03: HMAC-SHA256 Request Signing, Signer CLI & Replay Probes](#3-day-03-hmac-sha256-request-signing-signer-cli--replay-probes)
 4. [Day 04: Token-Bucket Rate Limiter, Concurrency & 429 Probes](#4-day-04-token-bucket-rate-limiter-concurrency--429-probes)
 5. [Day 05: Database Schema Migration & Verification Runbook (Composite Indexes & JSONB)](#5-day-05-database-schema-migration--verification-runbook-composite-indexes--jsonb)
-6. [Master Daily Git Multi-Commit & Push Workflow](#6-master-daily-git-multi-commit--push-workflow)
+6. [Day 06: Atomic Settlement & Double-Entry Ledger Verification Runbook](#6-day-06-atomic-settlement--double-entry-ledger-verification-runbook)
+7. [Day 07: Table-Driven Testing, Code Coverage & Benchmark Runbook](#7-day-07-table-driven-testing-code-coverage--benchmark-runbook)
+8. [Day 08: Concurrency Testing, Goroutine Collision & Race Detection Runbook](#8-day-08-concurrency-testing-goroutine-collision--race-detection-runbook)
+9. [Master Daily Git Multi-Commit & Push Workflow](#9-master-daily-git-multi-commit--push-workflow)
 
 ---
 
@@ -478,7 +481,51 @@ Start-Process coverage.html
 
 ---
 
-## 8. Master Daily Git Multi-Commit & Push Workflow
+## 8. Day 08: Concurrency Testing, Goroutine Collision & Race Detection Runbook
+
+### 8.1 Run the Full Day 8 Concurrency Test Suite (50–100 Goroutines):
+```powershell
+# Navigate to the API gateway microservice directory
+cd services\gateway
+
+# Run only the Day 8 concurrency stress test suites with verbose output
+go test -v -run "TestConcurrent" ./...
+```
+
+### 8.2 Run Concurrency Tests in High-Iteration Loops (Exposing Rare Timing Races):
+```powershell
+# Execute concurrency test suites 10 times consecutively
+go test -v -count=10 -run "TestConcurrent" ./...
+```
+
+### 8.3 Run Full Gateway Test Suite (All 25 Tests in Parallel):
+```powershell
+# Run all unit, integration, and concurrency tests
+go test -v ./...
+```
+
+### 8.4 Run Race Detector with ThreadSanitizer (Linux / macOS / WSL / CI):
+```bash
+# In Linux or GitHub Actions CI where 64-bit GCC is native:
+go test -race -v -run "TestConcurrent" ./...
+
+# Run concurrency tests 50 times under ThreadSanitizer
+go test -race -count=50 -cpu=8 -run "TestConcurrent" ./...
+```
+
+### 8.5 Verify Zero Static Diagnostics Across All Gateway Code:
+```powershell
+& "C:\Users\Tokachichu SriCharan\go\bin\gopls.exe" check concurrency_test.go settlement.go settlement_test.go main.go
+```
+
+### 8.6 Benchmark In-Memory Concurrency & Allocation Efficiency:
+```powershell
+go test -bench=. -benchmem ./...
+```
+
+---
+
+## 9. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 

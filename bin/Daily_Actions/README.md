@@ -49,7 +49,8 @@ Looking for copy-pasteable commands to run or probe any day's milestone? Check t
 | **Phase 1** | **Day 05** | **Full Ledger Schema: Human Fraud Reviews, Feature Snapshots & Composite JSONB Indexing** | [Day_05_Action_Log.md](./Day_05_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 06** | **Atomic Settlement Logic: Double-Entry Ledger Writes, Go Transactions & Rollbacks** | [Day_06_Action_Log.md](./Day_06_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 07** | **Testing Discipline: Table-Driven Testing Safety Nets, Mock Isolation & Benchmarking** | [Day_07_Action_Log.md](./Day_07_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 1** | **Day 08** | Distributed Concurrency: Redis 7 & Redlock Mutex Engine | *Pending* | ⏳ *Up Next* |
+| **Phase 1** | **Day 08** | **Concurrency Testing: Goroutines, Start-Gate Synchronization & The Race Detector** | [Day_08_Action_Log.md](./Day_08_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 1** | **Day 09** | **Optimistic Concurrency Control: Version Columns & Conditional Database Updates** | *Pending* | ⏳ *Up Next* |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 
 ---

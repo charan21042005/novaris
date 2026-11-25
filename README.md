@@ -298,7 +298,8 @@ Every milestone across the 84-day curriculum is documented with textbook-grade d
 | **Day 05** | **Full Ledger Schema, Composite Indexes & JSONB** | Human Fraud Reviews, Feature Snapshots, GIN & Hierarchical B-Trees | [Day 05 Action Log](bin/Daily_Actions/Day_05_Action_Log.md) | ✅ *Completed* |
 | **Day 06** | **Atomic Settlement Logic & Double-Entry Ledger Writes** | Multi-Table ACID Transactions, `defer tx.Rollback()`, Invariant Balance | [Day 06 Action Log](bin/Daily_Actions/Day_06_Action_Log.md) | ✅ *Completed* |
 | **Day 07** | **Testing Discipline & Table-Driven Safety Nets** | Table-Driven Unit Tests, 100% Core Statement Coverage & In-Memory Benchmarks | [Day 07 Action Log](bin/Daily_Actions/Day_07_Action_Log.md) | ✅ *Completed* |
-| **Day 08** | **Distributed Concurrency & Redis Redlock Mutex** | Multi-Node Distributed Mutexes, TTL Leases & Double-Spend Prevention | *Pending* | ⏳ *Up Next* |
+| **Day 08** | **Concurrency Testing & The Race Detector** | Nanosecond Start Barriers, Atomic Invariants & Memory Isolation | [Day 08 Action Log](bin/Daily_Actions/Day_08_Action_Log.md) | ✅ *Completed* |
+| **Day 09** | **Optimistic Concurrency Control & Version Columns** | Atomic SQL Conditional Updates, CAS & Database Collision Resilience | *Pending* | ⏳ *Up Next* |
 
 ---
 
