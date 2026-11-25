@@ -436,7 +436,49 @@ GROUP BY transaction_id;
 
 ---
 
-## 7. Master Daily Git Multi-Commit & Push Workflow
+## 7. Day 07: Table-Driven Testing, Code Coverage & Benchmark Runbook
+
+### 7.1 Run the Full Day 7 Table-Driven Unit Test Suite:
+```powershell
+# Navigate to the gateway service directory
+cd services\gateway
+
+# Run all 15 subtests with verbose per-test reporting
+go test -v -run "TestSettleTransaction_TableDriven" ./...
+```
+
+### 7.2 Run High-Throughput In-Memory Settlement Benchmarks:
+```powershell
+# Profile settlement execution duration and memory allocations
+go test -v -run "^$" -bench "BenchmarkSettleTransaction_Mock" -benchmem ./...
+```
+
+### 7.3 Generate Statement Code Coverage Metrics:
+```powershell
+# Generate coverage profile for the gateway package
+go test -coverprofile=coverage.out .
+
+# Print per-function statement coverage (asserting settleTransaction is 100%)
+go tool cover -func=coverage.out | Select-String "settleTransaction"
+```
+
+### 7.4 Generate and View Interactive HTML Heatmap:
+```powershell
+# Render interactive HTML heatmap (green = covered, red = uncovered)
+go tool cover -html=coverage.out -o coverage.html
+
+# Open in default browser
+Start-Process coverage.html
+```
+
+### 7.5 Run Static Diagnostics (Zero Warnings Verification):
+```powershell
+& "C:\Users\Tokachichu SriCharan\go\bin\gopls.exe" check settlement.go settlement_test.go main.go
+```
+
+---
+
+## 8. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 
