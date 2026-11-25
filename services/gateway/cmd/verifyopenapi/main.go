@@ -192,10 +192,26 @@ func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
 	return results, nil
 }
 
+// findDefaultOpenAPISpec dynamically checks parent directories to locate api/openapi.json
+// regardless of whether the command is run from repo root, services/gateway, or cmd/verifyopenapi.
+func findDefaultOpenAPISpec() string {
+	candidates := []string{
+		filepath.Join("api", "openapi.json"),
+		filepath.Join("..", "api", "openapi.json"),
+		filepath.Join("..", "..", "api", "openapi.json"),
+		filepath.Join("..", "..", "..", "api", "openapi.json"),
+	}
+	for _, c := range candidates {
+		if _, err := os.Stat(c); err == nil {
+			return c
+		}
+	}
+	return filepath.Join("..", "..", "..", "api", "openapi.json")
+}
+
 // main executes the CLI command parsing flags, running assertions, and formatting output.
 func main() {
-	// Default relative path pointing from cmd/verifyopenapi to api/openapi.json:
-	defaultPath := filepath.Join("..", "..", "..", "api", "openapi.json")
+	defaultPath := findDefaultOpenAPISpec()
 	specPath := flag.String("spec", defaultPath, "Path to openapi.json file to validate")
 	flag.Parse()
 
