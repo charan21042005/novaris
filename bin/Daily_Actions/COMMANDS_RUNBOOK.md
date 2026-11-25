@@ -6,11 +6,11 @@
 </p>
 
 # ⚡ NOVARIS Master Verification & Testing Runbook
-### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–9+)
+### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–10+)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Runbook-Master_Testing_Suite-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Runbook" />
-  <img src="https://img.shields.io/badge/Days-01_to_09_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
+  <img src="https://img.shields.io/badge/Days-01_to_10_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
   <img src="https://img.shields.io/badge/Shell-Bash_%26_PowerShell-7C4DFF?style=flat-square&logo=powershell&logoColor=white" alt="Shell" />
   <img src="https://img.shields.io/badge/Standard-Industrial_FinTech-FFA000?style=flat-square&logo=standards&logoColor=white" alt="Standard" />
 </p>
@@ -36,7 +36,8 @@ This document is the **central command cheat sheet** for NOVARIS. Every command 
 7. [Day 07: Table-Driven Testing, Code Coverage & Benchmark Runbook](#7-day-07-table-driven-testing-code-coverage--benchmark-runbook)
 8. [Day 08: Concurrency Testing, Goroutine Collision & Race Detection Runbook](#8-day-08-concurrency-testing-goroutine-collision--race-detection-runbook)
 9. [Day 09: Optimistic Concurrency Control (OCC) & Version Invariant Runbook](#9-day-09-optimistic-concurrency-control-occ--version-invariant-runbook)
-10. [Master Daily Git Multi-Commit & Push Workflow](#10-master-daily-git-multi-commit--push-workflow)
+10. [Day 10: Idempotent API Design & Safe Network Retries Runbook](#10-day-10-idempotent-api-design--safe-network-retries-runbook)
+11. [Master Daily Git Multi-Commit & Push Workflow](#11-master-daily-git-multi-commit--push-workflow)
 
 ---
 
@@ -570,7 +571,50 @@ docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/veri
 
 ---
 
-## 10. Master Daily Git Multi-Commit & Push Workflow
+## 10. Day 10: Idempotent API Design & Safe Network Retries Runbook
+
+### 10.1 Run All 7 Day 10 Automated Idempotency Test Suites:
+```powershell
+# Navigate to the API Gateway directory
+cd services\gateway
+
+# Run only the Idempotency test suites with verbose per-test reporting
+go test -v -run "TestIdempotency" ./...
+```
+
+### 10.2 Run 50-Worker Concurrent Idempotency Race Under Multi-Iteration Loop:
+```powershell
+# Verify that 50 concurrent goroutines submitting identical keys execute handler EXACTLY ONCE
+go test -v -count=10 -run "TestIdempotency_50ConcurrentWorkers" ./...
+```
+
+### 10.3 Run All 40 Gateway Unit, Integration, and Concurrency Tests:
+```powershell
+go test -v ./...
+```
+
+### 10.4 Verify Zero Static Diagnostics Across All Gateway Code:
+```powershell
+& "C:\Users\Tokachichu SriCharan\go\bin\gopls.exe" check idempotency.go idempotency_test.go occ.go occ_test.go settlement.go concurrency_test.go main.go
+```
+
+### 10.5 Apply Day 10 Database DDL Migration (Docker CLI):
+```bash
+# Copy and execute migration 003 into PostgreSQL container
+docker cp migrations/003_idempotency_keys.sql novaris-postgres:/tmp/003_idempotency_keys.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/003_idempotency_keys.sql
+```
+
+### 10.6 Execute Deterministic SQL Idempotency Verification Harness:
+```bash
+# Copy and execute verification harness (asserting primary key deduplication and zero double-spend)
+docker cp migrations/verify_day10_idempotency.sql novaris-postgres:/tmp/verify_day10_idempotency.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day10_idempotency.sql
+```
+
+---
+
+## 11. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 

@@ -36,6 +36,7 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 9. **Exhaustive Table-Driven Testing Safety Net (Day 7):** Complete table-driven test suite (`TestSettleTransaction_TableDriven`) providing **100.0% statement coverage** across settlement logic with 15 parallel subtests, boundary value analysis (\$0.01, \$10M), pre-flight input validation, and in-memory execution benchmarks ($66\mu\text{s/op}$).
 10. **Concurrency Stress Testing & Race Detection (Day 8):** High-density goroutine synchronization suite (`concurrency_test.go`) testing 50-100 simultaneous requests with nanosecond channel-close barriers (`chan struct{}`), verifying atomic state isolation on identical UUIDs, full-stack HTTP pipeline race stress through `sync.RWMutex` token buckets (burst saturation), and bidirectional transfer deadlock freedom.
 11. **Optimistic Concurrency Control (OCC Engine) (Day 9):** Database-level Compare-And-Swap (CAS) balance updates (`occ.go`) preventing the lost-update anomaly and double-spending across distributed pods. Validates `WHERE id = $1 AND version = $2`, detects collisions when `RowsAffected() == 0`, rolls back partial multi-table mutations, and provides automated jittered exponential-backoff retries (`SettleWithOCCRetry`).
+12. **Idempotent Request Engine (Day 10):** Stripe-compliant request deduplication middleware (`idempotency.go`) enforcing exact-once execution semantics on mutating payment routes (`POST /v1/payments`). Computes SHA-256 payload fingerprints, enforces database-level primary key uniqueness, captures and buffers HTTP response streams, and replays cached results with header `Idempotent-Replayed: true` on network retries.
 
 ---
 
@@ -167,6 +168,8 @@ go test -v ./...
 * 👉 **[`concurrency_test.go`](./concurrency_test.go):** High-density concurrency stress suite (50-100 goroutines) with nanosecond start gate synchronization barriers (`chan struct{}`), asserting atomic thread isolation and rate-limiting burst saturation.
 * 👉 **[`occ.go`](./occ.go):** Optimistic Concurrency Control (OCC) engine implementing atomic Compare-And-Swap (CAS) balance updates (`WHERE id = $1 AND version = $2`), collision detection (`RowsAffected == 0`), and jittered exponential-backoff retries.
 * 👉 **[`occ_test.go`](./occ_test.go):** Comprehensive OCC unit and 50-worker collision race stress suite, proving that exactly 1 winner succeeds and 49 stale writes are safely rejected.
+* 👉 **[`idempotency.go`](./idempotency.go):** Idempotent request engine implementing SHA-256 payload hashing, database-enforced deduplication, in-flight race protection (HTTP 409), payload tampering defense (HTTP 422), and cached response streaming.
+* 👉 **[`idempotency_test.go`](./idempotency_test.go):** Idempotency test suite (7 suites) including a 50-concurrent-worker race test proving the underlying settlement handler is executed exactly once across 50 simultaneous identical requests.
 * 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken`, `signrequest`, and `verifyschema`) for local token minting and signature testing.
 * 👉 **[`internal/` Engine Documentation](./internal/README.md):** Go compiler-enforced private package boundary.
 * 👉 **[`internal/auth/` Cryptographic Specs](./internal/auth/README.md):** Cryptographic JWT & HMAC-SHA256 engine specifications and test matrices.
