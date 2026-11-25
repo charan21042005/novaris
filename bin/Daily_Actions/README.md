@@ -52,7 +52,8 @@ Looking for copy-pasteable commands to run or probe any day's milestone? Check t
 | **Phase 1** | **Day 08** | **Concurrency Testing: Goroutines, Start-Gate Synchronization & The Race Detector** | [Day_08_Action_Log.md](./Day_08_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 09** | **Optimistic Concurrency Control: Version Columns & Conditional Database Updates** | [Day_09_Action_Log.md](./Day_09_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 10** | **Idempotent API Design: Network Retry Deduplication & Response Caching** | [Day_10_Action_Log.md](./Day_10_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 1** | **Day 11** | **Integration Wiring & End-to-End API Contracts (Postman & Gateway-to-DB Pipeline)** | *Pending* | ⏳ *Up Next* |
+| **Phase 1** | **Day 11** | **Integration Wiring & End-to-End API Contracts (Postman & Full-Stack Gateway Pipeline)** | [Day_11_Action_Log.md](./Day_11_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 1** | **Day 12** | **Documentation Discipline: OpenAPI Specifications & Architecture Decision Records (ADR-001)** | *Pending* | ⏳ *Up Next* |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 
 ---

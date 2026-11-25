@@ -84,6 +84,7 @@ Curated day-by-day kickoff guides authored to guide hands-on engineering from ze
   * `Day 08`: Concurrency stress testing, goroutine start-gate synchronization, and race detection.
   * `Day 09`: Optimistic Concurrency Control (OCC), monotonic version columns, check-and-increment atomic writes.
   * `Day 10`: Idempotent API design, IETF-compliant header validation, payload fingerprinting, and response caching.
+  * `Day 11`: Full-stack integration wiring, multi-layer pipeline assembly, Postman API contract test suites, and live E2E probe verification.
 
 ---
 

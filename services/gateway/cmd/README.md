@@ -32,6 +32,9 @@ The `cmd/` directory adheres to the **Standard Go Project Layout** (`golang-stan
 
 ```
 services/gateway/cmd/
+├── e2eprobe/         # End-to-end API contract verification runner (Day 11)
+│   ├── main.go
+│   └── main_test.go
 ├── gentoken/         # Mints cryptographically signed JWT Bearer tokens
 │   └── main.go
 ├── signrequest/      # Computes canonical HMAC-SHA256 signatures over request bodies
@@ -122,6 +125,38 @@ go run cmd/verifyschema/main.go
 
 # Run automated Go unit test suite
 go test -v ./cmd/verifyschema
+```
+
+---
+
+## 4. `e2eprobe` — End-to-End API Contract Verification Probe (Day 11)
+
+Located at [`cmd/e2eprobe/main.go`](./e2eprobe/main.go), this interactive CLI test runner validates that a running gateway instance fulfills all Day 11 API contract specifications in sequence:
+* Probes `/healthz` liveness and `/` service discovery.
+* Verifies missing authentication defense (HTTP 401).
+* Mints valid JWT, signs canonical body with HMAC-SHA256, and executes end-to-end payment settlement (HTTP 200).
+* Fires immediate network retry with identical `Idempotency-Key` and verifies cached response with `Idempotent-Replayed: true` (HTTP 200).
+* Attempts key reuse with mismatched payload and confirms security halt (HTTP 422).
+* Asserts missing idempotency key rejection (HTTP 400).
+
+### Supported CLI Flags:
+| Flag | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `-url` | `string` | `http://localhost:8080` | Target gateway base URL. |
+| `-merchant` | `string` | `c0000000-0000-0000-0000-000000000001` | Payer merchant account UUID. |
+| `-recipient` | `string` | `c0000000-0000-0000-0000-000000000002` | Payee recipient account UUID. |
+| `-amount` | `int64` | `5000` | Transfer magnitude in integer cents ($50.00 = 5000). |
+
+### Usage Examples:
+```bash
+# Run probe sequence against local gateway on port 8080
+go run cmd/e2eprobe/main.go
+
+# Probe custom staging environment
+go run cmd/e2eprobe/main.go -url https://staging-gateway.novaris.io
+
+# Run automated Go unit test suite
+go test -v ./cmd/e2eprobe
 ```
 
 ---

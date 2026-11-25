@@ -37,7 +37,8 @@ This document is the **central command cheat sheet** for NOVARIS. Every command 
 8. [Day 08: Concurrency Testing, Goroutine Collision & Race Detection Runbook](#8-day-08-concurrency-testing-goroutine-collision--race-detection-runbook)
 9. [Day 09: Optimistic Concurrency Control (OCC) & Version Invariant Runbook](#9-day-09-optimistic-concurrency-control-occ--version-invariant-runbook)
 10. [Day 10: Idempotent API Design & Safe Network Retries Runbook](#10-day-10-idempotent-api-design--safe-network-retries-runbook)
-11. [Master Daily Git Multi-Commit & Push Workflow](#11-master-daily-git-multi-commit--push-workflow)
+11. [Day 11: Integration Wiring, API Contracts & E2E Verification Runbook](#11-day-11-integration-wiring-api-contracts--e2e-verification-runbook)
+12. [Master Daily Git Multi-Commit & Push Workflow](#12-master-daily-git-multi-commit--push-workflow)
 
 ---
 
@@ -614,7 +615,59 @@ docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/ver
 
 ---
 
-## 11. Master Daily Git Multi-Commit & Push Workflow
+## 11. Day 11: Integration Wiring, API Contracts & E2E Verification Runbook
+
+### 11.1 Run All 9 Day 11 Automated Integration Test Scenarios:
+```powershell
+# Navigate to the API Gateway directory
+cd services\gateway
+
+# Run only the End-to-End Integration test suites with verbose per-test reporting
+go test -v -run "TestIntegration" ./...
+```
+
+### 11.2 Execute Multi-Merchant Concurrency Stress Test:
+```powershell
+# Verify that 25 simultaneous requests across 5 distinct merchants complete with zero data races
+go test -v -run "TestIntegration_Scenario9_MultiMerchantConcurrentStress" ./...
+```
+
+### 11.3 Run Live End-to-End CLI Contract Probe (`cmd/e2eprobe`):
+```powershell
+# 1. In Terminal 1: Start the gateway service
+cd services\gateway
+go run main.go
+
+# 2. In Terminal 2: Run the automated contract verification probe
+cd services\gateway
+go run cmd/e2eprobe/main.go
+```
+
+### 11.4 Execute Automated Postman Collection via Newman CLI:
+```bash
+# Execute full 10-scenario contract suite headlessly
+newman run deployments/postman/NOVARIS_API_Contracts.postman_collection.json \
+  -e deployments/postman/NOVARIS_Local_Dev.postman_environment.json \
+  --reporters cli
+```
+
+### 11.5 Apply Day 11 Deterministic Seed Accounts Migration (Docker CLI):
+```bash
+# Seed deterministic test accounts (Alpha, Beta, Gamma) into PostgreSQL container
+docker cp migrations/004_seed_test_accounts.sql novaris-postgres:/tmp/004_seed_test_accounts.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/004_seed_test_accounts.sql
+```
+
+### 11.6 Execute SQL Integration & Total Monetary Conservation Proof Harness:
+```bash
+# Verify balance conservation, atomic OCC updates, and outbox event staging
+docker cp migrations/verify_day11_integration.sql novaris-postgres:/tmp/verify_day11_integration.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day11_integration.sql
+```
+
+---
+
+## 12. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 
