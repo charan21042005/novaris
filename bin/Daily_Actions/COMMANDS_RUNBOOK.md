@@ -388,7 +388,55 @@ PGPASSWORD='novaris_secure_password_2026' psql -h localhost -p 5432 -U novaris_a
 
 ---
 
-## 6. Master Daily Git Multi-Commit & Push Workflow
+## 6. Day 06: Atomic Settlement & Double-Entry Ledger Verification Runbook
+
+### 6.1 Run Automated Go Settlement Unit & Mock Tests:
+```powershell
+# Navigate to the API Gateway service directory
+cd services\gateway
+
+# Run all tests in the package with verbose output
+go test -v ./...
+
+# Run only settlement-specific tests (mock rollback and atomicity)
+go test -v -run "TestSettleTransaction" ./...
+```
+
+### 6.2 Execute Deterministic SQL Verification Harness (Docker CLI):
+```bash
+# 1. Copy verification harness into the running PostgreSQL container
+docker cp migrations/verify_day06_settlement.sql novaris-postgres:/tmp/verify_day06_settlement.sql
+
+# 2. Execute verification script in psql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day06_settlement.sql
+```
+
+### 6.3 Windows PowerShell Alternative (Non-Interactive Pipe):
+```powershell
+docker cp migrations/verify_day06_settlement.sql novaris-postgres:/tmp/verify_day06_settlement.sql
+docker exec -i novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day06_settlement.sql
+```
+
+### 6.4 Direct Ledger Balance Audit Query in PostgreSQL:
+```sql
+-- Audit all settled transactions to verify double-entry invariant (Sum(Debits) == Sum(Credits))
+SELECT 
+    transaction_id,
+    SUM(CASE WHEN entry_type = 'DEBIT' THEN amount_cents ELSE 0 END) AS debits,
+    SUM(CASE WHEN entry_type = 'CREDIT' THEN amount_cents ELSE 0 END) AS credits,
+    CASE 
+        WHEN SUM(CASE WHEN entry_type = 'DEBIT' THEN amount_cents ELSE 0 END) = 
+             SUM(CASE WHEN entry_type = 'CREDIT' THEN amount_cents ELSE 0 END) 
+        THEN 'BALANCED' 
+        ELSE 'CORRUPTED' 
+    END AS status
+FROM journal_entries
+GROUP BY transaction_id;
+```
+
+---
+
+## 7. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 

@@ -47,7 +47,8 @@ Looking for copy-pasteable commands to run or probe any day's milestone? Check t
 | **Phase 1** | **Day 03** | **Cryptographic HMAC-SHA256 Request Signing & Replay Defense** | [Day_03_Action_Log.md](./Day_03_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 04** | **Token-Bucket Rate Limiting, Concurrency Safety & Fail-Fast Gateway** | [Day_04_Action_Log.md](./Day_04_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 05** | **Full Ledger Schema: Human Fraud Reviews, Feature Snapshots & Composite JSONB Indexing** | [Day_05_Action_Log.md](./Day_05_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 1** | **Day 06** | Atomic Settlement Logic & Concurrency Rollbacks | *Pending* | ⏳ *Up Next* |
+| **Phase 1** | **Day 06** | **Atomic Settlement Logic: Double-Entry Ledger Writes, Go Transactions & Rollbacks** | [Day_06_Action_Log.md](./Day_06_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 1** | **Day 07** | Testing Discipline: Table-Driven Unit Tests & Concurrency Suites | *Pending* | ⏳ *Up Next* |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 
 ---
