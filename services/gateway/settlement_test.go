@@ -230,3 +230,311 @@ func TestSettleTransaction_LiveDatabaseIntegration(t *testing.T) {
 			countBefore, countAfter)
 	}
 }
+
+// ==============================================================================
+// DAY 7: TABLE-DRIVEN UNIT TESTING SUITE (COMPREHENSIVE SAFETY NET)
+// ==============================================================================
+
+// setupMockHappyPath registers expectations for a complete 3-insert settlement sequence.
+func setupMockHappyPath(mock sqlmock.Sqlmock, senderID, recipientID string, amountCents int64) {
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO transactions
+		 (id, idempotency_key, sender_account_id, recipient_account_id, amount_cents, status)
+		 VALUES ($1, $2, $3, $4, $5, 'SETTLED')`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), senderID, recipientID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO journal_entries
+		 (transaction_id, account_id, entry_type, amount_cents)
+		 VALUES ($1, $2, 'DEBIT', $3)`)).
+		WithArgs(sqlmock.AnyArg(), senderID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO journal_entries
+		 (transaction_id, account_id, entry_type, amount_cents)
+		 VALUES ($1, $2, 'CREDIT', $3)`)).
+		WithArgs(sqlmock.AnyArg(), recipientID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectCommit()
+}
+
+// TestSettleTransaction_TableDriven implements an exhaustive, table-driven unit test suite
+// covering equivalence classes, boundary value analysis, defensive pre-flight validation,
+// and database-layer fault injection with automatic rollback verification.
+func TestSettleTransaction_TableDriven(t *testing.T) {
+	type testCase struct {
+		name           string
+		senderID       string
+		recipientID    string
+		amountCents    int64
+		passNilDB      bool
+		setupMock      func(mock sqlmock.Sqlmock, senderID, recipientID string, amountCents int64)
+		expectSuccess  bool
+		expectedErrSub string
+	}
+
+	tests := []testCase{
+		// ----------------------------------------------------------------------
+		// CLASS 1: Happy Paths (Equivalence Partitioning & Boundary Value Analysis)
+		// ----------------------------------------------------------------------
+		{
+			name:          "HappyPath_StandardTransfer_FiftyDollars",
+			senderID:      "c0000000-0000-0000-0000-000000000001",
+			recipientID:   "c0000000-0000-0000-0000-000000000002",
+			amountCents:   5000, // $50.00
+			setupMock:     setupMockHappyPath,
+			expectSuccess: true,
+		},
+		{
+			name:          "HappyPath_BoundaryMinimum_OneCent",
+			senderID:      "c0000000-0000-0000-0000-000000000001",
+			recipientID:   "c0000000-0000-0000-0000-000000000002",
+			amountCents:   1, // $0.01 lowest indivisible currency unit
+			setupMock:     setupMockHappyPath,
+			expectSuccess: true,
+		},
+		{
+			name:          "HappyPath_LargeInstitutionalTransfer_TenMillionDollars",
+			senderID:      "c0000000-0000-0000-0000-000000000001",
+			recipientID:   "c0000000-0000-0000-0000-000000000002",
+			amountCents:   1_000_000_000, // $10,000,000.00 (within int64 range)
+			setupMock:     setupMockHappyPath,
+			expectSuccess: true,
+		},
+
+		// ----------------------------------------------------------------------
+		// CLASS 2: Defensive Pre-Flight Input Validation (Fail-Fast before DB)
+		// ----------------------------------------------------------------------
+		{
+			name:           "ValidationError_ZeroAmount",
+			senderID:       "c0000000-0000-0000-0000-000000000001",
+			recipientID:    "c0000000-0000-0000-0000-000000000002",
+			amountCents:    0,
+			expectSuccess:  false,
+			expectedErrSub: "amount must be strictly positive",
+		},
+		{
+			name:           "ValidationError_NegativeAmount",
+			senderID:       "c0000000-0000-0000-0000-000000000001",
+			recipientID:    "c0000000-0000-0000-0000-000000000002",
+			amountCents:    -5000,
+			expectSuccess:  false,
+			expectedErrSub: "amount must be strictly positive",
+		},
+		{
+			name:           "ValidationError_EmptySenderID",
+			senderID:       "",
+			recipientID:    "c0000000-0000-0000-0000-000000000002",
+			amountCents:    5000,
+			expectSuccess:  false,
+			expectedErrSub: "sender account ID cannot be empty",
+		},
+		{
+			name:           "ValidationError_WhitespaceSenderID",
+			senderID:       "    ",
+			recipientID:    "c0000000-0000-0000-0000-000000000002",
+			amountCents:    5000,
+			expectSuccess:  false,
+			expectedErrSub: "sender account ID cannot be empty",
+		},
+		{
+			name:           "ValidationError_EmptyRecipientID",
+			senderID:       "c0000000-0000-0000-0000-000000000001",
+			recipientID:    "",
+			amountCents:    5000,
+			expectSuccess:  false,
+			expectedErrSub: "recipient account ID cannot be empty",
+		},
+		{
+			name:           "ValidationError_SelfTransferDisallowed",
+			senderID:       "c0000000-0000-0000-0000-000000000001",
+			recipientID:    "c0000000-0000-0000-0000-000000000001", // identical account
+			amountCents:    5000,
+			expectSuccess:  false,
+			expectedErrSub: "self-transfers disallowed",
+		},
+		{
+			name:           "ValidationError_NilDatabasePool",
+			senderID:       "c0000000-0000-0000-0000-000000000001",
+			recipientID:    "c0000000-0000-0000-0000-000000000002",
+			amountCents:    5000,
+			passNilDB:      true,
+			expectSuccess:  false,
+			expectedErrSub: "database connection pool is nil",
+		},
+
+		// ----------------------------------------------------------------------
+		// CLASS 3: Database Fault Injection & Atomicity Rollback Proofs
+		// ----------------------------------------------------------------------
+		{
+			name:        "DBFailure_BeginTransactionError",
+			senderID:    "c0000000-0000-0000-0000-000000000001",
+			recipientID: "c0000000-0000-0000-0000-000000000002",
+			amountCents: 5000,
+			setupMock: func(mock sqlmock.Sqlmock, s, r string, amt int64) {
+				mock.ExpectBegin().WillReturnError(fmt.Errorf("connection pool exhausted: dial tcp timeout"))
+			},
+			expectSuccess:  false,
+			expectedErrSub: "beginning database transaction",
+		},
+		{
+			name:        "DBFailure_TransactionInsertFailed_RollbackFired",
+			senderID:    "c0000000-0000-0000-0000-000000000001",
+			recipientID: "c0000000-0000-0000-0000-000000000002",
+			amountCents: 5000,
+			setupMock: func(mock sqlmock.Sqlmock, s, r string, amt int64) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO transactions`)).
+					WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), s, r, amt).
+					WillReturnError(fmt.Errorf("pq: unique constraint violation on idempotency_key"))
+				mock.ExpectRollback()
+			},
+			expectSuccess:  false,
+			expectedErrSub: "inserting transaction",
+		},
+		{
+			name:        "DBFailure_DebitLegFailed_NonExistentSender_RollbackFired",
+			senderID:    "c0000000-0000-0000-0000-000000000099",
+			recipientID: "c0000000-0000-0000-0000-000000000002",
+			amountCents: 5000,
+			setupMock: func(mock sqlmock.Sqlmock, s, r string, amt int64) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO transactions`)).
+					WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), s, r, amt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO journal_entries`)).
+					WithArgs(sqlmock.AnyArg(), s, amt).
+					WillReturnError(fmt.Errorf("pq: insert or update on table \"journal_entries\" violates foreign key constraint \"journal_entries_account_id_fkey\""))
+				mock.ExpectRollback()
+			},
+			expectSuccess:  false,
+			expectedErrSub: "inserting debit journal entry",
+		},
+		{
+			name:        "DBFailure_CreditLegFailed_NonExistentRecipient_RollbackFired",
+			senderID:    "c0000000-0000-0000-0000-000000000001",
+			recipientID: "c0000000-0000-0000-0000-000000000099",
+			amountCents: 5000,
+			setupMock: func(mock sqlmock.Sqlmock, s, r string, amt int64) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO transactions`)).
+					WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), s, r, amt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO journal_entries`)).
+					WithArgs(sqlmock.AnyArg(), s, amt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO journal_entries`)).
+					WithArgs(sqlmock.AnyArg(), r, amt).
+					WillReturnError(fmt.Errorf("pq: insert or update on table \"journal_entries\" violates foreign key constraint \"journal_entries_account_id_fkey\""))
+				mock.ExpectRollback()
+			},
+			expectSuccess:  false,
+			expectedErrSub: "inserting credit journal entry",
+		},
+		{
+			name:        "DBFailure_CommitFailed_DiskFull",
+			senderID:    "c0000000-0000-0000-0000-000000000001",
+			recipientID: "c0000000-0000-0000-0000-000000000002",
+			amountCents: 5000,
+			setupMock: func(mock sqlmock.Sqlmock, s, r string, amt int64) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO transactions`)).
+					WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), s, r, amt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO journal_entries`)).
+					WithArgs(sqlmock.AnyArg(), s, amt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO journal_entries`)).
+					WithArgs(sqlmock.AnyArg(), r, amt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				// Once Commit() is called, the driver marks the transaction done;
+				// the deferred Rollback() safely returns sql.ErrTxDone without calling driver Rollback.
+				mock.ExpectCommit().WillReturnError(fmt.Errorf("pq: disk full: cannot write WAL record"))
+			},
+			expectSuccess:  false,
+			expectedErrSub: "committing transaction",
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc // Capture range variable for parallel execution safety
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var targetDB *sql.DB
+			var mock sqlmock.Sqlmock
+			var err error
+
+			if !tc.passNilDB {
+				targetDB, mock, err = sqlmock.New()
+				if err != nil {
+					t.Fatalf("failed to create sqlmock instance: %v", err)
+				}
+				defer targetDB.Close()
+
+				if tc.setupMock != nil {
+					tc.setupMock(mock, tc.senderID, tc.recipientID, tc.amountCents)
+				}
+			}
+
+			// Execute settlement logic under test
+			txID, err := settleTransaction(targetDB, tc.senderID, tc.recipientID, tc.amountCents)
+
+			if tc.expectSuccess {
+				if err != nil {
+					t.Fatalf("expected settlement success, but encountered error: %v", err)
+				}
+				if txID == "" {
+					t.Fatal("expected non-empty transactionID, got empty string")
+				}
+				if _, err := uuid.Parse(txID); err != nil {
+					t.Fatalf("expected valid UUID for transactionID, got: %s", txID)
+				}
+			} else {
+				if err == nil {
+					t.Fatalf("expected settlement failure, but got success with txID: %s", txID)
+				}
+				if tc.expectedErrSub != "" && !strings.Contains(err.Error(), tc.expectedErrSub) {
+					t.Errorf("expected error containing %q, got: %v", tc.expectedErrSub, err)
+				}
+			}
+
+			// Verify that all mock expectations were met (including Rollback assertions)
+			if mock != nil {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("unfulfilled sqlmock expectations: %v", err)
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkSettleTransaction_Mock measures in-memory execution speed and allocations.
+func BenchmarkSettleTransaction_Mock(b *testing.B) {
+	senderID := "c0000000-0000-0000-0000-000000000001"
+	recipientID := "c0000000-0000-0000-0000-000000000002"
+	amountCents := int64(5000)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			b.Fatalf("failed to initialize sqlmock for benchmark: %v", err)
+		}
+		setupMockHappyPath(mock, senderID, recipientID, amountCents)
+		b.StartTimer()
+
+		_, err = settleTransaction(db, senderID, recipientID, amountCents)
+		if err != nil {
+			b.Fatalf("benchmark iteration failed: %v", err)
+		}
+
+		b.StopTimer()
+		db.Close()
+		b.StartTimer()
+	}
+}
