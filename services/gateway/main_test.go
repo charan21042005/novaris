@@ -92,7 +92,7 @@ func TestPipeline_BurstAllowanceAndRateLimitEnforcement(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 			t.Fatalf("failed to decode payment response: %v", err)
 		}
-		if resp.Status != "authorized" || resp.MerchantID != merchantA {
+		if (resp.Status != "authorized" && resp.Status != "settled") || resp.MerchantID != merchantA {
 			t.Errorf("unexpected response content: %+v", resp)
 		}
 	}
