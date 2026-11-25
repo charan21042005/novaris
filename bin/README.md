@@ -79,7 +79,11 @@ Curated day-by-day kickoff guides authored to guide hands-on engineering from ze
   * `Day 03`: HMAC-SHA256 digital signature validation for anti-tamper security.
   * `Day 04`: Per-merchant sliding token-bucket distributed rate limiting with Redis.
   * `Day 05`: Full PostgreSQL double-entry ledger schema, composite indexes, and JSONB audit structures.
-  * `Day 06`: Go database transaction settlement logic, optimistic locking, and rollback guards.
+  * `Day 06`: Go database transaction settlement logic, atomic multi-table writes, and rollback guards.
+  * `Day 07`: Table-driven unit testing safety nets, mock isolation, and deterministic test suites.
+  * `Day 08`: Concurrency stress testing, goroutine start-gate synchronization, and race detection.
+  * `Day 09`: Optimistic Concurrency Control (OCC), monotonic version columns, check-and-increment atomic writes.
+  * `Day 10`: Idempotent API design, IETF-compliant header validation, payload fingerprinting, and response caching.
 
 ---
 
