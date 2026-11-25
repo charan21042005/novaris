@@ -63,6 +63,7 @@ The composite index `idx_feature_snapshots_account_time` is ordered as `(account
 | **[`001_initial_ledger_schema.sql`](./001_initial_ledger_schema.sql)** | Initial Ledger & Outbox Schema | **Day 1** | `accounts`, `transactions`, `journal_entries`, `outbox` | ✅ Active |
 | **[`002_fraud_and_features.sql`](./002_fraud_and_features.sql)** | Human Reviews & Feature Snapshots | **Day 5** | `fraud_reviews`, `feature_snapshots` | ✅ Active |
 | **[`verify_day05_schema.sql`](./verify_day05_schema.sql)** | Day 5 Verification & Diagnostics | **Day 5** | Deterministic Seed Data, Constraint & Index Tests | 🧪 Test Suite |
+| **[`verify_day06_settlement.sql`](./verify_day06_settlement.sql)** | Day 6 Settlement & Atomicity Proof | **Day 6** | Balanced Double-Entry Settlement & Rollback Trap | 🧪 Test Suite |
 
 ---
 
@@ -77,9 +78,13 @@ docker cp migrations/002_fraud_and_features.sql novaris-postgres:/tmp/002_fraud_
 # 2. Execute migration with psql
 docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/002_fraud_and_features.sql
 
-# 3. Execute deterministic verification harness
+# 3. Execute Day 5 deterministic schema verification harness
 docker cp migrations/verify_day05_schema.sql novaris-postgres:/tmp/verify_day05_schema.sql
 docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day05_schema.sql
+
+# 4. Execute Day 6 deterministic atomic settlement & rollback proof harness
+docker cp migrations/verify_day06_settlement.sql novaris-postgres:/tmp/verify_day06_settlement.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_day06_settlement.sql
 ```
 
 ---
