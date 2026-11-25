@@ -9,6 +9,7 @@
 ### Developer Utilities, Cryptographic Token Generation & Request Signing Tools
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Language-Go_1.22+-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/Pattern-cmd_Standard_Layout-00C853?style=flat-square&logo=gitbook&logoColor=white" alt="Pattern" />
   <img src="https://img.shields.io/badge/Security-JWT_+_HMAC--SHA256-7C4DFF?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="Security" />
@@ -43,6 +44,12 @@ services/gateway/cmd/
 │   ├── main.go
 │   └── main_test.go
 ├── verifyschema/     # Verifies database schema, composite indexes & migration compliance
+│   ├── main.go
+│   └── main_test.go
+├── loadtest/         # High-concurrency load generator & tail latency benchmark (Day 13)
+│   ├── main.go
+│   └── main_test.go
+├── phase1audit/      # Phase 1 Capstone automated audit & certification runner (Day 14)
 │   ├── main.go
 │   └── main_test.go
 └── README.md         # This documentation
@@ -222,6 +229,35 @@ go run cmd/loadtest/main.go -workers 50 -requests 500 -hotwallet=false -tenants 
 
 # Run automated unit test suite
 go test -v ./cmd/loadtest/...
+```
+
+---
+
+## 7. `cmd/phase1audit`: Phase 1 Capstone Milestone Certification Runner (Day 14)
+
+### Purpose:
+The `phase1audit` utility programmatically validates that NOVARIS satisfies all five core deliverables of **Phase 1: The Core Ledger Engine**:
+1. **Criterion 1:** Go Gateway 5-Layer Security Perimeter (JWT Auth, HMAC Signatures, Token-Bucket Rate Limiter).
+2. **Criterion 2:** Full PostgreSQL Double-Entry Ledger Schema (5 Core Tables, Integer Cents, Constraints).
+3. **Criterion 3:** Atomic ACID Settlement Engine (Balanced Journal Entries, Rollback Safety Nets).
+4. **Criterion 4:** Idempotency Deduplication & DB-Level OCC (SHA-256 Hashes, Monotonic Version CAS).
+5. **Criterion 5:** 100 Concurrent Unit Tests with Zero Race Conditions.
+
+### Supported CLI Flags:
+| Flag | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `-json` | `bool` | `false` | Output audit report as machine-readable JSON for CI/CD pipelines. |
+
+### Usage Examples:
+```bash
+# Run interactive ANSI terminal audit
+go run cmd/phase1audit/main.go
+
+# Output machine-readable JSON certificate for CI/CD
+go run cmd/phase1audit/main.go -json
+
+# Run unit test harness for the audit CLI
+go test -v ./cmd/phase1audit/...
 ```
 
 ---
