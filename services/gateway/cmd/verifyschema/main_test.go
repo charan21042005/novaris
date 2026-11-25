@@ -56,6 +56,12 @@ func TestMigrationFiles_ExistenceAndNaming(t *testing.T) {
 	if _, err := os.Stat(file003); os.IsNotExist(err) {
 		t.Fatalf("expected migration file %s to exist, but was missing", file003)
 	}
+
+	// 4. Verify 004_seed_test_accounts.sql exists
+	file004 := filepath.Join(migDir, "004_seed_test_accounts.sql")
+	if _, err := os.Stat(file004); os.IsNotExist(err) {
+		t.Fatalf("expected migration file %s to exist, but was missing", file004)
+	}
 }
 
 func TestMigration003_IdempotencySchemaCompleteness(t *testing.T) {

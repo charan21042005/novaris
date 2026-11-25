@@ -165,12 +165,15 @@ func runOfflineVerification(explicitPath string) {
 			filepath.Join("migrations", "001_initial_ledger_schema.sql"),
 			filepath.Join("migrations", "002_fraud_and_features.sql"),
 			filepath.Join("migrations", "003_idempotency_keys.sql"),
+			filepath.Join("migrations", "004_seed_test_accounts.sql"),
 			filepath.Join("..", "migrations", "001_initial_ledger_schema.sql"),
 			filepath.Join("..", "migrations", "002_fraud_and_features.sql"),
 			filepath.Join("..", "migrations", "003_idempotency_keys.sql"),
+			filepath.Join("..", "migrations", "004_seed_test_accounts.sql"),
 			filepath.Join("..", "..", "migrations", "001_initial_ledger_schema.sql"),
 			filepath.Join("..", "..", "migrations", "002_fraud_and_features.sql"),
 			filepath.Join("..", "..", "migrations", "003_idempotency_keys.sql"),
+			filepath.Join("..", "..", "migrations", "004_seed_test_accounts.sql"),
 		}
 		for _, c := range candidates {
 			if _, err := os.Stat(c); err == nil {
