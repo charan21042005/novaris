@@ -98,9 +98,9 @@ ORDER BY created_at ASC;
 SELECT 
     status,
     COUNT(*) AS records_count,
-    COUNT(CASE WHEN length(payload_hash) = 64 THEN 1 END) AS valid_sha256_hashes,
+    COUNT(CASE WHEN length(request_hash) = 64 THEN 1 END) AS valid_sha256_hashes,
     CASE 
-        WHEN COUNT(*) = COUNT(CASE WHEN length(payload_hash) = 64 THEN 1 END)
+        WHEN COUNT(*) = COUNT(CASE WHEN length(request_hash) = 64 THEN 1 END)
         THEN '✅ PASS: 100% OF KEYS HAVE VALID SHA-256 FINGERPRINTS'
         ELSE '❌ FAIL: CORRUPT PAYLOAD HASH'
     END AS hash_audit
