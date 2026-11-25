@@ -35,10 +35,10 @@ In distributed fintech systems, speed without correctness is negligence. **Phase
 
 ---
 
-## ⚡ Master Testing & CLI Verification Runbook
+## ⚡ Phase 1 Testing & CLI Verification Runbook
 
-All copy-pasteable testing commands, Docker deployment guides, Newman automated runners, and Go test invocations across all Phase 1 milestones are centralized in the Master Runbook:
-👉 **[`../COMMANDS_RUNBOOK.md`](../COMMANDS_RUNBOOK.md)**
+All copy-pasteable testing commands, Docker deployment guides, Newman automated runners, and Go test invocations across all Phase 1 milestones are centralized in the Phase 1 Runbook:
+👉 **[`./COMMANDS_RUNBOOK.md`](./COMMANDS_RUNBOOK.md)**
 
 ---
 

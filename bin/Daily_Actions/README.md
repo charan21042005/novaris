@@ -30,10 +30,10 @@ This directory acts as the **central day-by-day learning journal and technical b
 
 ---
 
-## ⚡ Master Testing & CLI Verification Runbook
+## ⚡ Phase 1 Testing & CLI Verification Runbook
 
-Looking for copy-pasteable commands to run or probe any day's milestone? Check the centralized cheat sheet:  
-👉 **[`COMMANDS_RUNBOOK.md`](./COMMANDS_RUNBOOK.md)** — Master copy-paste runbook containing all Docker setup commands, `curl` probes, CLI generators, Postman collections, and PowerShell scripts across all milestones.
+Looking for copy-pasteable commands to run or probe any Phase 1 milestone? Check the centralized cheat sheet:  
+👉 **[`Phase_1_Design_and_Ledger/COMMANDS_RUNBOOK.md`](./Phase_1_Design_and_Ledger/COMMANDS_RUNBOOK.md)** — Master copy-paste runbook containing all Docker setup commands, `curl` probes, CLI generators, Postman collections, and PowerShell scripts for Phase 1.
 
 ---
 
@@ -41,11 +41,11 @@ Looking for copy-pasteable commands to run or probe any day's milestone? Check t
 
 ```
 bin/Daily_Actions/
-├── COMMANDS_RUNBOOK.md                         # Centralized test & run cheat sheet across all milestones
 ├── README.md                                   # Root directory index (this file)
 │
 ├── Phase_1_Design_and_Ledger/                 # 🏛️ Phase 1: Weeks 1-2 (Days 01–14) — [ACTIVE VAULT]
 │   ├── README.md                               # Phase 1 master index, architecture overview & badges
+│   ├── COMMANDS_RUNBOOK.md                     # Centralized test & run cheat sheet for Phase 1 milestones
 │   ├── Day_01_Action_Log.md                    # Day 01: Monorepo, Docker Compose & Ledger Schema Foundation
 │   ├── Day_02_Action_Log.md                    # Day 02: JWT Authentication & Middleware Pipeline
 │   ├── Day_03_Action_Log.md                    # Day 03: HMAC-SHA256 Request Signing & Replay Defense

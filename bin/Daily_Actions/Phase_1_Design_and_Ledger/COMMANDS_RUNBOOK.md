@@ -2,15 +2,15 @@
 
 <!-- Top Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
-# ⚡ NOVARIS Master Verification & Testing Runbook
-### Unified Copy-Paste Command Cheat Sheet Across All Daily Milestones (Days 1–10+)
+# ⚡ NOVARIS Phase 1 Verification & Testing Runbook
+### Unified Copy-Paste Command Cheat Sheet Across Phase 1 Milestones (Days 01–14)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Runbook-Master_Testing_Suite-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Runbook" />
-  <img src="https://img.shields.io/badge/Days-01_to_10_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
+  <img src="https://img.shields.io/badge/Runbook-Phase_1_Testing_Suite-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Runbook" />
+  <img src="https://img.shields.io/badge/Days-01_to_11_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
   <img src="https://img.shields.io/badge/Shell-Bash_%26_PowerShell-7C4DFF?style=flat-square&logo=powershell&logoColor=white" alt="Shell" />
   <img src="https://img.shields.io/badge/Standard-Industrial_FinTech-FFA000?style=flat-square&logo=standards&logoColor=white" alt="Standard" />
 </p>
@@ -698,10 +698,10 @@ git push origin main
 
 <!-- Bottom Banner -->
 <p align="center">
-  <img src="../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
+  <img src="../../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
 </p>
 
-### 🎓 NOVARIS Master Runbook
-*Deterministic Testing Across All Distributed Subsystems*
+### 🎓 NOVARIS Phase 1 Runbook
+*Deterministic Testing Across Phase 1 Subsystems*
 
 </div>
