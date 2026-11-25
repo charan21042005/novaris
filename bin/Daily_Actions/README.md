@@ -83,8 +83,8 @@ bin/Daily_Actions/
 | **Phase 1** | **Day 09** | **Optimistic Concurrency Control: Version Columns & Conditional Database Updates** | [Day_09_Action_Log.md](./Phase_1_Design_and_Ledger/Day_09_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 10** | **Idempotent API Design: Network Retry Deduplication & Response Caching** | [Day_10_Action_Log.md](./Phase_1_Design_and_Ledger/Day_10_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 11** | **Integration Wiring & End-to-End API Contracts (Postman & Full-Stack Gateway Pipeline)** | [Day_11_Action_Log.md](./Phase_1_Design_and_Ledger/Day_11_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 1** | **Day 12** | **Documentation Discipline: OpenAPI Specifications & Architecture Decision Records (ADR-001)** | *Pending* | ⏳ *Up Next* |
-| **Phase 1** | **Day 13** | **Edge-Case Hardening: Clock Skew, Malicious Payloads & Network Partitions** | *Pending* | 📅 *Upcoming* |
+| **Phase 1** | **Day 12** | **Documentation Discipline: OpenAPI Specifications & Architecture Decision Records (ADR-001)** | [Day_12_Action_Log.md](./Phase_1_Design_and_Ledger/Day_12_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 1** | **Day 13** | **Concurrency Load Scripting (k6 & Hot-Wallet Contention)** | *Pending* | ⏳ *Up Next* |
 | **Phase 1** | **Day 14** | **Phase 1 Capstone Milestone Review & Comprehensive Production Verification** | *Pending* | 📅 *Upcoming* |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 

@@ -302,7 +302,8 @@ Every milestone across the 84-day curriculum is documented with textbook-grade d
 | **Day 09** | **Optimistic Concurrency Control & Version Columns** | Atomic SQL Conditional Updates, CAS & Database Collision Resilience | [Day 09 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_09_Action_Log.md) | ✅ *Completed* |
 | **Day 10** | **Idempotent API Design & Safe Network Retries** | IETF Idempotency Standard, SHA-256 Body Fingerprinting & Exact-Once Replay | [Day 10 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_10_Action_Log.md) | ✅ *Completed* |
 | **Day 11** | **Integration Wiring & End-to-End API Contracts** | Multi-Layer Integration Pipeline, Postman Automated Suites & E2E Verification | [Day 11 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_11_Action_Log.md) | ✅ *Completed* |
-| **Day 12** | **Documentation Discipline: OpenAPI & ADR-001** | Standardized OpenAPI 3.0 Specs & Architecture Decision Records | *Pending* | ⏳ *Up Next* |
+| **Day 12** | **Documentation Discipline: OpenAPI & ADR-001** | Standardized OpenAPI 3.0 Specs, Swagger UI & Architecture Decision Records | [Day 12 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_12_Action_Log.md) | ✅ *Completed* |
+| **Day 13** | **Concurrency Load Scripting (k6 & Hot-Wallet Contention)** | High-Density Load Scripting, OCC Collision Metrics & Zero Race Verification | *Pending* | ⏳ *Up Next* |
 
 ---
 

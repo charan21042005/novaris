@@ -667,7 +667,67 @@ docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/ver
 
 ---
 
-## 12. Master Daily Git Multi-Commit & Push Workflow
+## 12. Day 12 — OpenAPI 3.0 & Architecture Decision Records (ADRs)
+
+### 12.1 Run OpenAPI Specification Validator CLI (`cmd/verifyopenapi`):
+```powershell
+# Navigate to the gateway directory
+cd services\gateway
+
+# Validate canonical OpenAPI JSON specification
+go run ./cmd/verifyopenapi/main.go -spec ../../api/openapi.json
+
+# Run unit tests for the validator
+go test -v ./cmd/verifyopenapi/...
+```
+
+### 12.2 Run Gateway OpenAPI & Swagger UI Serving Integration Tests:
+```powershell
+# Run the OpenAPI router integration suite
+go test -v -run "TestGateway_OpenAPI|TestGateway_Swagger|TestGateway_Root" .
+```
+
+### 12.3 Run Embedded OpenAPI Package Unit Tests:
+```powershell
+# Verify embedded //go:embed spec and swagger handlers
+go test -v ./internal/openapi/...
+```
+
+### 12.4 Preview Interactive Swagger UI in Local Browser:
+```powershell
+# 1. Start the API Gateway
+go run main.go idempotency.go occ.go settlement.go
+
+# 2. Open interactive Swagger UI documentation in browser:
+# http://localhost:8080/docs
+# Or fetch raw OpenAPI JSON specification:
+# http://localhost:8080/openapi.json
+```
+
+### 12.5 Preview Documentation with Redocly CLI & Spin Up Prism Mock Server:
+```bash
+# Preview via Redocly live development server
+npx @redocly/cli preview-docs ../../api/openapi.yaml --port 8081
+
+# Spin up a Prism mock server that validates against openapi.yaml
+npx @stoplight/prism-cli mock ../../api/openapi.yaml -p 4010
+```
+
+### 12.6 Inspect Published Architecture Decision Records (ADRs):
+```bash
+# View Master ADR Repository Index
+cat docs/adr/README.md
+
+# Inspect ADR-0001 (OCC vs Pessimistic Row Locking)
+cat docs/adr/0001-optimistic-concurrency-control-for-payment-settlement.md
+
+# Inspect ADR-0002 (Five-Layer Pipeline Ordering)
+cat docs/adr/0002-five-layer-defense-in-depth-gateway-pipeline.md
+```
+
+---
+
+## 13. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 

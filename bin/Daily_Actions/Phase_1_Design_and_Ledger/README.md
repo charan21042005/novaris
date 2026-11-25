@@ -57,8 +57,8 @@ All copy-pasteable testing commands, Docker deployment guides, Newman automated 
 | **Day 09** | **Optimistic Concurrency Control (OCC)** | Monotonic version columns, conditional check-and-increment writes, and jittered backoff retries | [Day 09 Action Log](./Day_09_Action_Log.md) | ✅ *COMPLETED* |
 | **Day 10** | **Idempotent API Design & Network Retries** | IETF `Idempotency-Key` headers, SHA-256 payload hashing, response buffer capture, and cached replays | [Day 10 Action Log](./Day_10_Action_Log.md) | ✅ *COMPLETED* |
 | **Day 11** | **Integration Wiring & End-to-End API Contracts** | Five-layer pipeline assembly, Postman API contract test suite, deterministic seed accounts, and live E2E probe | [Day 11 Action Log](./Day_11_Action_Log.md) | ✅ *COMPLETED* |
-| **Day 12** | **Documentation Discipline: OpenAPI & ADR-001** | OpenAPI 3.0 specification, Swagger contract enforcement, and Architecture Decision Record (OCC vs Pessimistic) | *Pending* | ⏳ *Up Next* |
-| **Day 13** | **Edge-Case Hardening & Payload Fuzzing** | Extreme boundary testing, system clock skew simulations, malicious payload fuzzing, and security audits | *Pending* | 📅 *Upcoming* |
+| **Day 12** | **Documentation Discipline: OpenAPI & ADR-001** | OpenAPI 3.0.3 specification, embedded Swagger UI dashboard, validator CLI, and ADR-001 / ADR-002 | [Day 12 Action Log](./Day_12_Action_Log.md) | ✅ *COMPLETED* |
+| **Day 13** | **Concurrency Load Scripting (k6 & Hot-Wallet Contention)** | Concurrent load testing against hot-wallet accounts, observing OCC backoff and race detector safety | *Pending* | ⏳ *Up Next* |
 | **Day 14** | **Phase 1 Capstone Review & Certification** | Full Phase 1 retrospective, end-to-end load benchmarking, and formal architectural sign-off | *Pending* | 📅 *Upcoming* |
 
 ---
