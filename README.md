@@ -288,24 +288,18 @@ curl -X GET http://localhost:8080/healthz
 
 ## 📚 Daily Implementation & Theory Action Logs
 
-Every milestone across the 84-day curriculum is documented with textbook-grade depth in [`bin/Daily_Actions/`](bin/Daily_Actions/README.md), covering first-principles computer science theory, line-by-line code masterclasses, and live verification matrices:
+Every milestone across the 84-day curriculum is documented with textbook-grade depth across dedicated **Phase Action Vaults** in [`bin/Daily_Actions/`](bin/Daily_Actions/README.md), covering first-principles computer science theory, line-by-line code masterclasses, and live verification matrices:
 
-| Day | Milestone Focus | Security / Architectural Guarantee | Theory & Action Log | Status |
-| :---: | :--- | :--- | :---: | :---: |
-| **Day 01** | **Monorepo Layout & Ledger Schema** | PostgreSQL 16 Double-Entry Ledger & Docker Infrastructure | [Day 01 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_01_Action_Log.md) | ✅ *Completed* |
-| **Day 02** | **JWT Authentication & Middleware** | RFC 7519 Stateless Identity & `alg: none` Defense | [Day 02 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_02_Action_Log.md) | ✅ *Completed* |
-| **Day 03** | **HMAC Request Signing & Replay Defense** | RFC 2104 Payload Integrity, Replay Window & Constant-Time Verification | [Day 03 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_03_Action_Log.md) | ✅ *Completed* |
-| **Day 04** | **Token-Bucket Rate Limiter & Concurrency Defense** | Burst-Tolerant Lazy Mathematical Refill, sync.RWMutex & RFC 6585 HTTP 429 | [Day 04 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_04_Action_Log.md) | ✅ *Completed* |
-| **Day 05** | **Full Ledger Schema, Composite Indexes & JSONB** | Human Fraud Reviews, Feature Snapshots, GIN & Hierarchical B-Trees | [Day 05 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_05_Action_Log.md) | ✅ *Completed* |
-| **Day 06** | **Atomic Settlement Logic & Double-Entry Ledger Writes** | Multi-Table ACID Transactions, `defer tx.Rollback()`, Invariant Balance | [Day 06 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_06_Action_Log.md) | ✅ *Completed* |
-| **Day 07** | **Testing Discipline & Table-Driven Safety Nets** | Table-Driven Unit Tests, 100% Core Statement Coverage & In-Memory Benchmarks | [Day 07 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_07_Action_Log.md) | ✅ *Completed* |
-| **Day 08** | **Concurrency Testing & The Race Detector** | Nanosecond Start Barriers, Atomic Invariants & Memory Isolation | [Day 08 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_08_Action_Log.md) | ✅ *Completed* |
-| **Day 09** | **Optimistic Concurrency Control & Version Columns** | Atomic SQL Conditional Updates, CAS & Database Collision Resilience | [Day 09 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_09_Action_Log.md) | ✅ *Completed* |
-| **Day 10** | **Idempotent API Design & Safe Network Retries** | IETF Idempotency Standard, SHA-256 Body Fingerprinting & Exact-Once Replay | [Day 10 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_10_Action_Log.md) | ✅ *Completed* |
-| **Day 11** | **Integration Wiring & End-to-End API Contracts** | Multi-Layer Integration Pipeline, Postman Automated Suites & E2E Verification | [Day 11 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_11_Action_Log.md) | ✅ *Completed* |
-| **Day 12** | **Documentation Discipline: OpenAPI & ADR-001** | Standardized OpenAPI 3.0 Specs, Swagger UI & Architecture Decision Records | [Day 12 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_12_Action_Log.md) | ✅ *Completed* |
-| **Day 13** | **Concurrency Load Scripting (k6 & Hot-Wallet Contention)** | k6 Load Scripting, Native Go Load CLI, 100-Worker Stress Testing & Zero Race Verification | [Day 13 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_13_Action_Log.md) | ✅ *Completed* |
-| **Day 14** | **Phase 1 Capstone Review & Final Sign-Off** | Full Phase 1 Retrospective, 100 Concurrent Unit Tests Milestone & Architectural Audit | [Day 14 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_14_Action_Log.md) | ✅ *Completed* |
+| Phase | Milestone Scope | Core Architectural Deliverables | Action Vault & Master Index | Status |
+| :---: | :---: | :--- | :---: | :---: |
+| **Phase 1** | Days 01–14 | PostgreSQL 16 Double-Entry Ledger, Go API Gateway, HMAC, Rate Limiting, OCC, Idempotency & Capstone Audit | [Phase 1 Vault](bin/Daily_Actions/Phase_1_Design_and_Ledger/README.md) • [Runbook](bin/Daily_Actions/Phase_1_Design_and_Ledger/COMMANDS_RUNBOOK.md) | ✅ *Completed (100% Certified)* |
+| **Phase 2** | Days 15–28 | Distributed Streaming Core, Apache Kafka KRaft, Transactional Outbox Relay, DLQ Routing & Consumers | [Phase 2 Vault](bin/Daily_Actions/Phase_2_Streaming_Core/README.md) | 🚀 *Active Vault (Up Next: Day 15)* |
+| **Phase 3** | Days 29–42 | High-Throughput Distributed Concurrency, Redis Redlock, Dynamic Sharding & Contention Defense | `bin/Daily_Actions/Phase_3_Concurrency/` | 📅 *Upcoming* |
+| **Phase 4** | Days 43–56 | Real-Time Adaptive Fraud Intelligence Engine, Feature Pipeline & Anomaly Scoring | `bin/Daily_Actions/Phase_4_Fraud_Engine/` | 📅 *Upcoming* |
+| **Phase 5** | Days 57–70 | Merchant Dashboard, Live Fraud Triage Portal & End-to-End MLOps Observability | `bin/Daily_Actions/Phase_5_Observability/` | 📅 *Upcoming* |
+| **Phase 6** | Days 71–84 | Production Cloud Infrastructure, Chaos Engineering, Failure Injections & Production Capstone | `bin/Daily_Actions/Phase_6_Capstone/` | 📅 *Upcoming* |
+
+> 💡 **Detailed Day-by-Day Logs:** For individual daily breakdowns (e.g., Days 01 through 14), consult the [Phase 1 Action Logs Index](bin/Daily_Actions/Phase_1_Design_and_Ledger/README.md#-phase-1-daily-action-logs-index-days-0114) or the [Master Daily Actions Index](bin/Daily_Actions/README.md).
 
 ---
 
