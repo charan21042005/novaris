@@ -2,7 +2,7 @@
 
 <!-- Floating Top Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
 # 📖 NOVARIS THEORY TEXTBOOK • DAY 01
@@ -1319,7 +1319,7 @@ With the foundation poured and verified, we are officially ready for **Day 2**:
 
 <!-- Floating Bottom Banner -->
 <p align="center">
-  <img src="../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
+  <img src="../../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
 </p>
 
 <p align="center">

@@ -2,7 +2,7 @@
 
 <!-- Floating Top Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
 # 📖 NOVARIS THEORY TEXTBOOK • DAY 06
@@ -1421,7 +1421,7 @@ Tomorrow on **Day 7**, we transition to **Testing Discipline**:
 <div align="center">
 
 <p align="center">
-  <img src="../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
+  <img src="../../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
 </p>
 
 ### 🎓 NOVARIS Educational Action Textbook • Day 06 Complete

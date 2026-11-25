@@ -94,8 +94,8 @@ Curated day-by-day kickoff guides authored to guide hands-on engineering from ze
 ---
 
 ### 6. `Daily_Actions/` — Live Build Journals & Beginner Guides
-* **Active Directory:** Dedicated to documenting the actual code written each day during the active build.
-* **Format:** Every single day receives its own markdown log (e.g. `Day_01_Action_Log.md`) featuring beginner-friendly explanations, line-by-line code breakdowns, local test commands, and interview defense questions.
+* **Active Directory:** Dedicated to documenting the actual code written each day during the active build, structured cleanly into **Phase vaults** (e.g. [`Phase_1_Design_and_Ledger/`](./Daily_Actions/Phase_1_Design_and_Ledger/)).
+* **Format:** Every single milestone receives its own comprehensive markdown log (e.g. `Day_01_Action_Log.md`) featuring beginner-friendly explanations, line-by-line code breakdowns, local test commands, and interview defense questions.
 * See [Daily_Actions/README.md](./Daily_Actions/README.md) for the live index.
 
 ---

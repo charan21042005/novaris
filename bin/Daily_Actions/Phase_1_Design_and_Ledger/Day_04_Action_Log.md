@@ -2,7 +2,7 @@
 
 <!-- Floating Top Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
 # 📖 NOVARIS THEORY TEXTBOOK • DAY 04
@@ -1347,7 +1347,7 @@ To solidify your practical mastery of Day 4 rate limiting and Go concurrency:
 <div align="center">
 
 <p align="center">
-  <img src="../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
+  <img src="../../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
 </p>
 
 ### 🎓 NOVARIS Educational Action Textbook • Day 04 Complete

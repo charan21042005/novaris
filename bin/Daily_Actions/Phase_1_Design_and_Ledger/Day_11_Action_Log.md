@@ -2,7 +2,7 @@
 
 <!-- Top Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
 # 🏛️ NOVARIS • Engineering Action Log

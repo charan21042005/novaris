@@ -2,7 +2,7 @@
 
 <!-- Top High-Definition Vector Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
 # 🔁 NOVARIS Master Engineering Action Log: Day 10

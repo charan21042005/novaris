@@ -2,7 +2,7 @@
 
 <!-- Floating Top Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
 # 📖 NOVARIS THEORY TEXTBOOK • DAY 03
@@ -1257,7 +1257,7 @@ On **Day 4**, we build a **Distributed Sliding Token-Bucket Rate Limiter**:
 
 <!-- Floating Bottom Banner -->
 <p align="center">
-  <img src="../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
+  <img src="../../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
 </p>
 
 ### 🎓 NOVARIS Ledger Engineering Curriculum • Day 03 Complete

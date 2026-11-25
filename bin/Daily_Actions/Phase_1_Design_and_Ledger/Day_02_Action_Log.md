@@ -2,7 +2,7 @@
 
 <!-- Floating Top Banner -->
 <p align="center">
-  <img src="../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
+  <img src="../../../assets/banner.svg" alt="NOVARIS Banner" width="100%" />
 </p>
 
 # 📖 NOVARIS THEORY TEXTBOOK • DAY 02
@@ -1428,7 +1428,7 @@ To solidify your mastery of Day 2 concepts, complete these exercises:
 
 <!-- Floating Bottom Banner -->
 <p align="center">
-  <img src="../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
+  <img src="../../../assets/footer.svg" alt="NOVARIS Footer" width="100%" />
 </p>
 
 ### 🎓 NOVARIS Ledger Engineering Curriculum • Day 02 Complete

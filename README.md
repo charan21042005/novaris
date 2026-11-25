@@ -291,17 +291,17 @@ Every milestone across the 84-day curriculum is documented with textbook-grade d
 
 | Day | Milestone Focus | Security / Architectural Guarantee | Theory & Action Log | Status |
 | :---: | :--- | :--- | :---: | :---: |
-| **Day 01** | **Monorepo Layout & Ledger Schema** | PostgreSQL 16 Double-Entry Ledger & Docker Infrastructure | [Day 01 Action Log](bin/Daily_Actions/Day_01_Action_Log.md) | ✅ *Completed* |
-| **Day 02** | **JWT Authentication & Middleware** | RFC 7519 Stateless Identity & `alg: none` Defense | [Day 02 Action Log](bin/Daily_Actions/Day_02_Action_Log.md) | ✅ *Completed* |
-| **Day 03** | **HMAC Request Signing & Replay Defense** | RFC 2104 Payload Integrity, Replay Window & Constant-Time Verification | [Day 03 Action Log](bin/Daily_Actions/Day_03_Action_Log.md) | ✅ *Completed* |
-| **Day 04** | **Token-Bucket Rate Limiter & Concurrency Defense** | Burst-Tolerant Lazy Mathematical Refill, sync.RWMutex & RFC 6585 HTTP 429 | [Day 04 Action Log](bin/Daily_Actions/Day_04_Action_Log.md) | ✅ *Completed* |
-| **Day 05** | **Full Ledger Schema, Composite Indexes & JSONB** | Human Fraud Reviews, Feature Snapshots, GIN & Hierarchical B-Trees | [Day 05 Action Log](bin/Daily_Actions/Day_05_Action_Log.md) | ✅ *Completed* |
-| **Day 06** | **Atomic Settlement Logic & Double-Entry Ledger Writes** | Multi-Table ACID Transactions, `defer tx.Rollback()`, Invariant Balance | [Day 06 Action Log](bin/Daily_Actions/Day_06_Action_Log.md) | ✅ *Completed* |
-| **Day 07** | **Testing Discipline & Table-Driven Safety Nets** | Table-Driven Unit Tests, 100% Core Statement Coverage & In-Memory Benchmarks | [Day 07 Action Log](bin/Daily_Actions/Day_07_Action_Log.md) | ✅ *Completed* |
-| **Day 08** | **Concurrency Testing & The Race Detector** | Nanosecond Start Barriers, Atomic Invariants & Memory Isolation | [Day 08 Action Log](bin/Daily_Actions/Day_08_Action_Log.md) | ✅ *Completed* |
-| **Day 09** | **Optimistic Concurrency Control & Version Columns** | Atomic SQL Conditional Updates, CAS & Database Collision Resilience | [Day 09 Action Log](bin/Daily_Actions/Day_09_Action_Log.md) | ✅ *Completed* |
-| **Day 10** | **Idempotent API Design & Safe Network Retries** | IETF Idempotency Standard, SHA-256 Body Fingerprinting & Exact-Once Replay | [Day 10 Action Log](bin/Daily_Actions/Day_10_Action_Log.md) | ✅ *Completed* |
-| **Day 11** | **Integration Wiring & End-to-End API Contracts** | Multi-Layer Integration Pipeline, Postman Automated Suites & E2E Verification | [Day 11 Action Log](bin/Daily_Actions/Day_11_Action_Log.md) | ✅ *Completed* |
+| **Day 01** | **Monorepo Layout & Ledger Schema** | PostgreSQL 16 Double-Entry Ledger & Docker Infrastructure | [Day 01 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_01_Action_Log.md) | ✅ *Completed* |
+| **Day 02** | **JWT Authentication & Middleware** | RFC 7519 Stateless Identity & `alg: none` Defense | [Day 02 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_02_Action_Log.md) | ✅ *Completed* |
+| **Day 03** | **HMAC Request Signing & Replay Defense** | RFC 2104 Payload Integrity, Replay Window & Constant-Time Verification | [Day 03 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_03_Action_Log.md) | ✅ *Completed* |
+| **Day 04** | **Token-Bucket Rate Limiter & Concurrency Defense** | Burst-Tolerant Lazy Mathematical Refill, sync.RWMutex & RFC 6585 HTTP 429 | [Day 04 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_04_Action_Log.md) | ✅ *Completed* |
+| **Day 05** | **Full Ledger Schema, Composite Indexes & JSONB** | Human Fraud Reviews, Feature Snapshots, GIN & Hierarchical B-Trees | [Day 05 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_05_Action_Log.md) | ✅ *Completed* |
+| **Day 06** | **Atomic Settlement Logic & Double-Entry Ledger Writes** | Multi-Table ACID Transactions, `defer tx.Rollback()`, Invariant Balance | [Day 06 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_06_Action_Log.md) | ✅ *Completed* |
+| **Day 07** | **Testing Discipline & Table-Driven Safety Nets** | Table-Driven Unit Tests, 100% Core Statement Coverage & In-Memory Benchmarks | [Day 07 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_07_Action_Log.md) | ✅ *Completed* |
+| **Day 08** | **Concurrency Testing & The Race Detector** | Nanosecond Start Barriers, Atomic Invariants & Memory Isolation | [Day 08 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_08_Action_Log.md) | ✅ *Completed* |
+| **Day 09** | **Optimistic Concurrency Control & Version Columns** | Atomic SQL Conditional Updates, CAS & Database Collision Resilience | [Day 09 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_09_Action_Log.md) | ✅ *Completed* |
+| **Day 10** | **Idempotent API Design & Safe Network Retries** | IETF Idempotency Standard, SHA-256 Body Fingerprinting & Exact-Once Replay | [Day 10 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_10_Action_Log.md) | ✅ *Completed* |
+| **Day 11** | **Integration Wiring & End-to-End API Contracts** | Multi-Layer Integration Pipeline, Postman Automated Suites & E2E Verification | [Day 11 Action Log](bin/Daily_Actions/Phase_1_Design_and_Ledger/Day_11_Action_Log.md) | ✅ *Completed* |
 | **Day 12** | **Documentation Discipline: OpenAPI & ADR-001** | Standardized OpenAPI 3.0 Specs & Architecture Decision Records | *Pending* | ⏳ *Up Next* |
 
 ---
