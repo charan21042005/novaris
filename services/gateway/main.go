@@ -187,6 +187,8 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 	recipientID := req.Recipient
 	if recipientID == "" {
 		recipientID = "c0000000-0000-0000-0000-000000000002"
+	} else if _, err := uuid.Parse(recipientID); err != nil {
+		recipientID = "c0000000-0000-0000-0000-000000000002"
 	}
 	amountCents := req.AmountCents
 	if amountCents <= 0 {

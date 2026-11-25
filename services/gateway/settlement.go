@@ -24,6 +24,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -41,8 +42,29 @@ import (
 //   - transactionID: The cryptographically random UUID assigned to the new transaction.
 //   - err: Any error encountered during transaction execution, wrapped with %w context.
 func settleTransaction(db *sql.DB, senderID, recipientID string, amountCents int64) (string, error) {
+	// --------------------------------------------------------------------------
+	// STEP 0: Defensive Pre-Flight Validation (Fail-Fast before opening DB tx)
+	// --------------------------------------------------------------------------
 	if db == nil {
 		return "", fmt.Errorf("settleTransaction: database connection pool is nil")
+	}
+
+	if amountCents <= 0 {
+		return "", fmt.Errorf("settleTransaction: invalid amount %d: amount must be strictly positive", amountCents)
+	}
+
+	trimmedSender := strings.TrimSpace(senderID)
+	if trimmedSender == "" {
+		return "", fmt.Errorf("settleTransaction: sender account ID cannot be empty")
+	}
+
+	trimmedRecipient := strings.TrimSpace(recipientID)
+	if trimmedRecipient == "" {
+		return "", fmt.Errorf("settleTransaction: recipient account ID cannot be empty")
+	}
+
+	if trimmedSender == trimmedRecipient {
+		return "", fmt.Errorf("settleTransaction: self-transfers disallowed: sender and recipient account IDs (%s) must be distinct", trimmedSender)
 	}
 
 	// --------------------------------------------------------------------------
