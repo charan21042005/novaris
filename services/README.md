@@ -9,6 +9,7 @@
 ### Polyglot Service Architecture for High-Throughput Payment Ingestion, Settlement & Fraud Detection
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Architecture-Distributed_Microservices-00ADD8?style=flat-square&logo=microservices&logoColor=white" alt="Microservices" />
   <img src="https://img.shields.io/badge/Languages-Go_1.22+_•_Python_3.11+-00C853?style=flat-square&logo=polyglot&logoColor=white" alt="Polyglot" />
   <img src="https://img.shields.io/badge/Throughput_Target-3%2C500+_TPS-FF6D00?style=flat-square&logo=speedtest&logoColor=white" alt="Throughput" />

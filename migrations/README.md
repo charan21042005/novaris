@@ -9,6 +9,7 @@
 ### Immutable Double-Entry Ledger Schema & Transactional Outbox DDL
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Database-PostgreSQL_16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Accounting-Double--Entry_Zero--Drift-00C853?style=flat-square&logo=cashapp&logoColor=white" alt="Accounting" />
   <img src="https://img.shields.io/badge/Concurrency-Optimistic_Locking_(OCC)-00E5FF?style=flat-square&logo=affinitylock&logoColor=white" alt="Concurrency" />

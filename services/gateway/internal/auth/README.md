@@ -9,6 +9,7 @@
 ### Dual-Layer Identity Verification, Payload Integrity & Replay Attack Defense
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Language-Go_1.22+-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/AuthN-JWT_RFC_7519-00C853?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="JWT" />
   <img src="https://img.shields.io/badge/Integrity-HMAC_RFC_2104-7C4DFF?style=flat-square&logo=shield&logoColor=white" alt="HMAC" />

@@ -9,6 +9,7 @@
 ### Scalable Vector Graphics, Color Standards & Visual Documentation Elements
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Format-Scalable_Vector_Graphics_(SVG)-FF6D00?style=flat-square&logo=svg&logoColor=white" alt="SVG" />
   <img src="https://img.shields.io/badge/Theme-Cyberpunk_Fintech_Dark-00E5FF?style=flat-square&logo=artstation&logoColor=white" alt="Theme" />
   <img src="https://img.shields.io/badge/Standard-W3C_SVG_1.1-7C4DFF?style=flat-square&logo=w3c&logoColor=white" alt="W3C" />

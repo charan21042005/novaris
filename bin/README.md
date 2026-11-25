@@ -9,6 +9,7 @@
 ### Central Documentation Archive, Architecture Blueprints, and Daily Action Logs
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Vault_Status-Active_Reference-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Status" />
   <img src="https://img.shields.io/badge/Scope-End--to--End_Architecture-00C853?style=flat-square&logo=blueprint&logoColor=white" alt="Scope" />
   <img src="https://img.shields.io/badge/Roadmap-84_Days_Mapped-7C4DFF?style=flat-square&logo=clockify&logoColor=white" alt="Roadmap" />

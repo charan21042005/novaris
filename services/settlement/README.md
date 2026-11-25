@@ -9,6 +9,7 @@
 ### High-Throughput Double-Entry Accounting, Outbox Relay & SAGA Coordination
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Language-Go_1.22+-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/Pattern-Double--Entry_Accounting-00C853?style=flat-square&logo=cashapp&logoColor=white" alt="Accounting" />
   <img src="https://img.shields.io/badge/Concurrency-OCC_Compare--And--Swap-00E5FF?style=flat-square&logo=affinitylock&logoColor=white" alt="OCC" />

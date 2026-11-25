@@ -9,6 +9,7 @@
 ### In-Memory Token-Bucket Algorithm, Concurrency Safety & Fail-Fast Gateway Ingress Protection
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Language-Go_1.22+-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/Algorithm-Token_Bucket-FF6D00?style=flat-square&logo=speedtest&logoColor=white" alt="Algorithm" />
   <img src="https://img.shields.io/badge/Refill-Zero--Goroutine_Lazy_Math-00C853?style=flat-square&logo=hyperledger&logoColor=white" alt="Refill" />

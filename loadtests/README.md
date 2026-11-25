@@ -9,6 +9,7 @@
 ### Industrial Load Generation, Hot-Wallet OCC Stress Testing & Tail Latency Profiling
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Milestone-Day_13_of_84-00E5FF?style=flat-square&logo=target&logoColor=white" alt="Milestone" />
   <img src="https://img.shields.io/badge/Phase-1:_Design,_Ledger_%26_Perimeter-00C853?style=flat-square&logo=shield&logoColor=white" alt="Phase" />
   <img src="https://img.shields.io/badge/Engine-Grafana_k6_%7C_Go_CLI-7C4DFF?style=flat-square&logo=k6&logoColor=white" alt="Engine" />

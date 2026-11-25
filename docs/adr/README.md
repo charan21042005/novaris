@@ -9,6 +9,7 @@
 ### Systematic Historical Documentation of Key Architectural Decisions, Invariants, and Trade-Offs
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Documentation-ADR_Standard-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Standard" />
   <img src="https://img.shields.io/badge/Format-Michael_Nygard_RFC-00C853?style=flat-square&logo=markdown&logoColor=white" alt="Format" />
   <img src="https://img.shields.io/badge/Status-Living_Repository-7C4DFF?style=flat-square&logo=target&logoColor=white" alt="Status" />

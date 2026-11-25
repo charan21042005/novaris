@@ -9,6 +9,7 @@
 ### Formal Machine-Readable API Specifications, Schema Definitions & Interactive Documentation
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/OpenAPI-3.0.3_OAS-00E5FF?style=flat-square&logo=openapiinitiative&logoColor=white" alt="OpenAPI" />
   <img src="https://img.shields.io/badge/Contract-First_Standard-00C853?style=flat-square&logo=swagger&logoColor=white" alt="Contract" />
   <img src="https://img.shields.io/badge/Formats-YAML_%26_JSON-7C4DFF?style=flat-square&logo=json&logoColor=white" alt="Formats" />

@@ -9,6 +9,7 @@
 ### High-Throughput Request Ingestion, Rate Limiting & Cryptographic Verification
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Language-Go_1.22+-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/Security-JWT_+_HMAC--SHA256-00C853?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="Security" />
   <img src="https://img.shields.io/badge/Rate_Limiter-Token_Bucket_[10_burst,_2/s]-FF6D00?style=flat-square&logo=speedtest&logoColor=white" alt="Rate Limiter" />

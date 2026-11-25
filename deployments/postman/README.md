@@ -9,6 +9,7 @@
 ### Industry-Standard Automated API Contract Collections & Environment Definitions
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Postman-v2.1.0_Format-FF6C37?style=flat-square&logo=postman&logoColor=white" alt="Postman" />
   <img src="https://img.shields.io/badge/Contracts-10_Scenarios_Verified-00C853?style=flat-square&logo=checkmarx&logoColor=white" alt="Scenarios" />
   <img src="https://img.shields.io/badge/Crypto_Pre--Request-CryptoJS_HMAC_+_JWT-7C4DFF?style=flat-square&logo=javascript&logoColor=white" alt="CryptoJS" />

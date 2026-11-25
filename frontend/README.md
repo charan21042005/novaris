@@ -9,6 +9,7 @@
 ### Real-Time Payment Telemetry, Live Fraud Alert Workbench & Human Review Console
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
   <img src="https://img.shields.io/badge/Framework-Next.js_14_•_React-000000?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/Styling-Tailwind_CSS_•_Shadcn_UI-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind" />
   <img src="https://img.shields.io/badge/Streaming-WebSockets_•_SSE-00C853?style=flat-square&logo=socketdotio&logoColor=white" alt="WebSockets" />
