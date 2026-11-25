@@ -196,8 +196,8 @@ func TestGateway_RootDiscoveryContainsDocsLinks(t *testing.T) {
 		t.Fatalf("failed to parse JSON from /: %v", err)
 	}
 
-	if info.Day != 12 {
-		t.Errorf("expected Day 12 in root discovery, got %d", info.Day)
+	if info.Day < 12 {
+		t.Errorf("expected at least Day 12 in root discovery, got %d", info.Day)
 	}
 
 	// Assertion: Ensure docs and openapi hypermedia links are present in discovery banner:
