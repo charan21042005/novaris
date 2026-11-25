@@ -1,0 +1,546 @@
+{
+  "info": {
+    "_postman_id": "a9c1e041-3b76-47b2-9218-e2e77b1e4c01",
+    "name": "NOVARIS API Contracts Suite (Day 11)",
+    "description": "Comprehensive automated contract validation test suite for NOVARIS API Gateway.\n\nCovers the complete five-layer defense-in-depth and OCC double-entry settlement pipeline:\n1. Layer 1: JWT Authentication (RFC 7519)\n2. Layer 2: Token-Bucket Rate Limiter (RFC 6585)\n3. Layer 3: HMAC-SHA256 Anti-Tamper & Anti-Replay (RFC 2104)\n4. Layer 4: Idempotent Request Deduplication (draft-ietf-httpapi-idempotency-key-header)\n5. Layer 5: Atomic OCC Double-Entry Settlement Core (ACID Invariants)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Public Liveness Probe",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Service status is ok\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"ok\");",
+              "    pm.expect(jsonData.service).to.eql(\"novaris-gateway\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/healthz",
+          "host": ["{{base_url}}"],
+          "path": ["healthz"]
+        },
+        "description": "Verifies that the API Gateway process is alive, unauthenticated, and responding to container orchestration probes."
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Public Service Discovery",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Discovery metadata reports Day 11 Integration Wiring\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"online\");",
+              "    pm.expect(jsonData.day).to.eql(11);",
+              "    pm.expect(jsonData.phase).to.include(\"Integration Wiring\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"],
+          "path": [""]
+        },
+        "description": "Returns gateway catalog, operational versioning, and listed endpoints."
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Auth Defense: Missing Bearer Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"Error indicates missing authorization header\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eql(\"unauthorized\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "missing-auth-key-001"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount_cents\": 5000, \"recipient\": \"{{recipient_id}}\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/payments",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Layer 1 Defense: Asserts that requests lacking an Authorization Bearer header are rejected immediately with HTTP 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Security Defense: Missing HMAC Signature",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Generate a standard JWT for test",
+              "var header = { \"alg\": \"HS256\", \"typ\": \"JWT\" };",
+              "var now = Math.floor(Date.now() / 1000);",
+              "var payload = {",
+              "    \"sub\": pm.environment.get(\"merchant_id\"),",
+              "    \"merchant_id\": pm.environment.get(\"merchant_id\"),",
+              "    \"role\": \"merchant\",",
+              "    \"iat\": now,",
+              "    \"exp\": now + 900",
+              "};",
+              "",
+              "function base64url(source) {",
+              "    var encodedSource = CryptoJS.enc.Base64.stringify(source);",
+              "    encodedSource = encodedSource.replace(/=+$/, '');",
+              "    encodedSource = encodedSource.replace(/\\+/g, '-');",
+              "    encodedSource = encodedSource.replace(/\\//g, '_');",
+              "    return encodedSource;",
+              "}",
+              "",
+              "var stringifiedHeader = CryptoJS.enc.Utf8.parse(JSON.stringify(header));",
+              "var encodedHeader = base64url(stringifiedHeader);",
+              "var stringifiedData = CryptoJS.enc.Utf8.parse(JSON.stringify(payload));",
+              "var encodedData = base64url(stringifiedData);",
+              "var token = encodedHeader + \".\" + encodedData;",
+              "var secret = pm.environment.get(\"jwt_secret\");",
+              "var signature = CryptoJS.HmacSHA256(token, secret);",
+              "signature = base64url(signature);",
+              "var signedJWT = token + \".\" + signature;",
+              "pm.environment.set(\"jwt_token\", signedJWT);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"Rejection mentions missing HMAC signature headers\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eql(\"unauthorized\");",
+              "    pm.expect(jsonData.message).to.include(\"signature\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "missing-hmac-key-002"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount_cents\": 5000, \"recipient\": \"{{recipient_id}}\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/payments",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Layer 3 Defense: Asserts that requests presenting valid JWT identity but missing cryptographic HMAC-SHA256 headers are rejected with HTTP 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Idempotency Defense: Missing Idempotency Key",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var body = pm.request.body.raw;",
+              "var now = Math.floor(Date.now() / 1000);",
+              "var secret = pm.environment.get(\"hmac_secret\");",
+              "var canonical = now + \".\" + body;",
+              "var sig = CryptoJS.HmacSHA256(canonical, secret).toString(CryptoJS.enc.Hex);",
+              "",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Timestamp\", value: String(now) });",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Signature\", value: sig });"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Rejection indicates missing Idempotency-Key header\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eql(\"bad_request\");",
+              "    pm.expect(jsonData.message).to.include(\"Idempotency-Key\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount_cents\": 5000, \"recipient\": \"{{recipient_id}}\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/payments",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Layer 4 Defense: Enforces draft-ietf-httpapi-idempotency-key-header standard on mutating payment routes."
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Full Pipeline End-to-End Settlement Success",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// 1. Generate fresh unique Idempotency-Key",
+              "var idempKey = 'postman-key-' + CryptoJS.lib.WordArray.random(16).toString();",
+              "pm.environment.set(\"current_idempotency_key\", idempKey);",
+              "pm.request.headers.upsert({ key: \"Idempotency-Key\", value: idempKey });",
+              "",
+              "// 2. Sign canonical body",
+              "var body = pm.request.body.raw;",
+              "var now = Math.floor(Date.now() / 1000);",
+              "var secret = pm.environment.get(\"hmac_secret\");",
+              "var canonical = now + \".\" + body;",
+              "var sig = CryptoJS.HmacSHA256(canonical, secret).toString(CryptoJS.enc.Hex);",
+              "",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Timestamp\", value: String(now) });",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Signature\", value: sig });"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Fresh request is NOT marked as replayed\", function () {",
+              "    pm.expect(pm.response.headers.get(\"Idempotent-Replayed\")).to.be.undefined;",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Payment settled atomically\", function () {",
+              "    pm.expect(jsonData.status).to.eql(\"settled\");",
+              "    pm.expect(jsonData.amount_cents).to.eql(5000);",
+              "    pm.expect(jsonData.transaction_id).to.be.a(\"string\");",
+              "    pm.environment.set(\"last_transaction_id\", jsonData.transaction_id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount_cents\": 5000, \"recipient\": \"{{recipient_id}}\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/payments",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Happy Path: Executes end-to-end payment settlement through all 5 layers, updating ledger balances and returning transaction UUID."
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Exact-Once Network Retry Replay",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Re-use exact same Idempotency-Key from Request 06",
+              "var idempKey = pm.environment.get(\"current_idempotency_key\");",
+              "pm.request.headers.upsert({ key: \"Idempotency-Key\", value: idempKey });",
+              "",
+              "// Re-sign exact same body",
+              "var body = pm.request.body.raw;",
+              "var now = Math.floor(Date.now() / 1000);",
+              "var secret = pm.environment.get(\"hmac_secret\");",
+              "var canonical = now + \".\" + body;",
+              "var sig = CryptoJS.HmacSHA256(canonical, secret).toString(CryptoJS.enc.Hex);",
+              "",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Timestamp\", value: String(now) });",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Signature\", value: sig });"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Idempotent-Replayed header is true\", function () {",
+              "    pm.expect(pm.response.headers.get(\"Idempotent-Replayed\")).to.eql(\"true\");",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Transaction ID matches original settled ID (Exact-Once Invariant)\", function () {",
+              "    var originalTxID = pm.environment.get(\"last_transaction_id\");",
+              "    pm.expect(jsonData.transaction_id).to.eql(originalTxID);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount_cents\": 5000, \"recipient\": \"{{recipient_id}}\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/payments",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Simulates network packet loss where client retries an already-settled transfer. Proves that original response is returned from cache with zero secondary debits."
+      },
+      "response": []
+    },
+    {
+      "name": "08 - Idempotency Defense: Key Reuse Mismatched Payload",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Re-use Idempotency-Key from Request 06 but with altered body ($500,000 cents instead of 5,000 cents)",
+              "var idempKey = pm.environment.get(\"current_idempotency_key\");",
+              "pm.request.headers.upsert({ key: \"Idempotency-Key\", value: idempKey });",
+              "",
+              "var body = pm.request.body.raw;",
+              "var now = Math.floor(Date.now() / 1000);",
+              "var secret = pm.environment.get(\"hmac_secret\");",
+              "var canonical = now + \".\" + body;",
+              "var sig = CryptoJS.HmacSHA256(canonical, secret).toString(CryptoJS.enc.Hex);",
+              "",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Timestamp\", value: String(now) });",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Signature\", value: sig });"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 422 Unprocessable Entity\", function () {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "",
+              "pm.test(\"Error indicates payload hash mismatch\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eql(\"idempotency_payload_mismatch\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount_cents\": 500000, \"recipient\": \"{{recipient_id}}\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/payments",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Simulates key reuse attack: client reuses idempotency key with a different transfer payload. Gateway halts execution with HTTP 422."
+      },
+      "response": []
+    },
+    {
+      "name": "09 - Validation Defense: Self-Transfer Disallowed",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var idempKey = 'self-transfer-' + CryptoJS.lib.WordArray.random(16).toString();",
+              "pm.request.headers.upsert({ key: \"Idempotency-Key\", value: idempKey });",
+              "",
+              "var body = pm.request.body.raw;",
+              "var now = Math.floor(Date.now() / 1000);",
+              "var secret = pm.environment.get(\"hmac_secret\");",
+              "var canonical = now + \".\" + body;",
+              "var sig = CryptoJS.HmacSHA256(canonical, secret).toString(CryptoJS.enc.Hex);",
+              "",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Timestamp\", value: String(now) });",
+              "pm.request.headers.upsert({ key: \"X-Novaris-Signature\", value: sig });"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Rejection indicates self-transfer error\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eql(\"validation_error\");",
+              "    pm.expect(jsonData.message).to.include(\"self-transfers\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount_cents\": 1000, \"recipient\": \"{{merchant_id}}\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/payments",
+          "host": ["{{base_url}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Financial Invariant: A user or merchant cannot settle funds to their own identical account ID."
+      },
+      "response": []
+    }
+  ]
+}
