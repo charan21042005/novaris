@@ -32,7 +32,7 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 5. **Structured Observability:** Middleware tracking request method, path, remote IP, and microsecond processing latency.
 6. **Graceful Termination:** Intercepts OS signals (`SIGINT`, `SIGTERM`) and allows in-flight connections to drain cleanly with a 5-second deadline.
 7. **Relational Ledger & Schema Integrity (Day 5):** Full SRS Blueprint database schema including `accounts`, `transactions`, `journal_entries`, `outbox`, `fraud_reviews` (human ground-truth labels with CHECK constraints), and `feature_snapshots` (JSONB point-in-time features with composite B-Tree indexing).
-8. *(Upcoming Day 6):* Atomic double-entry settlement engine, balance validation, and transaction rollbacks.
+8. **Atomic Settlement Engine (Day 6):** Pure ACID multi-table writes (`transactions` + 2 `journal_entries`), automatic deferred rollback (`defer tx.Rollback()`), injection-proof parameterized SQL queries (`$1, $2, ...`), and integer-cent precision with decoupled offline fallback.
 
 ---
 
@@ -79,13 +79,14 @@ Requires valid credentials across both security layers:
 * **Success Response (`200 OK`):**
 ```json
 {
-  "status": "authorized",
+  "status": "settled",
+  "transaction_id": "8fa8d39f-e60d-4952-b8ec-f584e44487ce",
   "merchant_id": "merchant_123",
   "role": "merchant",
   "amount_cents": 5000,
   "recipient": "merchant_456",
-  "message": "Payment request verified successfully: JWT identity confirmed, rate limit quota allocated, and HMAC body integrity preserved.",
-  "timestamp": "2026-11-24T12:50:11.608Z"
+  "message": "Payment settled atomically: double-entry journal records committed to PostgreSQL ledger.",
+  "timestamp": "2026-11-25T08:30:11.608Z"
 }
 ```
 
@@ -158,7 +159,9 @@ go test -v ./...
 
 ## 📂 Subdirectory Architecture & Technical Documentation
 
-* 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken` and `signrequest`) for local token minting and signature testing.
+* 👉 **[`settlement.go`](./settlement.go):** Atomic financial settlement core implementing double-entry multi-table writes inside a single database transaction with automatic deferred rollback (`defer tx.Rollback()`).
+* 👉 **[`settlement_test.go`](./settlement_test.go):** Comprehensive unit and integration test suite using `go-sqlmock` for deterministic rollback validation under foreign key failures.
+* 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken`, `signrequest`, and `verifyschema`) for local token minting and signature testing.
 * 👉 **[`internal/` Engine Documentation](./internal/README.md):** Go compiler-enforced private package boundary.
 * 👉 **[`internal/auth/` Cryptographic Specs](./internal/auth/README.md):** Cryptographic JWT & HMAC-SHA256 engine specifications and test matrices.
 * 👉 **[`internal/ratelimit/` Rate Limiter Specs](./internal/ratelimit/README.md):** Token-bucket rate limiter mathematical model, concurrency architecture, and test suites.
