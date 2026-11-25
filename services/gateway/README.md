@@ -34,6 +34,7 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 7. **Relational Ledger & Schema Integrity (Day 5):** Full SRS Blueprint database schema including `accounts`, `transactions`, `journal_entries`, `outbox`, `fraud_reviews` (human ground-truth labels with CHECK constraints), and `feature_snapshots` (JSONB point-in-time features with composite B-Tree indexing).
 8. **Atomic Settlement Engine (Day 6):** Pure ACID multi-table writes (`transactions` + 2 `journal_entries`), automatic deferred rollback (`defer tx.Rollback()`), injection-proof parameterized SQL queries (`$1, $2, ...`), and integer-cent precision with decoupled offline fallback.
 9. **Exhaustive Table-Driven Testing Safety Net (Day 7):** Complete table-driven test suite (`TestSettleTransaction_TableDriven`) providing **100.0% statement coverage** across settlement logic with 15 parallel subtests, boundary value analysis (\$0.01, \$10M), pre-flight input validation, and in-memory execution benchmarks ($66\mu\text{s/op}$).
+10. **Concurrency Stress Testing & Race Detection (Day 8):** High-density goroutine synchronization suite (`concurrency_test.go`) testing 50-100 simultaneous requests with nanosecond channel-close barriers (`chan struct{}`), verifying atomic state isolation on identical UUIDs, full-stack HTTP pipeline race stress through `sync.RWMutex` token buckets (burst saturation), and bidirectional transfer deadlock freedom.
 
 ---
 
