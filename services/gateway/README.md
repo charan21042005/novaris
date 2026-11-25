@@ -164,6 +164,9 @@ go test -v ./...
 
 * 👉 **[`settlement.go`](./settlement.go):** Atomic financial settlement core implementing double-entry multi-table writes inside a single database transaction with automatic deferred rollback (`defer tx.Rollback()`).
 * 👉 **[`settlement_test.go`](./settlement_test.go):** Comprehensive unit and integration test suite using `go-sqlmock` for deterministic rollback validation under foreign key failures.
+* 👉 **[`concurrency_test.go`](./concurrency_test.go):** High-density concurrency stress suite (50-100 goroutines) with nanosecond start gate synchronization barriers (`chan struct{}`), asserting atomic thread isolation and rate-limiting burst saturation.
+* 👉 **[`occ.go`](./occ.go):** Optimistic Concurrency Control (OCC) engine implementing atomic Compare-And-Swap (CAS) balance updates (`WHERE id = $1 AND version = $2`), collision detection (`RowsAffected == 0`), and jittered exponential-backoff retries.
+* 👉 **[`occ_test.go`](./occ_test.go):** Comprehensive OCC unit and 50-worker collision race stress suite, proving that exactly 1 winner succeeds and 49 stale writes are safely rejected.
 * 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken`, `signrequest`, and `verifyschema`) for local token minting and signature testing.
 * 👉 **[`internal/` Engine Documentation](./internal/README.md):** Go compiler-enforced private package boundary.
 * 👉 **[`internal/auth/` Cryptographic Specs](./internal/auth/README.md):** Cryptographic JWT & HMAC-SHA256 engine specifications and test matrices.
