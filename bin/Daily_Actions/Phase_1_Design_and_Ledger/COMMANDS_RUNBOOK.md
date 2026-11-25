@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Runbook-Phase_1_Testing_Suite-00E5FF?style=flat-square&logo=gitbook&logoColor=white" alt="Runbook" />
-  <img src="https://img.shields.io/badge/Days-01_to_11_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
+  <img src="https://img.shields.io/badge/Days-01_to_14_Verified-00C853?style=flat-square&logo=googlecalendar&logoColor=white" alt="Days" />
   <img src="https://img.shields.io/badge/Shell-Bash_%26_PowerShell-7C4DFF?style=flat-square&logo=powershell&logoColor=white" alt="Shell" />
   <img src="https://img.shields.io/badge/Standard-Industrial_FinTech-FFA000?style=flat-square&logo=standards&logoColor=white" alt="Standard" />
 </p>
@@ -38,7 +38,10 @@ This document is the **central command cheat sheet** for NOVARIS. Every command 
 9. [Day 09: Optimistic Concurrency Control (OCC) & Version Invariant Runbook](#9-day-09-optimistic-concurrency-control-occ--version-invariant-runbook)
 10. [Day 10: Idempotent API Design & Safe Network Retries Runbook](#10-day-10-idempotent-api-design--safe-network-retries-runbook)
 11. [Day 11: Integration Wiring, API Contracts & E2E Verification Runbook](#11-day-11-integration-wiring-api-contracts--e2e-verification-runbook)
-12. [Master Daily Git Multi-Commit & Push Workflow](#12-master-daily-git-multi-commit--push-workflow)
+12. [Day 12: OpenAPI 3.0 & Architecture Decision Records (ADRs)](#12-day-12--openapi-30--architecture-decision-records-adrs)
+13. [Day 13: Concurrency Load Scripting (k6 & Hot-Wallet Contention) Runbook](#13-day-13-concurrency-load-scripting-k6--hot-wallet-contention-runbook)
+14. [Day 14: Phase 1 Capstone Review & Final Certification Runbook](#14-day-14-phase-1-capstone-review--final-certification-runbook)
+15. [Master Daily Git Multi-Commit & Push Workflow](#15-master-daily-git-multi-commit--push-workflow)
 
 ---
 
@@ -786,7 +789,44 @@ go test -v ./...
 
 ---
 
-## 14. Master Daily Git Multi-Commit & Push Workflow
+## 14. Day 14: Phase 1 Capstone Review & Final Certification Runbook
+
+### 14.1 Run Automated Phase 1 Capstone 5-Criteria Test Suite:
+```powershell
+Set-Location "services/gateway"
+go test -v -count=1 -run "TestPhase1Capstone" .
+```
+
+### 14.2 Run Phase 1 Capstone Audit Runner CLI (Interactive ANSI Certificate):
+```powershell
+go run ./services/gateway/cmd/phase1audit/main.go
+```
+
+### 14.3 Run Phase 1 Capstone Audit Runner CLI (Machine-Readable JSON Output):
+```powershell
+go run ./services/gateway/cmd/phase1audit/main.go -json
+```
+
+### 14.4 Run Audit Runner CLI Unit Test Suite:
+```powershell
+go test -v ./services/gateway/cmd/phase1audit/...
+```
+
+### 14.5 Execute Database-Level Phase 1 Capstone SQL Audit Script:
+```bash
+docker cp migrations/verify_phase1_capstone.sql novaris-postgres:/tmp/verify_phase1_capstone.sql
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db -f /tmp/verify_phase1_capstone.sql
+```
+
+### 14.6 Run Full Multi-Package Test Suite Across All 9 Subsystems:
+```powershell
+Set-Location "services/gateway"
+go test -v ./...
+```
+
+---
+
+## 15. Master Daily Git Multi-Commit & Push Workflow
 
 To maintain a professional, atomic Git history and continuously build your public GitHub contribution profile:
 
