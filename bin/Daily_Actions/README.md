@@ -44,7 +44,7 @@ Looking for copy-pasteable commands to run or probe any Phase 1 milestone? Check
 bin/Daily_Actions/
 ├── README.md                                   # Root directory index (this file)
 │
-├── Phase_1_Design_and_Ledger/                 # 🏛️ Phase 1: Weeks 1-2 (Days 01–14) — [ACTIVE VAULT]
+├── Phase_1_Design_and_Ledger/                 # 🏛️ Phase 1: Weeks 1-2 (Days 01–14) — [COMPLETED VAULT]
 │   ├── README.md                               # Phase 1 master index, architecture overview & badges
 │   ├── COMMANDS_RUNBOOK.md                     # Centralized test & run cheat sheet for Phase 1 milestones
 │   ├── Day_01_Action_Log.md                    # Day 01: Monorepo, Docker Compose & Ledger Schema Foundation
@@ -62,7 +62,8 @@ bin/Daily_Actions/
 │   ├── Day_13_Action_Log.md                    # Day 13: Concurrency Load Scripting (k6 & Hot-Wallet Contention)
 │   └── Day_14_Action_Log.md                    # Day 14: Phase 1 Capstone Review & Final Sign-Off (COMPLETED)
 │
-├── Phase_2_Streaming_Core/                     # 🚀 Phase 2: Weeks 3-4 (Days 15–28) — [UPCOMING]
+├── Phase_2_Streaming_Core/                     # 🚀 Phase 2: Weeks 3-4 (Days 15–28) — [ACTIVE VAULT]
+│   └── README.md                               # Phase 2 master index, Kafka/Redis architecture & roadmap
 ├── Phase_3_Fraud_Engine/                       # 🧠 Phase 3: Weeks 5-6 (Days 29–42) — [UPCOMING]
 ├── Phase_4_High_Throughput/                    # ⚡ Phase 4: Weeks 7-8 (Days 43–56) — [UPCOMING]
 ├── Phase_5_Observability/                      # 📊 Phase 5: Weeks 9-10 (Days 57–70) — [UPCOMING]
@@ -89,6 +90,7 @@ bin/Daily_Actions/
 | **Phase 1** | **Day 12** | **Documentation Discipline: OpenAPI Specifications & Architecture Decision Records (ADR-001)** | [Day_12_Action_Log.md](./Phase_1_Design_and_Ledger/Day_12_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 13** | **Concurrency Load Scripting (k6 & Hot-Wallet Contention)** | [Day_13_Action_Log.md](./Phase_1_Design_and_Ledger/Day_13_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 14** | **Phase 1 Capstone Milestone Review & Comprehensive Production Verification** | [Day_14_Action_Log.md](./Phase_1_Design_and_Ledger/Day_14_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 2** | **Day 15** | **Apache Kafka Cluster Setup & Topic Topology** | [Phase_2_Streaming_Core/README.md](./Phase_2_Streaming_Core/README.md) | ⏳ *Up Next* |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 
 ---
