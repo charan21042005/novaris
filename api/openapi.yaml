@@ -1,34 +1,109 @@
+# ==============================================================================
+# NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
+# FILE: api/openapi.yaml
+# SPECIFICATION: OpenAPI Specification (OAS) 3.0.3
+# ==============================================================================
+#
+# 📚 COMPUTER SCIENCE & API CONTRACT DESIGN FOR BEGINNERS:
+#
+# 1. WHAT IS OPENAPI (OAS)?
+#    OpenAPI is a vendor-neutral, machine-readable standard (written in YAML or JSON)
+#    for describing HTTP REST APIs. It defines:
+#      - Available endpoints (URL paths like /v1/payments)
+#      - Supported HTTP methods (GET, POST, PUT, DELETE, etc.)
+#      - Authentication mechanisms (JWT Bearer tokens, HMAC signatures, API keys)
+#      - Required headers, query parameters, and URL path variables
+#      - Request body schemas and data types (JSON objects, integers, UUIDs)
+#      - Response structures and HTTP status codes (200, 400, 401, 409, 422, 429, 500)
+#
+# 2. WHY USE CONTRACT-FIRST API DEVELOPMENT?
+#    In traditional "Code-First" development, developers write backend code first and
+#    document it later (often inaccurately). In "Contract-First" development:
+#      - The OpenAPI YAML is the single source of truth agreed upon before coding.
+#      - Frontend and backend teams can develop in parallel using Prism mock servers.
+#      - Client SDKs (TypeScript, Python, Java, Go) can be generated automatically.
+#      - Automated contract testing ensures backend code never drifts from documentation.
+#
+# 3. NOVARIS PERIMETER & LEDGER INTEGRATION:
+#    This contract documents the entire Five-Layer Defense-in-Depth gateway perimeter
+#    protecting the PostgreSQL double-entry settlement engine:
+#      Layer 1: JWT RFC 7519 Bearer Token Authentication (Identity)
+#      Layer 2: Token-Bucket Rate Limiter (Denial-of-Service / Abuse Prevention)
+#      Layer 3: HMAC-SHA256 RFC 2104 Signature (Tamper & Replay Defense)
+#      Layer 4: IETF Draft Idempotency Deduplication (Exact-Once Settlement)
+#      Layer 5: Optimistic Concurrency Control (OCC Double-Entry Settlement)
+# ==============================================================================
+
+# OpenAPI Specification Semantic Version:
+# 3.0.3 provides maximum compatibility across Swagger UI, Redocly, Prism, and code generators.
 openapi: 3.0.3
+
+# ------------------------------------------------------------------------------
+# Metadata & Project Identification
+# ------------------------------------------------------------------------------
 info:
+  # The human-readable title of the platform gateway service:
   title: NOVARIS Distributed Payment Settlement & Adaptive Fraud Intelligence Gateway
+  
+  # Semantic version of the API contract (Major.Minor.Patch):
   version: 0.12.0
+  
+  # Detailed architectural overview displayed in developer portals and Swagger UI:
   description: |
     Production-grade distributed payment gateway API engineered with a Five-Layer Defense-in-Depth
     perimeter (JWT RFC 7519, Token-Bucket Rate Limiting, HMAC-SHA256 RFC 2104, IETF Idempotency,
     and Optimistic Concurrency Control double-entry consensus).
+    
+    All monetary values are strictly represented in 64-bit integer minor currency units (cents).
+    Floating-point numbers (IEEE-754) are strictly disallowed to prevent rounding truncation errors.
+    
+  # Maintainer contact information for developer support and vulnerability disclosures:
   contact:
     name: NOVARIS Core Systems Engineering
     email: support@novaris.internal
     url: https://github.com/charan21042005/novaris
+    
+  # Legal software licensing terms:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 
+# ------------------------------------------------------------------------------
+# Target Deployment Environments (Server Base URLs)
+# ------------------------------------------------------------------------------
+# Allows interactive API testing tools (like Swagger UI) to toggle between local and cloud hosts.
 servers:
+  # Local workstation development gateway (default during local engineering):
   - url: http://localhost:8080
-    description: Local Development Gateway
+    description: Local Development Gateway (Host Workstation)
+    
+  # Internal Kubernetes cluster / VPC private microservice service mesh gateway:
   - url: https://api.novaris.internal
-    description: Internal VPC Microservice Mesh Gateway
+    description: Internal VPC Microservice Mesh Gateway (Production / Staging)
 
+# ------------------------------------------------------------------------------
+# Category Tags for Logical Endpoint Grouping
+# ------------------------------------------------------------------------------
+# Tags organize endpoints into distinct visual accordions in Swagger UI and Redoc.
 tags:
   - name: Health & Diagnostics
-    description: Liveness, readiness, and service discovery probes
+    description: Liveness, readiness, and service discovery probes for container orchestrators (Kubernetes).
   - name: Payment Settlement
-    description: Core financial double-entry transaction settlement routes
+    description: Core financial double-entry transaction settlement routes with ACID guarantees.
   - name: Documentation
-    description: OpenAPI specifications and interactive API documentation
+    description: OpenAPI specifications and interactive API documentation endpoints.
 
+# ==============================================================================
+# Endpoint Paths & Operation Definitions
+# ==============================================================================
 paths:
+
+  # ----------------------------------------------------------------------------
+  # 1. GET /healthz — Public Kubernetes Liveness Probe
+  # ----------------------------------------------------------------------------
+  # Used by Kubernetes kubelet, AWS ALB, and Docker healthchecks to verify the process is alive.
+  # If this returns 5xx or fails to respond, the container orchestrator restarts the container.
+  # ----------------------------------------------------------------------------
   /healthz:
     get:
       tags:
@@ -37,11 +112,13 @@ paths:
       description: Returns service operational status. Publicly accessible without authentication.
       operationId: getHealthz
       responses:
+        # HTTP 200: Container is alive and accepting incoming TCP sockets.
         '200':
           description: Service is healthy and operational.
           content:
             application/json:
               schema:
+                # $ref points to reusable component model defined in components/schemas below:
                 $ref: '#/components/schemas/HealthResponse'
               example:
                 status: ok
@@ -49,16 +126,21 @@ paths:
                 version: 0.12.0
                 environment: development
 
+  # ----------------------------------------------------------------------------
+  # 2. GET / — Service Discovery Banner
+  # ----------------------------------------------------------------------------
+  # Returns metadata about the service, current version, and links to documentation.
+  # ----------------------------------------------------------------------------
   /:
     get:
       tags:
         - Health & Diagnostics
       summary: Service Discovery Banner
-      description: Returns root service identification and API versioning metadata.
+      description: Returns root service identification, versioning metadata, and links to API docs.
       operationId: getRoot
       responses:
         '200':
-          description: Root discovery banner.
+          description: Root discovery banner with documentation hypermedia links.
           content:
             application/json:
               schema:
@@ -69,6 +151,11 @@ paths:
                 docs: /docs
                 openapi: /openapi.json
 
+  # ----------------------------------------------------------------------------
+  # 3. GET /openapi.json — Machine-Readable OpenAPI Contract Schema
+  # ----------------------------------------------------------------------------
+  # Used by automated client generators, Postman collection importers, and CI validators.
+  # ----------------------------------------------------------------------------
   /openapi.json:
     get:
       tags:
@@ -78,12 +165,17 @@ paths:
       operationId: getOpenAPISpec
       responses:
         '200':
-          description: OpenAPI JSON specification.
+          description: Raw OpenAPI 3.0.3 JSON schema specification document.
           content:
             application/json:
               schema:
                 type: object
 
+  # ----------------------------------------------------------------------------
+  # 4. GET /docs — Interactive Developer Swagger UI Dashboard
+  # ----------------------------------------------------------------------------
+  # Serves an embedded HTML/CSS/JavaScript web page loading Swagger UI directly from Go binary memory.
+  # ----------------------------------------------------------------------------
   /docs:
     get:
       tags:
@@ -93,12 +185,23 @@ paths:
       operationId: getSwaggerUI
       responses:
         '200':
-          description: Interactive Swagger UI HTML page.
+          description: Interactive Swagger UI HTML developer dashboard page.
           content:
             text/html:
               schema:
                 type: string
 
+  # ----------------------------------------------------------------------------
+  # 5. POST /v1/payments — Core Double-Entry Settlement Route
+  # ----------------------------------------------------------------------------
+  # The central financial mutation endpoint of the NOVARIS platform.
+  # Executes atomic transfers between accounts while enforcing the 5-layer perimeter:
+  #   - Layer 1: Bearer JWT validation
+  #   - Layer 2: Token-bucket rate limiting (10 burst, 2 req/s)
+  #   - Layer 3: HMAC-SHA256 signature verification over body & timestamp
+  #   - Layer 4: Idempotency deduplication via SHA-256 fingerprinting
+  #   - Layer 5: Optimistic Concurrency Control (OCC) double-entry consensus
+  # ----------------------------------------------------------------------------
   /v1/payments:
     post:
       tags:
@@ -113,16 +216,22 @@ paths:
         4. Layer 4: IETF Idempotency Deduplication (Exact-once execution, SHA-256 payload fingerprinting)
         5. Layer 5: Optimistic Concurrency Control (OCC) double-entry consensus with monotonic version increments.
       operationId: settlePayment
+      
+      # Security requirements: Both BearerAuth (JWT) AND HMACAuth (Signature) are required:
       security:
         - BearerAuth: []
         - HMACAuth: []
+        
+      # Required Request Headers:
       parameters:
         - $ref: '#/components/parameters/IdempotencyKeyHeader'
         - $ref: '#/components/parameters/HMACTimestampHeader'
         - $ref: '#/components/parameters/HMACSignatureHeader'
+        
+      # Financial Transfer JSON Payload:
       requestBody:
         required: true
-        description: Financial payment transfer details.
+        description: Financial payment transfer details containing payer, payee, and amount in integer cents.
         content:
           application/json:
             schema:
@@ -132,10 +241,17 @@ paths:
               recipient_id: c0000000-0000-0000-0000-000000000002
               amount_cents: 5000
               currency: USD
+              
+      # Exhaustive HTTP Response Codes (7 Contract Outcomes):
       responses:
+      
+        # ----------------------------------------------------------------------
+        # HTTP 200 OK — Successful Settlement or Idempotent Cached Replay
+        # ----------------------------------------------------------------------
         '200':
           description: Payment settled successfully (or idempotently replayed from cache).
           headers:
+            # Header present ONLY on duplicate requests served from the idempotency cache:
             Idempotent-Replayed:
               schema:
                 type: string
@@ -154,13 +270,16 @@ paths:
                 currency: USD
                 message: Payment settled end-to-end via OCC double-entry ledger pipeline.
 
+        # ----------------------------------------------------------------------
+        # HTTP 400 Bad Request — Syntactic or Business Validation Violation
+        # ----------------------------------------------------------------------
         '400':
           description: |
             Bad Request. Triggered when:
             - Missing mandatory `Idempotency-Key` header
             - Self-transfer attempted (`sender_id == recipient_id`)
-            - Negative or zero `amount_cents`
-            - Malformed JSON payload
+            - Negative or zero `amount_cents` (must be >= 1 cent)
+            - Malformed or unparseable JSON payload
           content:
             application/json:
               schema:
@@ -170,6 +289,9 @@ paths:
                 message: Idempotency-Key header is mandatory for mutating payments
                 code: 400
 
+        # ----------------------------------------------------------------------
+        # HTTP 401 Unauthorized — Authentication or Cryptographic Signature Failure
+        # ----------------------------------------------------------------------
         '401':
           description: |
             Unauthorized. Triggered by Layer 1 or Layer 3 perimeter defenses:
@@ -186,6 +308,9 @@ paths:
                 message: HMAC signature verification failed or timestamp drift exceeded tolerance
                 code: 401
 
+        # ----------------------------------------------------------------------
+        # HTTP 409 Conflict — Concurrent Duplicate or High OCC Contention
+        # ----------------------------------------------------------------------
         '409':
           description: |
             Conflict. Triggered when:
@@ -200,6 +325,9 @@ paths:
                 message: Transaction currently in-flight or concurrency collision limit exceeded; retry with backoff
                 code: 409
 
+        # ----------------------------------------------------------------------
+        # HTTP 422 Unprocessable Entity — Idempotency Payload Mutation Attack
+        # ----------------------------------------------------------------------
         '422':
           description: |
             Unprocessable Entity. Triggered by Layer 4 security defense when a client reuses an
@@ -213,11 +341,15 @@ paths:
                 message: Idempotency key reused with mismatched body payload hash
                 code: 422
 
+        # ----------------------------------------------------------------------
+        # HTTP 429 Too Many Requests — Token-Bucket Rate Limit Exhaustion
+        # ----------------------------------------------------------------------
         '429':
           description: |
             Too Many Requests. Triggered by Layer 2 Token-Bucket limiter when per-merchant
             traffic exceeds burst capacity (10 requests) or sustained refill velocity (2 req/s).
           headers:
+            # Tells client how long to pause before sending next request:
             Retry-After:
               schema:
                 type: integer
@@ -231,6 +363,9 @@ paths:
                 message: Per-merchant burst capacity exhausted; backoff required
                 code: 429
 
+        # ----------------------------------------------------------------------
+        # HTTP 500 Internal Server Error — Infrastructure or Database Rollback
+        # ----------------------------------------------------------------------
         '500':
           description: Internal Server Error. Triggered on database connection failure or transaction rollback.
           content:
@@ -242,20 +377,34 @@ paths:
                 message: Database settlement failed; transaction safely rolled back
                 code: 500
 
+# ==============================================================================
+# Reusable Components (Security Schemes, Headers, and Data Schemas)
+# ==============================================================================
 components:
+
+  # ----------------------------------------------------------------------------
+  # Security Schemes (Authentication Protocols)
+  # ----------------------------------------------------------------------------
   securitySchemes:
+    # Scheme 1: RFC 7519 JSON Web Token
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
       description: "RFC 7519 JSON Web Token containing authenticated merchant identity claims (sub, role: merchant)."
+      
+    # Scheme 2: RFC 2104 Keyed-Hashing for Message Authentication (HMAC-SHA256)
     HMACAuth:
       type: apiKey
       in: header
       name: X-Novaris-Signature
       description: RFC 2104 HMAC-SHA256 hexadecimal digest computed over canonical string `<X-Novaris-Timestamp>.<raw_body>`.
 
+  # ----------------------------------------------------------------------------
+  # Header Parameter Definitions
+  # ----------------------------------------------------------------------------
   parameters:
+    # Parameter: Idempotency-Key (IETF Draft RFC Standard for Mutating APIs)
     IdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -266,6 +415,7 @@ components:
         format: uuid
         example: 7b3e2154-8c42-4f71-a0c3-f0d5718a9942
 
+    # Parameter: Request Timestamp Header (Replay Attack Defense)
     HMACTimestampHeader:
       name: X-Novaris-Timestamp
       in: header
@@ -276,16 +426,25 @@ components:
         format: int64
         example: 1732537200
 
+    # Parameter: Cryptographic HMAC Signature Header (Tamper Defense)
     HMACSignatureHeader:
       name: X-Novaris-Signature
       in: header
       required: true
-      description: Canonical HMAC-SHA256 signature in hex format.
+      description: Canonical HMAC-SHA256 signature in 64-character lowercase hex format.
       schema:
         type: string
         example: 6f9b2d3e1a8c4f7b2e5d8a1c3f6b9d2e1a8c4f7b2e5d8a1c3f6b9d2e1a8c4f7b
 
+  # ----------------------------------------------------------------------------
+  # Data Model Schemas (Request & Response Payloads)
+  # ----------------------------------------------------------------------------
   schemas:
+  
+    # --------------------------------------------------------------------------
+    # PaymentRequest Model
+    # Represents the incoming settlement payload submitted by a merchant.
+    # --------------------------------------------------------------------------
     PaymentRequest:
       type: object
       required:
@@ -296,26 +455,30 @@ components:
         sender_id:
           type: string
           format: uuid
-          description: UUIDv4 of the payer account to be debited.
+          description: UUIDv4 of the payer account to be debited in the double-entry journal.
           example: c0000000-0000-0000-0000-000000000001
         recipient_id:
           type: string
           format: uuid
-          description: UUIDv4 of the payee account to be credited. Must not match sender_id.
+          description: UUIDv4 of the payee account to be credited. Must not match sender_id (self-transfers are disallowed).
           example: c0000000-0000-0000-0000-000000000002
         amount_cents:
           type: integer
           format: int64
           minimum: 1
-          description: Transaction transfer amount in integer minor units (cents). Floating-point amounts are prohibited.
+          description: Transaction transfer amount in integer minor units (cents). Floating-point numbers are prohibited to prevent IEEE-754 precision loss.
           example: 5000
         currency:
           type: string
           pattern: ^[A-Z]{3}$
           default: USD
-          description: ISO 4217 three-letter uppercase currency code.
+          description: ISO 4217 three-letter uppercase currency code (e.g., USD, EUR, GBP).
           example: USD
 
+    # --------------------------------------------------------------------------
+    # PaymentReceipt Model
+    # Represents the immutable receipt returned upon successful OCC settlement.
+    # --------------------------------------------------------------------------
     PaymentReceipt:
       type: object
       required:
@@ -328,32 +491,39 @@ components:
         status:
           type: string
           enum: [settled]
+          description: Current lifecycle state of the payment. Always 'settled' upon successful return.
           example: settled
         transaction_id:
           type: string
           format: uuid
-          description: Permanent ledger transaction identifier aggregate.
+          description: Permanent ledger transaction aggregate identifier assigned by the database.
           example: 8fa8d39f-e60d-4952-b8ec-f584e44487ce
         merchant_id:
           type: string
-          description: Identifier of the authenticated payer merchant.
+          description: Identifier of the authenticated payer merchant extracted from the JWT token.
           example: c0000000-0000-0000-0000-000000000001
         recipient:
           type: string
-          description: Identifier of the recipient payee account.
+          description: Identifier of the recipient payee account credited in the ledger.
           example: c0000000-0000-0000-0000-000000000002
         amount_cents:
           type: integer
           format: int64
-          description: Amount transferred in minor currency units (cents).
+          description: Settled monetary amount expressed in integer minor currency units (cents).
           example: 5000
         currency:
           type: string
+          description: ISO 4217 currency code of the settled transfer.
           example: USD
         message:
           type: string
+          description: Human-readable settlement confirmation message.
           example: Payment settled end-to-end via OCC double-entry ledger pipeline.
 
+    # --------------------------------------------------------------------------
+    # HealthResponse Model
+    # Represents the JSON payload returned by GET /healthz.
+    # --------------------------------------------------------------------------
     HealthResponse:
       type: object
       required:
@@ -362,17 +532,25 @@ components:
       properties:
         status:
           type: string
+          description: Health operational status ('ok').
           example: ok
         service:
           type: string
+          description: Internal service identifier.
           example: novaris-gateway
         version:
           type: string
+          description: Current deployed semantic version of the gateway service.
           example: 0.12.0
         environment:
           type: string
+          description: Deployment tier ('development', 'staging', 'production').
           example: development
 
+    # --------------------------------------------------------------------------
+    # RootDiscoveryResponse Model
+    # Represents the JSON payload returned by GET /.
+    # --------------------------------------------------------------------------
     RootDiscoveryResponse:
       type: object
       required:
@@ -381,17 +559,25 @@ components:
       properties:
         message:
           type: string
+          description: Service description banner.
           example: NOVARIS Distributed Payment Settlement Gateway
         version:
           type: string
+          description: Deployed release version.
           example: 0.12.0
         docs:
           type: string
+          description: Relative URL path to the interactive Swagger UI developer dashboard.
           example: /docs
         openapi:
           type: string
+          description: Relative URL path to the raw machine-readable OpenAPI 3.0 JSON specification.
           example: /openapi.json
 
+    # --------------------------------------------------------------------------
+    # ErrorResponse Model
+    # Standardized RFC 7807-style error envelope returned on all 4xx and 5xx failures.
+    # --------------------------------------------------------------------------
     ErrorResponse:
       type: object
       required:
@@ -401,13 +587,13 @@ components:
       properties:
         error:
           type: string
-          description: Machine-readable error identifier string.
+          description: Stable machine-readable error token string for programmatic handling in client SDKs.
           example: missing_idempotency_key
         message:
           type: string
-          description: Human-readable error diagnostic explanation.
+          description: Detailed human-readable diagnostic message explaining the cause of rejection.
           example: Idempotency-Key header is mandatory for mutating payments
         code:
           type: integer
-          description: Equivalent HTTP response status code.
+          description: Standard HTTP numeric status code corresponding to the error condition.
           example: 400

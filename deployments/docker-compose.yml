@@ -1,95 +1,205 @@
 # ==============================================================================
 # NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
-# Local Development Infrastructure Mesh
+# FILE: deployments/docker-compose.yml
+# PURPOSE: Local Multi-Container Infrastructure Mesh Orchestration
 # ==============================================================================
-# Services:
-#   1. PostgreSQL 16: Primary ACID relational storage for accounts, double-entry
-#      journal entries, transactions, and the transactional outbox table.
-#   2. Redis 7: High-speed in-memory store for distributed idempotency locks (SETNX),
-#      sliding-window rate limiting, and Redlock mutex coordination.
-#   3. Apache Kafka (KRaft mode): Event streaming backbone partitioned by account_id
-#      for ordered transaction processing without external ZooKeeper dependencies.
+# 
+# 📚 COMPUTER SCIENCE & DISTRIBUTED SYSTEMS ARCHITECTURE FOR BEGINNERS:
+# 
+# What is Docker Compose?
+# In modern cloud microservice architectures, an application rarely runs in isolation.
+# A payment platform requires multiple backing services:
+#   1. A relational database with ACID transactions for immutable double-entry ledgers (PostgreSQL).
+#   2. An ultra-fast in-memory key-value cache for sub-millisecond idempotency locks and token buckets (Redis).
+#   3. A fault-tolerant, horizontally scalable event stream for asynchronous ledger auditing (Apache Kafka).
+# 
+# Rather than requiring developers to manually download, install, configure, and boot each service
+# on their host operating system (which leads to "works on my machine" bugs), Docker Compose
+# declares the entire multi-service stack as code in a single reproducible YAML configuration.
+# 
+# How Containers Network Together:
+# Docker Compose automatically creates a shared bridge network for all declared services.
+# Inside this virtual network:
+#   - Every container receives an isolated IP address.
+#   - Containers discover each other via built-in DNS using their service names (e.g., "postgres", "redis", "kafka").
+#   - Host port mappings (e.g., "5432:5432") expose container ports to the developer's localhost.
 # ==============================================================================
 
+# Compose file specification format version. Version 3.8 supports modern healthcheck syntax,
+# resource limits, and named persistent volume configurations across all modern Docker engines.
 version: '3.8'
 
 services:
-  # ----------------------------------------------------------------------------
-  # 1. PostgreSQL 16 (Ledger & Outbox Persistence)
-  # ----------------------------------------------------------------------------
+  # ============================================================================
+  # 1. PostgreSQL 16 — Double-Entry Ledger & Transactional Outbox Database
+  # ============================================================================
+  # Role in NOVARIS:
+  # Serves as the immutable System of Record (SoR) for financial accounting.
+  # PostgreSQL provides ACID guarantees:
+  #   - Atomicity: Double-entry transfers debit wallet A and credit wallet B together or neither.
+  #   - Consistency: Foreign keys, balance >= 0 constraints, and check conditions prevent corruption.
+  #   - Isolation: Read Committed with Optimistic Concurrency Control (OCC) prevents race conditions.
+  #   - Durability: Write-Ahead Logging (WAL) ensures committed transfers survive sudden power loss.
+  # ============================================================================
   postgres:
+    # Use lightweight Alpine Linux image (~80MB vs standard ~400MB) for rapid local pulling and lower RAM usage.
     image: postgres:16-alpine
+    # Explicit container name for easy terminal debugging with `docker exec -it novaris-postgres sh`.
     container_name: novaris-postgres
+    # Restart policy: automatically restarts container on crash or reboot unless explicitly stopped by developer.
     restart: unless-stopped
+    
+    # Environment variables injected directly into the container's runtime process:
     environment:
+      # Initial database created automatically during container initialization:
       POSTGRES_DB: novaris_db
+      # Superuser account username for local development:
       POSTGRES_USER: novaris_admin
+      # Superuser password. In production, this is supplied via Vault/AWS Secrets Manager, never hardcoded:
       POSTGRES_PASSWORD: dev_password_change_me
+      
+    # Port Forwarding: <HostPort>:<ContainerPort>
+    # Binds port 5432 on developer's host (127.0.0.1:5432) to port 5432 inside the PostgreSQL container.
     ports:
       - "5432:5432"
+      
+    # Storage Volumes:
+    # Mount points connecting host directories or named Docker volumes to container filesystem directories.
     volumes:
+      # Named volume for persistent data. Ensures financial ledger data survives container restarts/rebuilds:
       - pgdata:/var/lib/postgresql/data
-      # Automatically executes migrations on initial container initialization
+      # Automated Migration Auto-Runner:
+      # PostgreSQL Alpine executes all .sql scripts placed in /docker-entrypoint-initdb.d in alphabetical order
+      # upon first boot. Mounting ../migrations here initializes tables (001, 002, 003, 004) automatically:
       - ../migrations:/docker-entrypoint-initdb.d:ro
+      
+    # Container Healthcheck:
+    # Docker periodically probes container readiness so dependent services don't connect before DB is initialized.
     healthcheck:
+      # Executes the pg_isready CLI utility against the target database:
       test: ["CMD-SHELL", "pg_isready -U novaris_admin -d novaris_db"]
+      # Probe every 5 seconds:
       interval: 5s
+      # Maximum time allowed for probe to answer before considering it a timeout failure:
       timeout: 5s
+      # Mark container unhealthy only after 5 consecutive failed probes:
       retries: 5
 
-  # ----------------------------------------------------------------------------
-  # 2. Redis 7 (In-Memory Concurrency & Rate Limiting)
-  # ----------------------------------------------------------------------------
+  # ============================================================================
+  # 2. Redis 7 — High-Speed In-Memory Idempotency & Rate Limiting Engine
+  # ============================================================================
+  # Role in NOVARIS:
+  # Serves the gateway perimeter with sub-millisecond response latency (<0.5ms):
+  #   1. Distributed Idempotency Locks: Atomic SETNX operations ensure concurrent duplicates
+  #      holding identical Idempotency-Key headers are rejected with HTTP 409 Conflict.
+  #   2. Token Bucket Rate Limiting: Atomic counter and timestamp updates throttle abusive API keys.
+  #   3. Response Caching: Completed responses are cached with a 24-hour TTL for idempotent replay.
+  # ============================================================================
   redis:
+    # Ultra-lean Alpine Linux distribution for minimal footprint and maximum execution speed:
     image: redis:7-alpine
     container_name: novaris-redis
     restart: unless-stopped
+    
+    # Custom startup command enabling Append-Only File (AOF) persistence:
+    # By default Redis is pure RAM; --appendonly yes logs every write to disk, protecting locks across restarts.
     command: ["redis-server", "--appendonly", "yes"]
+    
+    # Standard Redis port binding: exposes 6379 to localhost for local testing via redis-cli:
     ports:
       - "6379:6379"
+      
+    # Volume mount: stores Redis AOF and snapshot (RDB) dump files inside a persistent named Docker volume:
     volumes:
       - redisdata:/data
+      
+    # Healthcheck: sends Redis PING command; expects PONG reply within 5 seconds:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # ----------------------------------------------------------------------------
-  # 3. Apache Kafka (KRaft Single-Node Mode)
-  # ----------------------------------------------------------------------------
+  # ============================================================================
+  # 3. Apache Kafka 7.5 (KRaft Mode) — Distributed Event Streaming Backbone
+  # ============================================================================
+  # Role in NOVARIS:
+  # The asynchronous pub/sub backbone that decouples the fast HTTP payment ingress path
+  # from heavy asynchronous background workers (Fraud ML inference, anti-money laundering,
+  # merchant webhook notifications, and reconciliation ledger auditing).
+  # 
+  # KRaft (Kafka Raft Metadata Mode):
+  # Historically, Kafka required a separate Apache ZooKeeper cluster for leader elections and metadata.
+  # Modern Kafka (v3.0+) replaces ZooKeeper with an internal Raft consensus protocol called KRaft.
+  # This eliminates an entire distributed system dependency, simplifying local development dramatically!
+  # ============================================================================
   kafka:
+    # Confluent Platform enterprise-grade Apache Kafka image:
     image: confluentinc/cp-kafka:7.5.0
     container_name: novaris-kafka
     restart: unless-stopped
+    
+    # Forward Kafka broker port to developer localhost (for Kafka GUI tools like AKHQ or local Go producers):
     ports:
       - "9092:9092"
+      
+    # Kafka Environment Configuration:
     environment:
+      # Unique numerical identifier for this Kafka node inside the cluster:
       KAFKA_NODE_ID: 1
+      # In KRaft single-node mode, this node acts as BOTH a broker (message storage) and a controller (Raft consensus):
       KAFKA_PROCESS_ROLES: 'broker,controller'
+      # Defines the Raft voter quorum: node ID 1 at host novaris-kafka on controller port 29093:
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@novaris-kafka:29093'
+      
+      # Socket Listeners:
+      # Defines network interfaces and ports Kafka opens:
+      #   - PLAINTEXT://0.0.0.0:29092: internal Docker network communication between containers.
+      #   - CONTROLLER://0.0.0.0:29093: internal KRaft consensus election port.
+      #   - PLAINTEXT_HOST://0.0.0.0:9092: external access for developer workstation on localhost.
       KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      
+      # Advertised Listeners:
+      # Addresses returned to clients during initial connection handshake:
+      #   - Docker containers connect via "novaris-kafka:29092"
+      #   - Host tools connect via "localhost:9092"
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://novaris-kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      
+      # Protocol mappings mapping security protocols to listener names:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      
+      # Single-node development adjustments:
+      # Set replication factors to 1 since there is only 1 node in our local dev environment:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # Speed up initial consumer group rebalance delay from 3000ms to 0ms for instant testing:
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      
+      # Directory where Kafka commit log segments and index files are persisted:
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      # Fixed cluster ID for local deterministic initialization
+      # Deterministic base64 cluster ID for automatic KRaft formatting without manual CLI formatting commands:
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      
+    # Volume mount preserving Kafka topic logs across container teardowns:
     volumes:
       - kafkadata:/var/lib/kafka/data
 
-# ------------------------------------------------------------------------------
-# Persistent Volume Declarations
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# Persistent Named Volumes (Host Storage Managed by Docker Engine)
+# ==============================================================================
+# Declares disk volumes isolated from the temporary container lifecycle.
+# Running `docker compose down` preserves this data; running `docker compose down -v` wipes it.
+# ==============================================================================
 volumes:
+  # Dedicated disk volume for PostgreSQL relational database pages:
   pgdata:
     name: novaris_pgdata
+  # Dedicated disk volume for Redis Append-Only File (AOF) logs:
   redisdata:
     name: novaris_redisdata
+  # Dedicated disk volume for Apache Kafka topic partitions and commit logs:
   kafkadata:
     name: novaris_kafkadata

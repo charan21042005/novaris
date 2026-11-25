@@ -1,28 +1,69 @@
 <!DOCTYPE html>
+<!-- ==============================================================================
+     NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
+     FILE: services/gateway/internal/openapi/swagger.html
+     PURPOSE: Standalone Embedded Interactive Developer Dashboard (Swagger UI)
+     ==============================================================================
+     
+     📚 COMPUTER SCIENCE & WEB ARCHITECTURE FOR BEGINNERS:
+     
+     1. WHAT IS SWAGGER UI?
+        Swagger UI is an open-source visual renderer that parses an OpenAPI 3.0
+        specification file (in JSON or YAML) and generates a fully interactive,
+        human-readable API explorer in the browser. It allows developers to:
+          - Visually inspect request schemas, parameter constraints, and status codes.
+          - Execute real HTTP requests ("Try it out") directly from the web browser.
+          - Authenticate requests using JWT Bearer tokens or API keys interactively.
+          
+     2. ZERO-DEPENDENCY EMBEDDED DELIVERY:
+        In Go 1.16+, the standard library directive `//go:embed` allows binary executables
+        to embed static assets (HTML, CSS, JSON) directly into memory at compile time.
+        When a developer or QA engineer visits `http://localhost:8080/docs`, the Go
+        gateway serves this HTML page straight from binary memory without touching
+        the host disk or requiring node_modules, webpack, or external web servers!
+     ============================================================================== -->
 <html lang="en">
 <head>
+  <!-- Standard UTF-8 character encoding supporting international characters and emojis: -->
   <meta charset="UTF-8">
+  
+  <!-- Responsive viewport meta tag ensuring clean mobile and desktop browser rendering: -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Browser tab title: -->
   <title>NOVARIS Payment Gateway • Swagger UI</title>
+  
+  <!-- Official Swagger UI CSS stylesheet loaded via high-speed jsDelivr CDN: -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css" />
+  
+  <!-- Browser tab favicons (32x32 and 16x16 pixels): -->
   <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/favicon-32x32.png" sizes="32x32" />
   <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/favicon-16x16.png" sizes="16x16" />
+  
+  <!-- Custom branding styles tailored for NOVARIS dark-theme platform aesthetics: -->
   <style>
+    /* CSS Box Model reset: padding and borders are included within total width/height */
     html {
       box-sizing: border-box;
-      overflow: -moz-scrollbars-vertical;
       overflow-y: scroll;
     }
     *, *:before, *:after {
       box-sizing: inherit;
     }
+    
+    /* Body base styling: clean sans-serif system font stack across Windows, Mac, and Linux */
     body {
       margin: 0;
       background: #fafafa;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+    
+    /* Hide Swagger's default topbar (which displays a search box pointing to the Petstore demo) */
     .topbar {
       display: none;
     }
+    
+    /* Custom NOVARIS Platform Brand Banner Header */
     .novaris-banner {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: #ffffff;
@@ -42,6 +83,8 @@
       align-items: center;
       gap: 0.5rem;
     }
+    
+    /* Version badge pill styling */
     .novaris-banner .badge {
       background: rgba(0, 229, 255, 0.15);
       border: 1px solid rgba(0, 229, 255, 0.4);
@@ -52,6 +95,8 @@
       font-weight: 600;
       text-transform: uppercase;
     }
+    
+    /* Subtitle and hypermedia navigation link styling */
     .novaris-banner .meta {
       font-size: 0.85rem;
       color: #94a3b8;
@@ -67,6 +112,7 @@
   </style>
 </head>
 <body>
+  <!-- Top Platform Header Banner -->
   <div class="novaris-banner">
     <div>
       <h1>🏛️ NOVARIS Distributed Gateway <span class="badge">OpenAPI 3.0.3</span></h1>
@@ -77,25 +123,53 @@
       Repo: <a href="https://github.com/charan21042005/novaris" target="_blank">GitHub</a>
     </div>
   </div>
+
+  <!-- Mounting target DOM element where Swagger UI dynamically injects the generated interactive explorer -->
   <div id="swagger-ui"></div>
+
+  <!-- Core Swagger UI JavaScript Bundle (v5.11.0) -->
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" charset="UTF-8"></script>
+  <!-- Standalone Layout Preset providing navigation sidebars and interactive forms -->
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
+
+  <!-- Swagger UI Client Initialization Script -->
   <script>
+    // Execute initialization once the full HTML document and CDN bundles have loaded into memory
     window.onload = function() {
+      // Initialize the SwaggerUIBundle constructor with custom configuration
       window.ui = SwaggerUIBundle({
+        // URL where the Swagger UI client fetches the machine-readable OpenAPI specification:
+        // Serves the embedded JSON specification from the Go gateway backend.
         url: "/openapi.json",
+        
+        // Target DOM element ID to render into:
         dom_id: '#swagger-ui',
+        
+        // Enables browser address bar hash routing (e.g., #/Payment%20Settlement/settlePayment)
+        // allowing developers to share direct links to specific API endpoints.
         deepLinking: true,
+        
+        // Presets: standard API UI components and layout presets
         presets: [
           SwaggerUIBundle.presets.apis,
           SwaggerUIStandalonePreset
         ],
+        
+        // Plugins: enables URL download capability
         plugins: [
           SwaggerUIBundle.plugins.DownloadUrl
         ],
+        
+        // UI Layout: Standalone layout displays clean accordion groups
         layout: "StandaloneLayout",
+        
+        // Expansion mode: "list" displays operations in compact collapsed rows until clicked
         docExpansion: "list",
+        
+        // Enables interactive real-time text filter search box at the top of the endpoint list
         filter: true,
+        
+        // Renders OpenAPI vendor extensions (x-*) if defined in schema
         showExtensions: true,
         showCommonExtensions: true
       });

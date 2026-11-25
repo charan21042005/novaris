@@ -3,6 +3,25 @@
 // OPENAPI CONTRACT & SCHEMA VALIDATOR CLI (Day 12)
 // FILE: services/gateway/cmd/verifyopenapi/main.go
 // ==============================================================================
+//
+// 📚 COMPUTER SCIENCE & CONTRACT TESTING FOR BEGINNERS:
+//
+// 1. WHAT IS CONTRACT TESTING?
+//    In distributed microservices, APIs act as a legally binding "contract" between
+//    producers (backend services) and consumers (frontend web apps, mobile apps,
+//    merchant integration code, and third-party payment orchestrators).
+//    If a backend engineer changes a field name (e.g. from `amount_cents` to `amount`),
+//    consumers immediately break in production!
+//
+// 2. THE PURPOSE OF THIS CLI TOOL:
+//    This automated validator executes in CI/CD build pipelines (GitHub Actions)
+//    to statically inspect `api/openapi.json` before any PR can be merged:
+//      - Asserts OpenAPI 3.0.x compliance
+//      - Asserts service title and descriptive metadata
+//      - Asserts mandatory paths (/healthz, /, /openapi.json, /docs, /v1/payments)
+//      - Asserts all 7 HTTP status codes (200, 400, 401, 409, 422, 429, 500)
+//      - Asserts data model schemas (PaymentRequest, PaymentReceipt, etc.)
+// ==============================================================================
 
 package main
 
@@ -15,21 +34,27 @@ import (
 	"strings"
 )
 
-// ValidationResult records the status of an OpenAPI contract assertion.
+// ValidationResult captures the pass/fail outcome and diagnostic details of an assertion.
 type ValidationResult struct {
-	CheckName string
-	Passed    bool
-	Details   string
+	CheckName string // Human-readable assertion name (e.g., "Mandatory Ingress Routes")
+	Passed    bool   // True if assertion succeeded, false if violation detected
+	Details   string // Diagnostic explanation of the check outcome
 }
 
 // ValidateOpenAPISpec parses the target OpenAPI JSON file and verifies strict
 // compliance with NOVARIS Day 12 API Contract Standards.
+//
+// Returns a slice of individual ValidationResult structs and an error if the file
+// cannot be read or unmarshaled as valid JSON.
 func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
+	// Read the raw file bytes from the specified filesystem path:
 	bytes, err := os.ReadFile(specPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read OpenAPI spec at %s: %w", specPath, err)
 	}
 
+	// Unmarshal JSON into a generic map[string]interface{}:
+	// In Go, dynamic JSON structures with varying fields are parsed into map[string]interface{}.
 	var spec map[string]interface{}
 	if err := json.Unmarshal(bytes, &spec); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON schema: %w", err)
@@ -37,7 +62,10 @@ func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
 
 	var results []ValidationResult
 
-	// 1. Check OpenAPI Version (OAS 3.0.x)
+	// --------------------------------------------------------------------------
+	// Assertion 1: Check OpenAPI Specification Version (OAS 3.0.x)
+	// --------------------------------------------------------------------------
+	// Use Go type assertion .(string) to safely extract the string value.
 	version, _ := spec["openapi"].(string)
 	if strings.HasPrefix(version, "3.0") {
 		results = append(results, ValidationResult{
@@ -53,7 +81,9 @@ func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
 		})
 	}
 
-	// 2. Check Info Metadata & Title
+	// --------------------------------------------------------------------------
+	// Assertion 2: Check API Metadata & Title
+	// --------------------------------------------------------------------------
 	info, _ := spec["info"].(map[string]interface{})
 	title, _ := info["title"].(string)
 	if strings.Contains(title, "NOVARIS") {
@@ -70,7 +100,9 @@ func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
 		})
 	}
 
-	// 3. Check Mandatory Routes
+	// --------------------------------------------------------------------------
+	// Assertion 3: Check Mandatory Ingress Routes
+	// --------------------------------------------------------------------------
 	paths, _ := spec["paths"].(map[string]interface{})
 	requiredRoutes := []string{"/healthz", "/", "/openapi.json", "/docs", "/v1/payments"}
 	missingRoutes := []string{}
@@ -94,7 +126,9 @@ func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
 		})
 	}
 
-	// 4. Check /v1/payments Method, Parameters & Status Codes
+	// --------------------------------------------------------------------------
+	// Assertion 4: Check /v1/payments Method & Status Codes (All 7 Codes)
+	// --------------------------------------------------------------------------
 	paymentsPath, _ := paths["/v1/payments"].(map[string]interface{})
 	postOp, hasPost := paymentsPath["post"].(map[string]interface{})
 	if hasPost {
@@ -128,7 +162,9 @@ func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
 		})
 	}
 
-	// 5. Check Schemas Completeness
+	// --------------------------------------------------------------------------
+	// Assertion 5: Check Component Model Schemas Completeness
+	// --------------------------------------------------------------------------
 	components, _ := spec["components"].(map[string]interface{})
 	schemas, _ := components["schemas"].(map[string]interface{})
 	requiredSchemas := []string{"PaymentRequest", "PaymentReceipt", "HealthResponse", "RootDiscoveryResponse", "ErrorResponse"}
@@ -156,7 +192,9 @@ func ValidateOpenAPISpec(specPath string) ([]ValidationResult, error) {
 	return results, nil
 }
 
+// main executes the CLI command parsing flags, running assertions, and formatting output.
 func main() {
+	// Default relative path pointing from cmd/verifyopenapi to api/openapi.json:
 	defaultPath := filepath.Join("..", "..", "..", "api", "openapi.json")
 	specPath := flag.String("spec", defaultPath, "Path to openapi.json file to validate")
 	flag.Parse()
@@ -166,6 +204,7 @@ func main() {
 	fmt.Printf(" Target Spec: %s\n", *specPath)
 	fmt.Println("==================================================================")
 
+	// Execute all assertions against the target file:
 	results, err := ValidateOpenAPISpec(*specPath)
 	if err != nil {
 		fmt.Printf("❌ CRITICAL ERROR: %v\n", err)
