@@ -161,7 +161,7 @@ func TestSettleTransaction_RollbackOnFailure_CreditError(t *testing.T) {
 
 	// Verify error wrapping
 	expectedErrMsg := "inserting credit journal entry"
-	if err == nil || !strings.Contains(err.Error(), expectedErrMsg) {
+	if !strings.Contains(err.Error(), expectedErrMsg) {
 		t.Errorf("expected error containing %q, got: %v", expectedErrMsg, err)
 	} else {
 		t.Logf("Successfully captured wrapped rollback error: %v", err)
