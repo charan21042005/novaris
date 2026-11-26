@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/Phase-2_of_6:_Streaming_Core-00E5FF?style=flat-square&logo=apachekafka&logoColor=white" alt="Phase" />
   <img src="https://img.shields.io/badge/Milestones-Days_15_to_28-7C4DFF?style=flat-square&logo=target&logoColor=white" alt="Milestones" />
   <img src="https://img.shields.io/badge/Day_15-VERIFIED_(100%25)-00C853?style=flat-square&logo=apachekafka&logoColor=white" alt="Day 15 Verified" />
+  <img src="https://img.shields.io/badge/Day_16-VERIFIED_(100%25)-00C853?style=flat-square&logo=apachekafka&logoColor=white" alt="Day 16 Verified" />
   <img src="https://img.shields.io/badge/Status-ACTIVE_VAULT-FF6D00?style=flat-square&logo=gitbook&logoColor=white" alt="Status" />
   <img src="https://img.shields.io/badge/Tech_Stack-Apache_Kafka_%7C_Redis_7.2_%7C_CDC-FFA000?style=flat-square&logo=redis&logoColor=white" alt="Tech Stack" />
 </p>
@@ -65,8 +66,8 @@ flowchart LR
 | Day | Milestone Focus | Core CS & Architectural Concept | Action Log Document | Status |
 | :---: | :--- | :--- | :---: | :---: |
 | **Day 15** | **Apache Kafka Fundamentals & Topic Topology** | KRaft metadata mode, commit log anatomy, deterministic partition routing, verification CLI | [Day 15 Action Log](Day_15_Action_Log.md) | ✅ *Completed (100% Certified)* |
-| **Day 16** | **High-Performance Strongly-Typed Go Producer** | `segmentio/kafka-go`, async batching, partition routing by merchant UUID | *Day_16_Action_Log.md* | ⏳ *Up Next* |
-| **Day 17** | **Resilient Consumer Groups & Manual Offsets** | Cooperative sticky assignor, manual offset commit control, at-least-once delivery | *Day_17_Action_Log.md* | 📅 *Upcoming* |
+| **Day 16** | **High-Performance Strongly-Typed Go Producer** | `segmentio/kafka-go`, async batching, partition routing by merchant UUID | [Day 16 Action Log](Day_16_Action_Log.md) | ✅ *Completed (100% Certified)* |
+| **Day 17** | **Resilient Consumer Groups & Manual Offsets** | Cooperative sticky assignor, manual offset commit control, at-least-once delivery | *Day_17_Action_Log.md* | ⏳ *Up Next* |
 | **Day 18** | **Transactional Outbox Pattern & CDC Relay** | Defeating the Dual-Write dilemma, atomic relational outbox writes, relay daemon | *Day_18_Action_Log.md* | 📅 *Upcoming* |
 | **Day 19** | **Dead-Letter Queues (DLQ) & Poison-Pill Isolation** | Tiered retry topics, exponential backoff back-pressure, administrative inspection CLI | *Day_19_Action_Log.md* | 📅 *Upcoming* |
 | **Day 20** | **Kafka Cluster Chaos & Rebalance Verification** | Network latency injection, broker failure recovery, consumer group rebalance SLA | *Day_20_Action_Log.md* | 📅 *Upcoming* |

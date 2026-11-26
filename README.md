@@ -12,6 +12,7 @@
 <!-- Metric Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
+  <img src="https://img.shields.io/badge/Phase_2_Streaming-ACTIVE_(Day_16_Certified)-00E5FF?style=flat-square&logo=apachekafka&logoColor=white" alt="Phase 2 Active" />
   <img src="https://img.shields.io/badge/Throughput-3%2C500%2B_TPS-00C853?style=flat-square&logo=speedtest&logoColor=white" alt="Throughput" />
   <img src="https://img.shields.io/badge/P99_Latency-%3C_40ms-0288D1?style=flat-square&logo=clockify&logoColor=white" alt="Latency" />
   <img src="https://img.shields.io/badge/ML_Inference-%3C_12ms-7B1FA2?style=flat-square&logo=lightning&logoColor=white" alt="ML Inference" />
@@ -293,7 +294,7 @@ Every milestone across the 84-day curriculum is documented with textbook-grade d
 | Phase | Milestone Scope | Core Architectural Deliverables | Action Vault & Master Index | Status |
 | :---: | :---: | :--- | :---: | :---: |
 | **Phase 1** | Days 01–14 | PostgreSQL 16 Double-Entry Ledger, Go API Gateway, HMAC, Rate Limiting, OCC, Idempotency & Capstone Audit | [Phase 1 Vault](bin/Daily_Actions/Phase_1_Design_and_Ledger/README.md) • [Runbook](bin/Daily_Actions/Phase_1_Design_and_Ledger/COMMANDS_RUNBOOK.md) | ✅ *Completed (100% Certified)* |
-| **Phase 2** | Days 15–28 | Distributed Streaming Core, Apache Kafka KRaft, Transactional Outbox Relay, DLQ Routing & Consumers | [Phase 2 Vault](bin/Daily_Actions/Phase_2_Streaming_Core/README.md) | 🚀 *Active Vault (Up Next: Day 15)* |
+| **Phase 2** | Days 15–28 | Distributed Streaming Core, Apache Kafka KRaft, Transactional Outbox Relay, DLQ Routing & Consumers | [Phase 2 Vault](bin/Daily_Actions/Phase_2_Streaming_Core/README.md) • [Runbook](bin/Daily_Actions/Phase_2_Streaming_Core/COMMANDS_RUNBOOK.md) | 🚀 *Active Vault (Day 16 Certified)* |
 | **Phase 3** | Days 29–42 | High-Throughput Distributed Concurrency, Redis Redlock, Dynamic Sharding & Contention Defense | `bin/Daily_Actions/Phase_3_Concurrency/` | 📅 *Upcoming* |
 | **Phase 4** | Days 43–56 | Real-Time Adaptive Fraud Intelligence Engine, Feature Pipeline & Anomaly Scoring | `bin/Daily_Actions/Phase_4_Fraud_Engine/` | 📅 *Upcoming* |
 | **Phase 5** | Days 57–70 | Merchant Dashboard, Live Fraud Triage Portal & End-to-End MLOps Observability | `bin/Daily_Actions/Phase_5_Observability/` | 📅 *Upcoming* |

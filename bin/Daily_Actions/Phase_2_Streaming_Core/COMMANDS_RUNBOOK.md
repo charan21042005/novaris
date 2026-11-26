@@ -219,14 +219,80 @@ nc -zv localhost 9092
 
 ---
 
-## 2. Day 16: Strongly-Typed Go Kafka Producer Runbook (Preview)
+## 2. Day 16: Strongly-Typed Go Kafka Producer & Event Visibility Runbook
 
-*Day 16 introduces the high-performance async batching producer (`segmentio/kafka-go`) embedded in the API Gateway.*
+*Day 16 introduces the high-performance Go Kafka Producer (`segmentio/kafka-go`) in the API Gateway, emitting `novaris.tx.initiated` events with Leader ACKs and Murmur2 partition routing.*
 
+### 2.1 Interactive Terminal Producer Verification CLI (`cmd/verifyproducer`)
+
+#### Windows PowerShell:
 ```powershell
-# Upcoming Day 16 test command:
-cd services\gateway
-go test -v -run TestDay16KafkaProducer .
+Set-Location "services\gateway"
+
+# 1. Run interactive 4-stage producer verification (L2 + L3)
+go run ./cmd/verifyproducer
+
+# 2. Output machine-readable JSON certificate for CI/CD
+go run ./cmd/verifyproducer -json
+
+# 3. Test with custom amount and payer UUID partition key
+go run ./cmd/verifyproducer -amount 50000 -payer "c0000000-0000-0000-0000-000000000088"
+```
+
+#### Bash (Linux / macOS):
+```bash
+cd services/gateway
+
+# 1. Run interactive 4-stage producer verification (L2 + L3)
+go run ./cmd/verifyproducer
+
+# 2. Output machine-readable JSON certificate for CI/CD
+go run ./cmd/verifyproducer -json
+
+# 3. Test with custom amount and payer UUID partition key
+go run ./cmd/verifyproducer -amount 50000 -payer "c0000000-0000-0000-0000-000000000088"
+```
+
+---
+
+### 2.2 Automated Day 16 Master Integration Test Suite
+
+#### Windows PowerShell:
+```powershell
+Set-Location "services\gateway"
+
+# Run master integration test suite against live Docker Kafka container:
+go test -v -run TestDay16_KafkaProducerMasterSuite .
+
+# Run producer unit test suite:
+go test -v ./internal/streaming/...
+```
+
+#### Bash (Linux / macOS):
+```bash
+cd services/gateway
+
+# Run master integration test suite against live Docker Kafka container:
+go test -v -run TestDay16_KafkaProducerMasterSuite .
+
+# Run producer unit test suite:
+go test -v ./internal/streaming/...
+```
+
+---
+
+### 2.3 Real-Time Topic Inspection (Inside Docker Kafka Container)
+
+Tail the `novaris.tx.initiated` topic to watch financial events arrive in real-time:
+
+#### Windows PowerShell & Bash:
+```powershell
+docker exec -it novaris-kafka /bin/kafka-console-consumer `
+  --bootstrap-server localhost:9092 `
+  --topic novaris.tx.initiated `
+  --from-beginning `
+  --property print.key=true `
+  --property print.timestamp=true
 ```
 
 ---
