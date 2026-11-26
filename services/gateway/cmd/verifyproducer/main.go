@@ -6,22 +6,30 @@
 //
 // 📚 COMPUTER SCIENCE & STREAMING AUDIT CONCEPTS FOR BEGINNERS:
 //
-// 1. WHAT DOES THIS TOOL VERIFY?
-//    Day 16 of NOVARIS focuses on the Kafka Producer: converting an incoming
-//    API Gateway request into an immutable, durable streaming event on Apache Kafka.
-//    This diagnostic CLI proves three essential operational truths:
-//    - Truth 1: The Go Kafka Producer can establish TCP connections to brokers.
-//    - Truth 2: A strongly typed `novaris.tx.initiated` event can be serialized,
-//      partitioned by Account UUID (PayerID), and acknowledged by the broker leader.
-//    - Truth 3: The published event is immediately visible, readable, and intact
-//      inside the physical Kafka commit log (fulfilling Day 16 Milestone Outcome:
-//      "Events visible in the Kafka topic").
+// 1. WHAT DOES THIS TOOL DO?
+//    In Day 16 of NOVARIS, our goal is to publish events from Go to Kafka and
+//    verify that they are physically visible in the topic commit log.
+//    This command-line utility executes an automated, 4-stage end-to-end verification:
+//      [Stage 1] TCP Broker Ping: Proves the network socket to Kafka is open.
+//      [Stage 2] Topic Provisioning: Ensures the canonical `novaris.tx.initiated`
+//                topic exists with 3 partitions and a replication factor of 1.
+//      [Stage 3] Event Production: Serializes a canonical financial transaction event,
+//                computes the target partition using Murmur2 hashing, and writes it
+//                to Kafka awaiting Leader ACK confirmation.
+//      [Stage 4] Topic Visibility Audit: Concurrently spawns partition reader
+//                goroutines from FirstOffset (beginning of log), seeks across all
+//                partitions, and proves that the exact event payload is physically
+//                present and uncorrupted in the Kafka log.
 //
-// 2. THE PRODUCER-TO-CONSUMER PROVING LOOP:
-//    How do you definitively prove an event reached Kafka?
-//    You publish with Key K and Unique UUID U, then attach a lightweight
-//    Kafka reader to the partition, seek to the message, and assert that the
-//    bytes read back deserialize into the identical payload!
+// 2. THE CONCURRENT PARTITION FAN-IN PATTERN:
+//    Because a topic has multiple partitions (0, 1, 2) distributed across brokers,
+//    reading each partition sequentially with a blocking loop is slow and error-prone.
+//    Instead, this tool spawns a lightweight Go reader goroutine for EACH partition:
+//    - Each goroutine connects to its assigned partition and streams messages.
+//    - The first goroutine to locate the matching `event_id` sends the result into
+//      a thread-safe Go channel (`resultChan`) and triggers `cancelAll()`.
+//    - The context cancellation causes all other peer goroutines to exit instantly!
+//    This fan-in pattern discovers events in milliseconds regardless of traffic volume.
 // ==============================================================================
 
 package main
@@ -42,7 +50,10 @@ import (
 	"github.com/charan21042005/novaris/services/gateway/internal/streaming"
 )
 
-// ANSI color escape codes for high-visibility terminal reporting:
+// ==============================================================================
+// ANSI COLOR ESCAPE CODES FOR HIGH-VISIBILITY TERMINAL REPORTING
+// ==============================================================================
+
 const (
 	colorReset  = "\033[0m"
 	colorGreen  = "\033[32m"
@@ -52,22 +63,51 @@ const (
 	colorBold   = "\033[1m"
 )
 
-// Report captures the full structured audit output for JSON export.
+// ==============================================================================
+// STRUCTURED AUDIT REPORT MODEL (FOR HUMAN CLI & AUTOMATED CI/CD)
+// ==============================================================================
+
+// Report captures the full structured audit output for JSON export or visual printing.
 type Report struct {
-	Timestamp       time.Time              `json:"timestamp"`
-	TargetBrokers   []string               `json:"target_brokers"`
-	ClusterStatus   string                 `json:"cluster_status"`
-	TopicVerified   string                 `json:"topic_verified"`
-	PartitionCount  int                    `json:"partition_count"`
-	PublishedEvent  *streaming.TransactionInitiatedEvent `json:"published_event"`
-	PublishLatencyMs float64               `json:"publish_latency_ms"`
-	ConsumedEvent   *streaming.TransactionInitiatedEvent `json:"consumed_event"`
-	ReadLatencyMs   float64                `json:"read_latency_ms"`
-	PayloadMatches  bool                   `json:"payload_matches"`
-	Outcome         string                 `json:"outcome"`
+	// Timestamp is the UTC moment when this verification audit was executed:
+	Timestamp time.Time `json:"timestamp"`
+
+	// TargetBrokers is the list of Kafka bootstrap endpoints probed:
+	TargetBrokers []string `json:"target_brokers"`
+
+	// ClusterStatus indicates network reachability ("REACHABLE" or "UNREACHABLE"):
+	ClusterStatus string `json:"cluster_status"`
+
+	// TopicVerified is the canonical topic name audited:
+	TopicVerified string `json:"topic_verified"`
+
+	// PartitionCount is the total number of partitions provisioned on the topic:
+	PartitionCount int `json:"partition_count"`
+
+	// PublishedEvent contains the full payload sent to Kafka:
+	PublishedEvent *streaming.TransactionInitiatedEvent `json:"published_event"`
+
+	// PublishLatencyMs is the round-trip write latency in milliseconds:
+	PublishLatencyMs float64 `json:"publish_latency_ms"`
+
+	// ConsumedEvent contains the payload read back from Kafka disk log:
+	ConsumedEvent *streaming.TransactionInitiatedEvent `json:"consumed_event"`
+
+	// ReadLatencyMs is the time taken to discover and deserialize the event:
+	ReadLatencyMs float64 `json:"read_latency_ms"`
+
+	// PayloadMatches indicates whether every byte and field matches 100%:
+	PayloadMatches bool `json:"payload_matches"`
+
+	// Outcome is the final summary status ("SUCCESS..." or "FAILED..."):
+	Outcome string `json:"outcome"`
 }
 
 func main() {
+	// --------------------------------------------------------------------------
+	// 1. COMMAND-LINE FLAG CONFIGURATION
+	// --------------------------------------------------------------------------
+	// Allows engineers and automated test harnesses to customize verification parameters:
 	brokersFlag := flag.String("brokers", "localhost:9092", "Comma-separated list of Kafka broker endpoints")
 	clientIDFlag := flag.String("client-id", "novaris-verifyproducer-cli", "Client ID string sent during Kafka TCP handshakes")
 	topicFlag := flag.String("topic", streaming.TopicTxInitiated, "Target Kafka topic for verification")
@@ -77,16 +117,19 @@ func main() {
 	payeeFlag := flag.String("payee", "c0000000-0000-0000-0000-000000000002", "Payee recipient account UUID")
 	flag.Parse()
 
+	// Initialize the audit report struct:
 	report := Report{
 		Timestamp:     time.Now().UTC(),
 		TargetBrokers: strings.Split(*brokersFlag, ","),
 		TopicVerified: *topicFlag,
 	}
 
+	// Print visual dashboard banner in human-readable mode:
 	if !*jsonFlag {
 		printBanner(*brokersFlag, *topicFlag)
 	}
 
+	// Construct platform streaming configuration:
 	cfg := streaming.Config{
 		Brokers:                  report.TargetBrokers,
 		ClientID:                 *clientIDFlag,
@@ -102,6 +145,7 @@ func main() {
 		fmt.Printf("\n%s[1/4] KAFKA BROKER REACHABILITY & TCP PING:%s\n", colorBold, colorReset)
 	}
 
+	// Probe the primary broker socket with a fast TCP dial:
 	probeDuration, err := streaming.QuickTCPProbe(cfg.Brokers[0], cfg.DialTimeout)
 	if err != nil {
 		report.ClusterStatus = "UNREACHABLE"
@@ -128,6 +172,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Idempotently ensure standard platform topics exist:
 	specs := streaming.GetStandardTopics(cfg.DefaultPartitions, cfg.DefaultReplicationFactor)
 	_, err = admin.EnsureTopics(ctx, specs)
 	if err != nil {
@@ -136,6 +181,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Inspect partition count on the target topic:
 	topics, err := admin.ListTopics(ctx)
 	if err == nil {
 		for _, t := range topics {
@@ -146,7 +192,7 @@ func main() {
 		}
 	}
 	if report.PartitionCount == 0 {
-		report.PartitionCount = 3
+		report.PartitionCount = 3 // Standard default
 	}
 
 	if !*jsonFlag {
@@ -169,7 +215,7 @@ func main() {
 	}
 	defer producer.Close()
 
-	// Calculate target partition before publishing to prove mathematical determinism:
+	// Calculate target partition before publishing using Murmur2 to prove mathematical determinism:
 	partitioner := streaming.NewPartitioner(streaming.StrategyMurmur2)
 	expectedPartition := partitioner.RouteAccountKey(*payerFlag, report.PartitionCount)
 
@@ -179,7 +225,7 @@ func main() {
 		EventType:      streaming.EventTypeTxInitiated,
 		Version:        streaming.EventSchemaVersion1,
 		TransactionID:  txID,
-		PayerID:        *payerFlag, // Partition Key
+		PayerID:        *payerFlag, // Partition Key: guarantees per-account FIFO ordering
 		PayeeID:        *payeeFlag,
 		AmountCents:    *amountFlag,
 		Currency:       "USD",
@@ -194,6 +240,7 @@ func main() {
 	}
 	report.PublishedEvent = event
 
+	// Measure round-trip write latency to Kafka broker:
 	pubStart := time.Now()
 	pubRes, err := producer.PublishTxInitiated(ctx, event)
 	pubDuration := time.Since(pubStart)
@@ -223,16 +270,19 @@ func main() {
 
 	readStart := time.Now()
 
+	// Internal struct to hold results from whichever partition reader discovers the event first:
 	type readResult struct {
 		partition int
 		offset    int64
 		event     *streaming.TransactionInitiatedEvent
 	}
 
+	// Channel for fan-in discovery:
 	resultChan := make(chan readResult, report.PartitionCount)
-	ctxAll, cancelAll := context.WithTimeout(context.Background(), 5*time.Second)
+	ctxAll, cancelAll := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelAll()
 
+	// Concurrently probe all partitions using lightweight reader goroutines:
 	var wg sync.WaitGroup
 	for p := 0; p < report.PartitionCount; p++ {
 		wg.Add(1)
@@ -243,7 +293,7 @@ func main() {
 				Topic:       *topicFlag,
 				Partition:   part,
 				MinBytes:    1,
-				MaxBytes:    10e6, // 10MB
+				MaxBytes:    10e6, // 10MB batch buffer
 				StartOffset: kafka.FirstOffset,
 			})
 			defer r.Close()
@@ -258,12 +308,14 @@ func main() {
 						return
 					}
 
+					// Attempt to unmarshal record value into TransactionInitiatedEvent:
 					var candidate streaming.TransactionInitiatedEvent
 					if err := json.Unmarshal(msg.Value, &candidate); err == nil {
+						// Match on either EventID or TransactionID:
 						if candidate.EventID == event.EventID || candidate.TransactionID == event.TransactionID {
 							select {
 							case resultChan <- readResult{partition: part, offset: msg.Offset, event: &candidate}:
-								cancelAll() // Cancel peer readers immediately
+								cancelAll() // Event found! Cancel all peer reader goroutines immediately
 							default:
 							}
 							return
@@ -274,6 +326,7 @@ func main() {
 		}(p)
 	}
 
+	// Wait for discovery result or timeout:
 	var foundEvent *streaming.TransactionInitiatedEvent
 	var foundPartition int
 	var foundOffset int64
@@ -283,7 +336,7 @@ func main() {
 		foundEvent = res.event
 		foundPartition = res.partition
 		foundOffset = res.offset
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 	}
 	cancelAll()
 	wg.Wait()
@@ -292,7 +345,7 @@ func main() {
 	report.ReadLatencyMs = float64(readDuration.Nanoseconds()) / 1e6
 
 	if foundEvent == nil {
-		report.Outcome = "FAILED: published event was not observed within the 5s read window"
+		report.Outcome = "FAILED: published event was not observed within the read window"
 		emitResult(report, *jsonFlag)
 		os.Exit(1)
 	}
@@ -314,6 +367,7 @@ func main() {
 	emitResult(report, *jsonFlag)
 }
 
+// printBanner renders an ANSI-styled terminal header for the diagnostic report.
 func printBanner(broker, topic string) {
 	fmt.Println()
 	fmt.Println("================================================================================")
@@ -326,6 +380,7 @@ func printBanner(broker, topic string) {
 	fmt.Printf("Certification Goal:  Confirm events are visible in the Kafka topic log\n")
 }
 
+// emitResult formats and outputs the final audit verdict in either plain text or JSON.
 func emitResult(r Report, asJSON bool) {
 	if asJSON {
 		enc := json.NewEncoder(os.Stdout)
