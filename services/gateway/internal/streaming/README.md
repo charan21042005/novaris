@@ -110,10 +110,20 @@ $$\text{PartitionIndex} = \Big(\text{Hash}(\text{RoutingKey}) \;\&\; \text{0x7FF
 
 Provides high-level cluster administration built on `github.com/segmentio/kafka-go`:
 
-* **`Ping(ctx)`:** Executes an active protocol-level round-trip metadata ping against the broker cluster.
-* **`GetClusterMetadata(ctx)`:** Discovers broker nodes, the elected KRaft controller node ID, and the active topic partition registry.
-* **`EnsureTopics(ctx, configs...)`:** Idempotently provisions topics. If a topic already exists, it verifies partition counts rather than throwing an error.
-* **`PublishDiagnosticProbe(ctx, topic, key, payload)`:** Dispatches an end-to-end test message and confirms synchronous broker Leader ACK (`RequiredAcks = RequireOne`).
+* **`CheckHealth(ctx)`:** Executes an active protocol-level round-trip metadata ping against the broker cluster.
+* **`ListTopics(ctx)`:** Discovers broker nodes, partition assignments, and the active topic registry.
+* **`EnsureTopics(ctx, specs)`:** Idempotently provisions topics. If a topic already exists, it verifies partition counts rather than throwing an error.
+* **`ProduceProbeMessage(ctx, topic, key, payload)`:** Dispatches an end-to-end test message and confirms synchronous broker Leader ACK (`RequiredAcks = RequireOne`).
+
+---
+
+### 4. `producer.go` — Resilient Kafka Producer & Event Model (Day 16)
+
+Transforms gateway HTTP payment requests into durable streaming events:
+
+* **`TransactionInitiatedEvent` Schema:** Canonical financial record containing `EventID` (UUIDv4), `TransactionID`, `PayerID` (Partition Key), `PayeeID`, `AmountCents`, `Currency`, `MerchantID`, `IdempotencyKey`, and UTC `Timestamp`.
+* **Synchronous Leader ACK (`kafka.RequireOne`):** Balances sub-15ms socket turnaround time with partition leader durability before acknowledging the client.
+* **`MockProducer`:** Thread-safe, in-memory implementation of `EventProducer` enabling 100% hermetic unit testing without Docker dependencies.
 
 ---
 

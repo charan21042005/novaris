@@ -54,10 +54,12 @@ services/gateway/internal/
 │   ├── limiter.go        # Zero-goroutine lazy refill algorithm & sync.RWMutex store
 │   ├── limiter_test.go   # Burst, refill, multi-goroutine race tests, and HTTP 429
 │   └── README.md         # Rate limiter architecture, math derivation & test guide
-├── streaming/            # Distributed event streaming & Kafka KRaft core (Phase 2, Day 15)
+├── streaming/            # Distributed event streaming & Kafka KRaft core (Phase 2, Day 15-16)
 │   ├── config.go         # Cloud-native Kafka configuration & canonical topic catalog
 │   ├── partitioner.go    # Deterministic Murmur2 key routing & FIFO account invariant
 │   ├── admin.go          # Pure-Go cluster admin, KRaft metadata & topic provisioning
+│   ├── producer.go       # Resilient Go Kafka Producer & TransactionInitiatedEvent model (Day 16)
+│   ├── producer_test.go  # Unit tests for event validation, serialization & mock producer
 │   ├── streaming_test.go # Comprehensive tests for hashing, distribution & integration
 │   └── README.md         # Streaming core architecture, Murmur2 math & cluster guide
 └── README.md             # This documentation
