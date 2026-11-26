@@ -1,5 +1,35 @@
-// Package streaming provides high-performance, fault-tolerant Apache Kafka event streaming
-// primitives for the NOVARIS payment settlement and adaptive fraud intelligence platform.
+// ==============================================================================
+// NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
+// FILE: services/gateway/internal/streaming/admin.go
+// PURPOSE: Apache Kafka Admin Client, KRaft Metadata Discovery & Topic Provisioning
+// ==============================================================================
+//
+// 🎓 COMPUTER SCIENCE & DISTRIBUTED SYSTEMS ARCHITECTURE FOR BEGINNERS:
+//
+// 1. What is an "Admin Client" in Apache Kafka?
+//    While normal producers and consumers send and receive application payload messages,
+//    an Admin Client performs metadata operations:
+//      - Querying which brokers are alive and who is the active KRaft cluster controller.
+//      - Inspecting topic schemas, partition counts, and replica sets.
+//      - Idempotently creating new topics with specified replication factors and retention policies.
+//      - Probing round-trip protocol latency.
+//
+// 2. Why Pure Go (`segmentio/kafka-go`)?
+//    Historically, Kafka Go clients (such as `confluent-kafka-go`) were CGO wrappers around
+//    `librdkafka` (written in C). This required developers to install GCC/MSVC C compilers,
+//    created cross-compilation nightmares between Windows and Linux containers, and caused
+//    mysterious segmentation faults during thread panics.
+//    `segmentio/kafka-go` is written in 100% pure Go: it compiles instantly, runs natively
+//    on Windows and Linux, and leverages standard Go net.Conn socket pooling.
+//
+// 3. The Power of Idempotent Topic Provisioning:
+//    In production, multiple instances of our API Gateway or worker microservices boot
+//    concurrently in Kubernetes pods. If each service attempts to create topics on boot,
+//    a naive client would throw "TopicAlreadyExists" errors and crash.
+//    Our `EnsureTopics()` method is fully IDEMPOTENT: it inspects cluster metadata first,
+//    provisions missing topics, and treats existing compliant topics as success!
+// ==============================================================================
+
 package streaming
 
 import (
@@ -16,12 +46,23 @@ import (
 
 // BrokerMetadata represents the connection and role details of a single Kafka node.
 type BrokerMetadata struct {
-	ID           int    `json:"id"`
-	Host         string `json:"host"`
-	Port         int    `json:"port"`
-	Address      string `json:"address"`
-	IsController bool   `json:"is_controller"`
-	Rack         string `json:"rack,omitempty"`
+	// ID is the unique numerical broker identifier configured in Kafka (e.g. KAFKA_NODE_ID: 1).
+	ID int `json:"id"`
+
+	// Host is the hostname or IP address advertised by the broker.
+	Host string `json:"host"`
+
+	// Port is the TCP port on which the broker listens for client connections.
+	Port int `json:"port"`
+
+	// Address is the formatted "host:port" connection string.
+	Address string `json:"address"`
+
+	// IsController is true if this broker currently holds the KRaft Raft controller leadership role.
+	IsController bool `json:"is_controller"`
+
+	// Rack is an optional cloud availability zone or datacenter rack tag (e.g. "us-east-1a").
+	Rack string `json:"rack,omitempty"`
 }
 
 // PartitionMetadata represents the log partition details, leader broker, and replica set.
@@ -30,7 +71,7 @@ type PartitionMetadata struct {
 	ID        int    `json:"id"`
 	LeaderID  int    `json:"leader_id"`
 	Replicas  []int  `json:"replicas"`
-	Isr       []int  `json:"isr"` // In-Sync Replicas
+	Isr       []int  `json:"isr"` // In-Sync Replicas: the replicas actively caught up with the leader
 	ErrorDesc string `json:"error,omitempty"`
 }
 
@@ -40,7 +81,7 @@ type TopicSummary struct {
 	NumPartitions     int                 `json:"num_partitions"`
 	ReplicationFactor int                 `json:"replication_factor"`
 	Partitions        []PartitionMetadata `json:"partitions"`
-	IsInternal        bool                `json:"is_internal"`
+	IsInternal        bool                `json:"is_internal"` // true for __consumer_offsets and @metadata
 }
 
 // ClusterHealth encapsulates the overall operational status and latency of the Kafka cluster.
@@ -100,6 +141,15 @@ func NewAdminClient(cfg Config) *AdminClient {
 
 // CheckHealth probes the Kafka cluster over TCP, queries the KRaft controller metadata,
 // and returns a detailed cluster health report.
+//
+// 🎓 Step-by-Step Execution Walkthrough for Beginners:
+//  1. Low-Level TCP Probe: Uses `FindFirstReachableBroker()` to verify socket reachability.
+//     If Docker is stopped, fails fast in <50ms instead of hanging.
+//  2. Protocol Dial: Establishes a raw Kafka protocol connection via `dialer.DialContext()`.
+//  3. Query Brokers: Calls `conn.Brokers()` to retrieve the cluster broker topology.
+//  4. Query KRaft Controller: Calls `conn.Controller()` to discover which node is the active Raft leader.
+//  5. Query Topics & Partitions: Calls `conn.ReadPartitions()` to count active topics.
+//  6. Measures round-trip ping latency and returns the assembled `ClusterHealth` struct.
 func (a *AdminClient) CheckHealth(ctx context.Context) (*ClusterHealth, error) {
 	start := time.Now()
 
@@ -143,7 +193,7 @@ func (a *AdminClient) CheckHealth(ctx context.Context) (*ClusterHealth, error) {
 		}, err
 	}
 
-	// Query controller node:
+	// Query KRaft controller node:
 	controllerBroker, err := conn.Controller()
 	controllerID := -1
 	controllerHost := ""
@@ -244,7 +294,7 @@ func (a *AdminClient) ListTopics(ctx context.Context) ([]TopicSummary, error) {
 			NumPartitions:     len(parts),
 			ReplicationFactor: repFactor,
 			Partitions:        parts,
-			IsInternal:        strings.HasPrefix(name, "__"),
+			IsInternal:        strings.HasPrefix(name, "__") || strings.HasPrefix(name, "@"),
 		})
 	}
 
@@ -254,6 +304,12 @@ func (a *AdminClient) ListTopics(ctx context.Context) ([]TopicSummary, error) {
 // EnsureTopics idempotently verifies that all required NOVARIS topics exist.
 // If a topic is missing, it is created with the specified partitions and replication factor.
 // If it already exists, its status is verified and recorded without raising an error.
+//
+// 🎓 Pedagogical Note on Kafka Controller Leadership:
+// In Apache Kafka, topic creation and partition alterations MUST be authorized by the
+// active Controller node. This method dynamically queries the controller address and
+// establishes a connection to the controller broker directly, ensuring immediate metadata
+// convergence without waiting for background inter-broker metadata propagation!
 func (a *AdminClient) EnsureTopics(ctx context.Context, specs []TopicSpec) (*TopicProvisionReport, error) {
 	start := time.Now()
 	report := &TopicProvisionReport{
@@ -271,13 +327,13 @@ func (a *AdminClient) EnsureTopics(ctx context.Context, specs []TopicSpec) (*Top
 		ClientID:  a.cfg.ClientID,
 	}
 
-	// Dial the controller broker if possible for authoritative metadata modification:
 	conn, err := dialer.DialContext(ctx, "tcp", reachableBroker)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial broker %s: %w", reachableBroker, err)
 	}
 	defer conn.Close()
 
+	// Connect directly to the KRaft controller broker if distinct:
 	controller, err := conn.Controller()
 	var targetConn *kafka.Conn
 	if err == nil {
@@ -292,7 +348,7 @@ func (a *AdminClient) EnsureTopics(ctx context.Context, specs []TopicSpec) (*Top
 		targetConn = conn
 	}
 
-	// Read existing topics:
+	// Query pre-existing topic partitions:
 	existingPartitions, err := targetConn.ReadPartitions()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read existing partitions: %w", err)
@@ -303,6 +359,7 @@ func (a *AdminClient) EnsureTopics(ctx context.Context, specs []TopicSpec) (*Top
 		existingTopicParts[p.Topic]++
 	}
 
+	// Filter topics that require creation:
 	var toCreate []kafka.TopicConfig
 	for _, spec := range specs {
 		if parts, exists := existingTopicParts[spec.Name]; exists {
@@ -333,10 +390,11 @@ func (a *AdminClient) EnsureTopics(ctx context.Context, specs []TopicSpec) (*Top
 		})
 	}
 
+	// Issue topic creation batch to controller:
 	if len(toCreate) > 0 {
 		err = targetConn.CreateTopics(toCreate...)
 		if err != nil {
-			// Some versions return TopicAlreadyExists error if another client created it concurrently
+			// Defensively handle concurrent creation race conditions:
 			if !isTopicAlreadyExistsErr(err) {
 				return nil, fmt.Errorf("failed to create Kafka topics: %w", err)
 			}
