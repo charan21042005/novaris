@@ -38,16 +38,28 @@ In the Go programming language, the `internal/` directory is **enforced by the G
 
 ```
 services/gateway/internal/
-├── auth/                 # Cryptographic authentication & security middleware
+├── auth/                 # Cryptographic authentication & security middleware (Day 2-3)
 │   ├── jwt.go            # RFC 7519 JWT verification & context claims injection
 │   ├── jwt_test.go       # Table-driven unit tests for JWT pipeline
 │   ├── hmac.go           # RFC 2104 HMAC-SHA256 request signing & replay defense
 │   ├── hmac_test.go      # Unit tests for tampering, replay, & stream restoration
 │   └── README.md         # Forensic security documentation for internal/auth
-├── ratelimit/            # In-memory traffic control & token-bucket rate limiter
+├── openapi/              # OpenAPI 3.0.3 contract & Swagger UI interactive dashboard (Day 12)
+│   ├── openapi.go        # Embedded spec handlers & HTTP verb validation
+│   ├── openapi.json      # Canonical OpenAPI 3.0.3 machine-readable schema
+│   ├── openapi_test.go   # Table-driven tests for MIME types, headers & verbs
+│   ├── swagger.html      # Self-contained embedded Swagger UI HTML5 dashboard
+│   └── README.md         # OpenAPI embedding & Swagger documentation
+├── ratelimit/            # In-memory traffic control & token-bucket rate limiter (Day 4)
 │   ├── limiter.go        # Zero-goroutine lazy refill algorithm & sync.RWMutex store
 │   ├── limiter_test.go   # Burst, refill, multi-goroutine race tests, and HTTP 429
 │   └── README.md         # Rate limiter architecture, math derivation & test guide
+├── streaming/            # Distributed event streaming & Kafka KRaft core (Phase 2, Day 15)
+│   ├── config.go         # Cloud-native Kafka configuration & canonical topic catalog
+│   ├── partitioner.go    # Deterministic Murmur2 key routing & FIFO account invariant
+│   ├── admin.go          # Pure-Go cluster admin, KRaft metadata & topic provisioning
+│   ├── streaming_test.go # Comprehensive tests for hashing, distribution & integration
+│   └── README.md         # Streaming core architecture, Murmur2 math & cluster guide
 └── README.md             # This documentation
 ```
 
@@ -65,14 +77,15 @@ flowchart TD
         GatewayMain["services/gateway/main.go"]
         GenTokenCLI["cmd/gentoken/main.go"]
         SignRequestCLI["cmd/signrequest/main.go"]
+        VerifyKafkaCLI["cmd/verifykafka/main.go"]
+        VerifyOpenAPICLI["cmd/verifyopenapi/main.go"]
     end
 
     subgraph InternalBoundary ["Go Compiler 'internal/' Boundary"]
         AuthPackage["internal/auth (hmac.go, jwt.go)"]
         RateLimitPackage["internal/ratelimit (limiter.go)"]
-        ContextKey["Type-Safe contextKey"]
-        CryptoVerify["hmac.Equal & Constant-Time Checks"]
-        TokenBucket["Lazy Refill TokenBucket"]
+        OpenAPIPackage["internal/openapi (openapi.go)"]
+        StreamingPackage["internal/streaming (config.go, partitioner.go, admin.go)"]
     end
 
     subgraph ExternalDisallowed ["External Repositories (Disallowed)"]
@@ -81,11 +94,17 @@ flowchart TD
 
     GatewayMain -->|"Allowed: imports"| AuthPackage
     GatewayMain -->|"Allowed: imports"| RateLimitPackage
+    GatewayMain -->|"Allowed: imports"| OpenAPIPackage
+    GatewayMain -->|"Allowed: imports"| StreamingPackage
     GenTokenCLI -->|"Allowed: imports"| AuthPackage
     SignRequestCLI -->|"Allowed: imports"| AuthPackage
+    VerifyKafkaCLI -->|"Allowed: imports"| StreamingPackage
+    VerifyOpenAPICLI -->|"Allowed: imports"| OpenAPIPackage
 
     ExternalModule -.->|"❌ Rejected by go build (compiler error)"| AuthPackage
     ExternalModule -.->|"❌ Rejected by go build (compiler error)"| RateLimitPackage
+    ExternalModule -.->|"❌ Rejected by go build (compiler error)"| OpenAPIPackage
+    ExternalModule -.->|"❌ Rejected by go build (compiler error)"| StreamingPackage
 ```
 
 ---
@@ -93,7 +112,9 @@ flowchart TD
 ## 🧭 Directory Index
 
 * 👉 **[internal/auth/ README](./auth/README.md):** In-depth documentation covering JWT claims verification, HMAC payload hashing, constant-time equality comparisons, and stream restoration mechanics.
+* 👉 **[internal/openapi/ README](./openapi/README.md):** In-depth documentation covering embedded OpenAPI 3.0.3 specification, `//go:embed` hermetic packaging, and interactive Swagger UI dashboard.
 * 👉 **[internal/ratelimit/ README](./ratelimit/README.md):** In-depth documentation covering token-bucket algorithm, zero-goroutine lazy mathematical refill, thread safety, and HTTP 429 Retry-After specifications.
+* 👉 **[internal/streaming/ README](./streaming/README.md):** In-depth documentation covering Apache Kafka KRaft cluster architecture, deterministic Murmur2 partition routing, topic provisioning, and pure-Go administration.
 
 ---
 
