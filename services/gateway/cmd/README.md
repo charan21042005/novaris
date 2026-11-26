@@ -35,25 +35,45 @@ The `cmd/` directory adheres to the **Standard Go Project Layout** (`golang-stan
 services/gateway/cmd/
 ├── e2eprobe/         # End-to-end API contract verification runner (Day 11)
 │   ├── main.go
-│   └── main_test.go
-├── gentoken/         # Mints cryptographically signed JWT Bearer tokens
-│   └── main.go
-├── signrequest/      # Computes canonical HMAC-SHA256 signatures over request bodies
-│   └── main.go
+│   ├── main_test.go
+│   └── README.md
+├── gentoken/         # Mints cryptographically signed JWT Bearer tokens (Day 2)
+│   ├── main.go
+│   └── README.md
+├── signrequest/      # Computes canonical HMAC-SHA256 signatures over request bodies (Day 3)
+│   ├── main.go
+│   └── README.md
 ├── verifyopenapi/    # Validates OpenAPI 3.0 schema conformance & status codes (Day 12)
 │   ├── main.go
-│   └── main_test.go
-├── verifyschema/     # Verifies database schema, composite indexes & migration compliance
+│   ├── main_test.go
+│   └── README.md
+├── verifyschema/     # Verifies database schema, composite indexes & migration compliance (Day 5, 10)
 │   ├── main.go
-│   └── main_test.go
+│   ├── main_test.go
+│   └── README.md
 ├── loadtest/         # High-concurrency load generator & tail latency benchmark (Day 13)
 │   ├── main.go
-│   └── main_test.go
+│   ├── main_test.go
+│   └── README.md
 ├── phase1audit/      # Phase 1 Capstone automated audit & certification runner (Day 14)
 │   ├── main.go
-│   └── main_test.go
-└── README.md         # This documentation
+│   ├── main_test.go
+│   └── README.md
+├── verifykafka/      # Phase 2 Day 15 Kafka cluster & streaming core verification CLI
+│   ├── main.go
+│   └── README.md
+└── README.md         # This master CLI documentation
 ```
+
+### 🧭 Subfolder Documentation Directory:
+* 🔍 **[cmd/e2eprobe](./e2eprobe/README.md):** Automated black-box API contract probe runner.
+* 🔑 **[cmd/gentoken](./gentoken/README.md):** RFC 7519 HMAC-SHA256 JWT minting utility.
+* ✍️ **[cmd/signrequest](./signrequest/README.md):** RFC 2104 HMAC-SHA256 request signing and replay test tool.
+* 🗄️ **[cmd/verifyschema](./verifyschema/README.md):** PostgreSQL schema compliance and static DDL validator.
+* 📑 **[cmd/verifyopenapi](./verifyopenapi/README.md):** OpenAPI 3.0.3 contract gatekeeper and status code auditor.
+* 🚀 **[cmd/loadtest](./loadtest/README.md):** High-concurrency worker pool load tester and OCC benchmark.
+* 🎖️ **[cmd/phase1audit](./phase1audit/README.md):** Phase 1 Capstone automated audit and milestone certifier.
+* ⚡ **[cmd/verifykafka](./verifykafka/README.md):** Phase 2 Kafka KRaft cluster diagnostic and partition routing tool.
 
 ---
 
@@ -258,6 +278,32 @@ go run cmd/phase1audit/main.go -json
 
 # Run unit test harness for the audit CLI
 go test -v ./cmd/phase1audit/...
+```
+
+---
+
+## 8. `verifykafka` — Kafka Cluster & Streaming Verification CLI (Phase 2, Day 15)
+
+Located at [`cmd/verifykafka/main.go`](./verifykafka/main.go), this diagnostic tool audits the Phase 2 Kafka event backbone:
+* **KRaft Quorum Health:** Validates TCP connectivity, queries controller node IDs, and audits registered active brokers.
+* **Canonical Topic Provisioning:** Idempotently ensures all 6 core Novaris streaming topics (`novaris.tx.initiated`, `settled`, `failed`, `dlq`, `retry.1`, `retry.2`) exist with 3 partitions.
+* **Deterministic Partition Routing Proof:** Mathematically verifies that transactions for a given account key consistently map to the identical partition ($P = |\text{Murmur2}(\text{Key})| \pmod 3$) preserving per-account FIFO invariants.
+* **Diagnostic Probe Write Path:** Publishes an authentic probe event and validates synchronous broker Leader ACK.
+
+### Supported CLI Flags:
+| Flag | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `-brokers` | `string` | `localhost:9092` | Comma-separated list of target Kafka brokers. |
+| `-client-id` | `string` | `novaris-verifykafka-cli` | Client identifier string sent during TCP wire handshakes. |
+| `-json` | `bool` | `false` | Emits full audit findings as machine-readable JSON for CI/CD pipelines. |
+
+### Usage Examples:
+```bash
+# Run interactive ANSI terminal audit against local KRaft cluster
+go run cmd/verifykafka/main.go
+
+# Export machine-readable JSON audit report
+go run cmd/verifykafka/main.go -json
 ```
 
 ---
