@@ -42,6 +42,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -51,10 +52,33 @@ import (
 	"github.com/charan21042005/novaris/services/gateway/internal/auth"
 	"github.com/charan21042005/novaris/services/gateway/internal/openapi"
 	"github.com/charan21042005/novaris/services/gateway/internal/ratelimit"
+	"github.com/charan21042005/novaris/services/gateway/internal/streaming"
 )
 
 // db is the shared PostgreSQL database connection pool.
 var db *sql.DB
+
+var (
+	producerMu    sync.RWMutex
+	eventProducer streaming.EventProducer
+)
+
+// SetEventProducer configures the active event producer for payment event publishing.
+func SetEventProducer(p streaming.EventProducer) {
+	producerMu.Lock()
+	defer producerMu.Unlock()
+	eventProducer = p
+}
+
+// GetEventProducer returns the active event producer (defaults to an in-memory mock if unset).
+func GetEventProducer() streaming.EventProducer {
+	producerMu.RLock()
+	defer producerMu.RUnlock()
+	if eventProducer == nil {
+		return streaming.NewMockProducer()
+	}
+	return eventProducer
+}
 
 // Config holds runtime configuration parameters for the gateway.
 type Config struct {
@@ -95,6 +119,8 @@ type PaymentRequest struct {
 type PaymentResponse struct {
 	Status             string    `json:"status"`
 	TransactionID      string    `json:"transaction_id,omitempty"`
+	EventID            string    `json:"event_id,omitempty"`
+	EventPublished     bool      `json:"event_published,omitempty"`
 	MerchantID         string    `json:"merchant_id"`
 	Role               string    `json:"role"`
 	AmountCents        int64     `json:"amount_cents,omitempty"`
@@ -278,12 +304,56 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 		transactionID = uuid.New().String()
 	}
 
+	// --------------------------------------------------------------------------
+	// Phase 2 (Day 16): Publish tx.initiated Event to Apache Kafka
+	// --------------------------------------------------------------------------
+	// Turn every accepted gateway payment into a durable, immutable streaming event.
+	// PayerID serves as the Kafka Partition Key, preserving strict FIFO ordering.
+	var eventID string
+	var eventPublished bool
+
+	if prod := GetEventProducer(); prod != nil {
+		event := &streaming.TransactionInitiatedEvent{
+			EventID:        uuid.New().String(),
+			EventType:      streaming.EventTypeTxInitiated,
+			Version:        streaming.EventSchemaVersion1,
+			TransactionID:  transactionID,
+			PayerID:        senderID, // Kafka Partition Key (strict per-account FIFO invariant)
+			PayeeID:        recipientID,
+			AmountCents:    amountCents,
+			Currency:       "USD",
+			MerchantID:     claims.MerchantID,
+			IdempotencyKey: r.Header.Get("Idempotency-Key"),
+			Timestamp:      time.Now().UTC(),
+			Status:         "INITIATED",
+			Metadata: map[string]string{
+				"role":        claims.Role,
+				"remote_addr": r.RemoteAddr,
+			},
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		res, err := prod.PublishTxInitiated(ctx, event)
+		cancel()
+
+		if err != nil {
+			log.Printf("[KAFKA_WARN] Failed to publish tx.initiated event for tx %s: %v", transactionID, err)
+		} else {
+			eventID = event.EventID
+			eventPublished = true
+			log.Printf("[KAFKA] Emitted novaris.tx.initiated for tx %s (key: %s, latency: %v)",
+				transactionID, senderID, res.Latency)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	payload := PaymentResponse{
 		Status:             "settled",
 		TransactionID:      transactionID,
+		EventID:            eventID,
+		EventPublished:     eventPublished,
 		MerchantID:         claims.MerchantID,
 		Role:               claims.Role,
 		AmountCents:        amountCents,
@@ -381,6 +451,25 @@ func main() {
 		log.Println("[IDEMP] Initialized In-Memory Idempotency Store (sync.RWMutex)")
 	}
 
+	// --------------------------------------------------------------------------
+	// Phase 2 (Day 16): Apache Kafka Event Producer Initialization
+	// --------------------------------------------------------------------------
+	kafkaCfg := streaming.LoadConfigFromEnv()
+	if _, err := streaming.QuickTCPProbe(kafkaCfg.Brokers[0], 2*time.Second); err == nil {
+		liveProducer, err := streaming.NewProducer(&kafkaCfg)
+		if err == nil {
+			SetEventProducer(liveProducer)
+			log.Printf(" Connected to Apache Kafka broker at %v (Topic: %s)", kafkaCfg.Brokers, streaming.TopicTxInitiated)
+		} else {
+			log.Printf("[WARN] Failed to instantiate Kafka producer (%v). Running with in-memory mock producer.", err)
+			SetEventProducer(streaming.NewMockProducer())
+		}
+	} else {
+		log.Printf("[WARN] Kafka broker %s unreachable (%v). Running in decoupled mode with in-memory mock producer.",
+			kafkaCfg.Brokers[0], err)
+		SetEventProducer(streaming.NewMockProducer())
+	}
+
 	// Build the HTTP router with full layered middleware pipeline
 	router := SetupServerMux(cfg, db, bucketStore, idempStore)
 
@@ -428,6 +517,11 @@ func main() {
 	if db != nil {
 		_ = db.Close()
 		log.Println("[SHUTDOWN] Database connection pool closed.")
+	}
+
+	if prod := GetEventProducer(); prod != nil {
+		_ = prod.Close()
+		log.Println("[SHUTDOWN] Kafka event producer closed.")
 	}
 
 	log.Println("[SHUTDOWN] NOVARIS Gateway stopped cleanly.")
