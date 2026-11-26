@@ -90,7 +90,8 @@ bin/Daily_Actions/
 | **Phase 1** | **Day 12** | **Documentation Discipline: OpenAPI Specifications & Architecture Decision Records (ADR-001)** | [Day_12_Action_Log.md](./Phase_1_Design_and_Ledger/Day_12_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 13** | **Concurrency Load Scripting (k6 & Hot-Wallet Contention)** | [Day_13_Action_Log.md](./Phase_1_Design_and_Ledger/Day_13_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 1** | **Day 14** | **Phase 1 Capstone Milestone Review & Comprehensive Production Verification** | [Day_14_Action_Log.md](./Phase_1_Design_and_Ledger/Day_14_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 2** | **Day 15** | **Apache Kafka Cluster Setup & Topic Topology** | [Phase_2_Streaming_Core/README.md](./Phase_2_Streaming_Core/README.md) | ⏳ *Up Next* |
+| **Phase 2** | **Day 15** | **Apache Kafka Fundamentals & Topic Topology** | [Day_15_Action_Log.md](./Phase_2_Streaming_Core/Day_15_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 2** | **Day 16** | **High-Performance Strongly-Typed Go Producer** | [Phase_2_Streaming_Core/README.md](./Phase_2_Streaming_Core/README.md) | ⏳ *Up Next* |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 
 ---
