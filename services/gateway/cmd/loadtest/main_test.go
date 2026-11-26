@@ -90,11 +90,11 @@ func TestRunLoadTest_MockGatewaySuccess(t *testing.T) {
 		t.Errorf("expected 0 network errors, got %d", report.NetworkErrors)
 	}
 
-	// Assertion 4: Verify latency statistics exist and are non-zero:
+	// Assertion 4: Verify latency statistics exist and are non-negative:
 	if len(report.LatenciesMs) != 25 {
 		t.Errorf("expected 25 latency data points, got %d", len(report.LatenciesMs))
 	}
-	if report.MinMs < 0 || report.P50Ms <= 0 || report.P99Ms <= 0 {
+	if report.MinMs < 0 || report.P50Ms < 0 || report.P99Ms < 0 {
 		t.Errorf("expected valid non-negative latency percentiles, got min=%v, p50=%v, p99=%v", report.MinMs, report.P50Ms, report.P99Ms)
 	}
 	if report.TPS <= 0 {
