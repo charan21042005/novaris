@@ -307,12 +307,23 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 	// --------------------------------------------------------------------------
 	// Phase 2 (Day 16): Publish tx.initiated Event to Apache Kafka
 	// --------------------------------------------------------------------------
-	// Turn every accepted gateway payment into a durable, immutable streaming event.
-	// PayerID serves as the Kafka Partition Key, preserving strict FIFO ordering.
+	// 📚 WHAT HAPPENS HERE (BEGINNER'S GUIDE TO EVENT-DRIVEN ARCHITECTURE):
+	// 1. The payment has just been durably committed to the PostgreSQL ledger.
+	// 2. Instead of synchronously calling downstream services (fraud score, email,
+	//    accounting sync) over HTTP—which would make this endpoint slow and fragile—
+	//    we publish an immutable domain event: "novaris.tx.initiated".
+	// 3. We use `senderID` (the Payer Account UUID) as the Kafka Partition Key.
+	//    Why? Kafka runs Murmur2 hash on the key. All transactions for this sender
+	//    will ALWAYS route to the same partition, guaranteeing chronological First-In,
+	//    First-Out (FIFO) ordering!
+	// 4. We set a 3-second context timeout so a slow broker never blocks HTTP clients.
+	// 5. Downstream workers (e.g. Day 17 Settlement Consumer) will consume this event
+	//    asynchronously at their own pace.
 	var eventID string
 	var eventPublished bool
 
 	if prod := GetEventProducer(); prod != nil {
+		// Construct the canonical financial event envelope:
 		event := &streaming.TransactionInitiatedEvent{
 			EventID:        uuid.New().String(),
 			EventType:      streaming.EventTypeTxInitiated,
@@ -332,11 +343,14 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
+		// Use a bounded context timeout (3 seconds) to prevent hanging on network partitions:
 		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 		res, err := prod.PublishTxInitiated(ctx, event)
 		cancel()
 
 		if err != nil {
+			// Log warning if event publication failed; in Day 18 we introduce the
+			// Transactional Outbox pattern to eliminate the dual-write hazard entirely!
 			log.Printf("[KAFKA_WARN] Failed to publish tx.initiated event for tx %s: %v", transactionID, err)
 		} else {
 			eventID = event.EventID
