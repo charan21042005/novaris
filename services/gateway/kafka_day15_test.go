@@ -1,3 +1,39 @@
+// ==============================================================================
+// NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
+// FILE: services/gateway/kafka_day15_test.go
+// PURPOSE: Day 15 Master Integration Test Suite for Kafka Streaming Core
+// ==============================================================================
+//
+// 🎓 WHAT THIS TEST SUITE VERIFIES & GUARANTEES:
+//
+// This test file runs against the live local Apache Kafka KRaft container.
+// It executes 5 sub-tests representing the complete Day 15 curriculum syllabus:
+//
+//  1. 01_ClusterReachabilityAndKRaftMetadata:
+//     - Probes TCP port 9092.
+//     - Handshakes via Kafka wire protocol.
+//     - Verifies active broker count (>= 1) and valid KRaft controller node ID.
+//
+//  2. 02_EnsureCanonicalPhase2Topics:
+//     - Calls AdminClient.EnsureTopics().
+//     - Verifies idempotent creation of all 6 required Phase 2 topics.
+//     - Asserts zero errors even if topics already exist from previous runs.
+//
+//  3. 03_VerifyTopicCatalogAndPartitions:
+//     - Reads cluster partitions directly from broker metadata.
+//     - Asserts exactly 3 partitions exist for each canonical topic.
+//
+//  4. 04_DeterministicAccountKeyRouting:
+//     - Evaluates 5 distinct merchant/account IDs across 5,000 iterations.
+//     - Mathematically proves that Account X ALWAYS routes to the SAME partition.
+//     - Verifies the strict per-account FIFO ordering invariant.
+//
+//  5. 05_DiagnosticProbeWritePath:
+//     - Emits a real test payload to `novaris.tx.initiated`.
+//     - Uses `RequiredAcks: RequireOne` to ensure leader broker commits the message
+//       to disk before acknowledging.
+// ==============================================================================
+
 package main
 
 import (
@@ -22,7 +58,9 @@ func TestDay15KafkaStreamingCore(t *testing.T) {
 
 	admin := streaming.NewAdminClient(cfg)
 
-	// Step 1: Pre-flight check & cluster health
+	// =========================================================================
+	// Subtest 1: Pre-flight check & cluster health
+	// =========================================================================
 	t.Run("01_ClusterReachabilityAndKRaftMetadata", func(t *testing.T) {
 		health, err := admin.CheckHealth(ctx)
 		if err != nil {
@@ -44,7 +82,9 @@ func TestDay15KafkaStreamingCore(t *testing.T) {
 		}
 	})
 
-	// Step 2: Idempotent Topic Provisioning
+	// =========================================================================
+	// Subtest 2: Idempotent Topic Provisioning
+	// =========================================================================
 	t.Run("02_EnsureCanonicalPhase2Topics", func(t *testing.T) {
 		specs := streaming.GetStandardTopics(cfg.DefaultPartitions, cfg.DefaultReplicationFactor)
 		report, err := admin.EnsureTopics(ctx, specs)
@@ -61,7 +101,9 @@ func TestDay15KafkaStreamingCore(t *testing.T) {
 		}
 	})
 
-	// Step 3: Verify Topic Specifications & Partition Counts
+	// =========================================================================
+	// Subtest 3: Verify Topic Specifications & Partition Counts
+	// =========================================================================
 	t.Run("03_VerifyTopicCatalogAndPartitions", func(t *testing.T) {
 		summaries, err := admin.ListTopics(ctx)
 		if err != nil {
@@ -97,7 +139,9 @@ func TestDay15KafkaStreamingCore(t *testing.T) {
 		}
 	})
 
-	// Step 4: Mathematical Partition Routing Invariant
+	// =========================================================================
+	// Subtest 4: Mathematical Partition Routing Invariant
+	// =========================================================================
 	t.Run("04_DeterministicAccountKeyRouting", func(t *testing.T) {
 		partitioner := streaming.NewPartitioner(streaming.StrategyFNV1a)
 		accounts := []string{
@@ -128,7 +172,9 @@ func TestDay15KafkaStreamingCore(t *testing.T) {
 		}
 	})
 
-	// Step 5: Diagnostic Probe Event Write
+	// =========================================================================
+	// Subtest 5: Diagnostic Probe Event Write
+	// =========================================================================
 	t.Run("05_DiagnosticProbeWritePath", func(t *testing.T) {
 		probeTarget := streaming.TopicTxInitiated
 		probeKey := "acc_merchant_alpha_001"

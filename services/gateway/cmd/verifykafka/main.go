@@ -1,18 +1,31 @@
-// Command verifykafka is the official Day 15 automated verification and diagnostic CLI for NOVARIS.
+// ==============================================================================
+// NOVARIS: Distributed Payment Settlement & Adaptive Fraud Intelligence Platform
+// FILE: services/gateway/cmd/verifykafka/main.go
+// PURPOSE: Day 15 Interactive Diagnostic & Verification CLI Tool
+// ==============================================================================
 //
-// Role in NOVARIS:
-//  1. Validates local Apache Kafka (KRaft mode) cluster health and reachability over TCP.
-//  2. Discovers active brokers, KRaft metadata controller node, and protocol latency.
-//  3. Idempotently provisions the canonical Phase 2 NOVARIS event topics:
-//     - novaris.tx.initiated (3 partitions)
-//     - novaris.tx.settled (3 partitions)
-//     - novaris.tx.failed (3 partitions)
-//     - novaris.tx.dlq (3 partitions - Dead Letter Queue)
-//     - novaris.tx.retry.1 (3 partitions)
-//     - novaris.tx.retry.2 (3 partitions)
-//  4. Demonstrates mathematical partition key hashing invariants: proves that account transactions
-//     always route to the same partition index to preserve FIFO order without global locking.
-//  5. Emits and verifies a live diagnostic probe message.
+// 🎓 WHY THIS TOOL EXISTS IN OUR FINTECH ENGINEERING DISCIPLINE:
+//
+// In production cloud environments (AWS EKS / MSK / GCP), infrastructure issues
+// (e.g., security group port blocks, misconfigured advertised listeners, DNS resolution
+// latency, or KRaft controller leader elections) can cause silent outages.
+//
+// Rather than relying on trial-and-error or opaque log messages, NOVARIS provides
+// dedicated verification binaries (like `phase1audit`, `verifyopenapi`, `verifyschema`,
+// and now `verifykafka`).
+//
+// What `verifykafka` Proves in 5 Automated Steps:
+//  [1/5] Cluster Reachability: Executes low-level TCP and Kafka protocol handshakes,
+//        measuring round-trip ping latency and querying KRaft metadata controllers.
+//  [2/5] Canonical Topic Provisioning: Ensures all 6 required Phase 2 event streams
+//        are active with 3 partitions and correct retention policies.
+//  [3/5] Active Catalog Inspection: Queries the broker for partition leaders and ISRs.
+//  [4/5] Partition Routing Mathematics: Proves deterministic key hashing across 5 sample
+//        accounts, demonstrating per-account FIFO invariants.
+//  [5/5] Diagnostic Probe Injection: Writes a live probe message to `novaris.tx.initiated`
+//        and confirms leader ACK receipt.
+// ==============================================================================
+
 package main
 
 import (
@@ -27,7 +40,7 @@ import (
 	"github.com/charan21042005/novaris/services/gateway/internal/streaming"
 )
 
-// ANSI terminal color codes for clear terminal visual reporting:
+// ANSI terminal color escape codes for high-contrast visual status reporting:
 const (
 	colorReset  = "\033[0m"
 	colorBold   = "\033[1m"
@@ -40,18 +53,18 @@ const (
 
 // AuditReport aggregates all verification checks for JSON export or ANSI console display.
 type AuditReport struct {
-	Timestamp          time.Time                         `json:"timestamp"`
-	Phase              string                            `json:"phase"`
-	Day                int                               `json:"day"`
-	Milestone          string                            `json:"milestone"`
-	TargetBrokers      []string                          `json:"target_brokers"`
-	ClusterHealth      *streaming.ClusterHealth          `json:"cluster_health"`
-	ProvisionReport    *streaming.TopicProvisionReport   `json:"provision_report,omitempty"`
-	TopicSummaries     []streaming.TopicSummary          `json:"topic_summaries,omitempty"`
-	PartitionProof     []PartitionProofItem              `json:"partition_proof"`
-	ProbeResult        *streaming.ProbeResult            `json:"probe_result,omitempty"`
-	AllChecksPassed    bool                              `json:"all_checks_passed"`
-	VerificationStatus string                            `json:"verification_status"`
+	Timestamp          time.Time                       `json:"timestamp"`
+	Phase              string                          `json:"phase"`
+	Day                int                             `json:"day"`
+	Milestone          string                          `json:"milestone"`
+	TargetBrokers      []string                        `json:"target_brokers"`
+	ClusterHealth      *streaming.ClusterHealth        `json:"cluster_health"`
+	ProvisionReport    *streaming.TopicProvisionReport `json:"provision_report,omitempty"`
+	TopicSummaries     []streaming.TopicSummary        `json:"topic_summaries,omitempty"`
+	PartitionProof     []PartitionProofItem            `json:"partition_proof"`
+	ProbeResult        *streaming.ProbeResult          `json:"probe_result,omitempty"`
+	AllChecksPassed    bool                            `json:"all_checks_passed"`
+	VerificationStatus string                          `json:"verification_status"`
 }
 
 // PartitionProofItem proves deterministic routing for an account key.
