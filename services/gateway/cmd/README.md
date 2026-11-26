@@ -62,6 +62,10 @@ services/gateway/cmd/
 ├── verifykafka/      # Phase 2 Day 15 Kafka cluster & streaming core verification CLI
 │   ├── main.go
 │   └── README.md
+├── verifyproducer/   # Phase 2 Day 16 Kafka producer & event visibility verification CLI
+│   ├── main.go
+│   ├── main_test.go
+│   └── README.md
 └── README.md         # This master CLI documentation
 ```
 
@@ -74,6 +78,7 @@ services/gateway/cmd/
 * 🚀 **[cmd/loadtest](./loadtest/README.md):** High-concurrency worker pool load tester and OCC benchmark.
 * 🎖️ **[cmd/phase1audit](./phase1audit/README.md):** Phase 1 Capstone automated audit and milestone certifier.
 * ⚡ **[cmd/verifykafka](./verifykafka/README.md):** Phase 2 Kafka KRaft cluster diagnostic and partition routing tool.
+* 📤 **[cmd/verifyproducer](./verifyproducer/README.md):** Phase 2 Kafka Producer diagnostic, event publisher and visibility audit tool.
 
 ---
 
@@ -304,6 +309,33 @@ go run cmd/verifykafka/main.go
 
 # Export machine-readable JSON audit report
 go run cmd/verifykafka/main.go -json
+```
+
+---
+
+## 9. `verifyproducer` — Kafka Producer & Event Visibility Verification CLI (Phase 2, Day 16)
+
+Located at [`cmd/verifyproducer/main.go`](./verifyproducer/main.go), this diagnostic tool certifies the Day 16 milestone by turning a payment request into a durable event on Kafka and confirming that events are **visible in the Kafka topic**:
+* **Direct Event Production:** Serializes and publishes strongly-typed `TransactionInitiatedEvent` records to `novaris.tx.initiated` with Murmur2 deterministic partition keys.
+* **Topic Visibility Audit:** Reads committed events directly back from the physical partition log using a lightweight reader to prove end-to-end event visibility.
+* **Schema & Financial Invariant Validation:** Asserts 100% field parity across EventID, TransactionID, AmountCents, and Payer Account UUID.
+
+### Supported CLI Flags:
+| Flag | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `-brokers` | `string` | `localhost:9092` | Comma-separated list of target Kafka brokers. |
+| `-topic` | `string` | `novaris.tx.initiated` | Target event topic for verification. |
+| `-amount` | `int64` | `12500` | Payment magnitude in integer cents ($125.00 = 12500). |
+| `-payer` | `string` | `c0000000-0000-0000-0000-000000000001` | Payer account UUID (Kafka Partition Key). |
+| `-json` | `bool` | `false` | Emits full audit findings as machine-readable JSON for CI/CD pipelines. |
+
+### Usage Examples:
+```bash
+# Run interactive ANSI terminal audit
+go run cmd/verifyproducer/main.go
+
+# Export machine-readable JSON audit report
+go run cmd/verifyproducer/main.go -json
 ```
 
 ---
