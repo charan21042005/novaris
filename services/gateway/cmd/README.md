@@ -66,6 +66,10 @@ services/gateway/cmd/
 │   ├── main.go
 │   ├── main_test.go
 │   └── README.md
+├── verifyconsumer/   # Phase 2 Day 17 Kafka consumer & in-order audit verification CLI
+│   ├── main.go
+│   ├── main_test.go
+│   └── README.md
 └── README.md         # This master CLI documentation
 ```
 
@@ -79,6 +83,7 @@ services/gateway/cmd/
 * 🎖️ **[cmd/phase1audit](./phase1audit/README.md):** Phase 1 Capstone automated audit and milestone certifier.
 * ⚡ **[cmd/verifykafka](./verifykafka/README.md):** Phase 2 Kafka KRaft cluster diagnostic and partition routing tool.
 * 📤 **[cmd/verifyproducer](./verifyproducer/README.md):** Phase 2 Kafka Producer diagnostic, event publisher and visibility audit tool.
+* 📥 **[cmd/verifyconsumer](./verifyconsumer/README.md):** Phase 2 Kafka Consumer diagnostic, in-order auditor and offset commit prover.
 
 ---
 
@@ -336,6 +341,39 @@ go run cmd/verifyproducer/main.go
 
 # Export machine-readable JSON audit report
 go run cmd/verifyproducer/main.go -json
+```
+
+---
+
+## 10. `verifyconsumer` — Kafka Consumer & In-Order Audit Engine (Day 17)
+
+The `verifyconsumer` CLI is the dedicated diagnostic tool developed for **Phase 2 Day 17 (Kafka Consumer)**. It executes an end-to-end verification proving that consumer groups reliably read every published event in strict FIFO chronological sequence without message loss and commit offsets back to Kafka.
+
+### Key Capabilities:
+* **Broker & Group Handshake:** Probes TCP reachability and initializes dynamic consumer groups (`novaris-verifyconsumer-<uuid>`).
+* **Sequential Batch Production:** Emits $N$ sequentially numbered events using a fixed Payer Account UUID, guaranteeing single-partition alignment.
+* **In-Order FIFO Audit (Day 17 Outcome):** Reads the event batch, asserts that sequence numbers are strictly monotonic ($1 \rightarrow 2 \rightarrow 3 \rightarrow 4 \rightarrow 5$), and asserts zero message loss.
+* **Offset Commit Proving:** Confirms offset checkpoints are durably registered in Kafka's `__consumer_offsets`.
+
+### Supported CLI Flags:
+| Flag | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `-brokers` | `string` | `localhost:9092` | Comma-separated list of target Kafka brokers. |
+| `-topic` | `string` | `novaris.tx.initiated` | Target event topic for verification. |
+| `-events` | `int` | `5` | Number of sequential events to publish and verify. |
+| `-payer` | `string` | `c0000000-0000-0000-0000-000000000088` | Payer account UUID (Kafka Partition Key). |
+| `-json` | `bool` | `false` | Emits full audit findings as machine-readable JSON for CI/CD pipelines. |
+
+### Usage Examples:
+```bash
+# Run interactive ANSI terminal consumer audit
+go run cmd/verifyconsumer/main.go
+
+# Export machine-readable JSON audit report
+go run cmd/verifyconsumer/main.go -json
+
+# Verify 20-event high-volume stream
+go run cmd/verifyconsumer/main.go -events 20
 ```
 
 ---
