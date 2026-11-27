@@ -12,8 +12,8 @@
 <!-- Metric Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/Phase_1_Capstone-COMPLETED_(100%25_Verified)-00C853?style=flat-square&logo=checkbox&logoColor=white" alt="Phase 1 Capstone" />
-  <img src="https://img.shields.io/badge/Phase_2_Streaming-ACTIVE_(Day_17_Certified)-00E5FF?style=flat-square&logo=apachekafka&logoColor=white" alt="Phase 2 Active" />
-  <img src="https://img.shields.io/badge/Day_17-VERIFIED_(100%25)-00C853?style=flat-square&logo=apachekafka&logoColor=white" alt="Day 17 Verified" />
+  <img src="https://img.shields.io/badge/Phase_2_Streaming-ACTIVE_(Day_18_Certified)-00E5FF?style=flat-square&logo=apachekafka&logoColor=white" alt="Phase 2 Active" />
+  <img src="https://img.shields.io/badge/Day_18-VERIFIED_(100%25)-00C853?style=flat-square&logo=apachekafka&logoColor=white" alt="Day 18 Verified" />
   <img src="https://img.shields.io/badge/Throughput-3%2C500%2B_TPS-00C853?style=flat-square&logo=speedtest&logoColor=white" alt="Throughput" />
   <img src="https://img.shields.io/badge/P99_Latency-%3C_40ms-0288D1?style=flat-square&logo=clockify&logoColor=white" alt="Latency" />
   <img src="https://img.shields.io/badge/ML_Inference-%3C_12ms-7B1FA2?style=flat-square&logo=lightning&logoColor=white" alt="ML Inference" />

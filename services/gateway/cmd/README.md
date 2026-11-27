@@ -70,6 +70,10 @@ services/gateway/cmd/
 │   ├── main.go
 │   ├── main_test.go
 │   └── README.md
+├── verifyoutbox/     # Phase 2 Day 18 Transactional Outbox & simulated crash recovery verifier
+│   ├── main.go
+│   ├── main_test.go
+│   └── README.md
 └── README.md         # This master CLI documentation
 ```
 
@@ -83,6 +87,8 @@ services/gateway/cmd/
 * 🎖️ **[cmd/phase1audit](./phase1audit/README.md):** Phase 1 Capstone automated audit and milestone certifier.
 * ⚡ **[cmd/verifykafka](./verifykafka/README.md):** Phase 2 Kafka KRaft cluster diagnostic and partition routing tool.
 * 📤 **[cmd/verifyproducer](./verifyproducer/README.md):** Phase 2 Kafka Producer diagnostic, event publisher and visibility audit tool.
+* 📥 **[cmd/verifyconsumer](./verifyconsumer/README.md):** Phase 2 Kafka Consumer diagnostic, in-order FIFO audit and manual offset verifier.
+* 📬 **[cmd/verifyoutbox](./verifyoutbox/README.md):** Phase 2 Transactional Outbox diagnostic, atomic dual-write and crash recovery verifier.
 * 📥 **[cmd/verifyconsumer](./verifyconsumer/README.md):** Phase 2 Kafka Consumer diagnostic, in-order auditor and offset commit prover.
 
 ---
@@ -374,6 +380,37 @@ go run cmd/verifyconsumer/main.go -json
 
 # Verify 20-event high-volume stream
 go run cmd/verifyconsumer/main.go -events 20
+```
+
+---
+
+## 11. Transactional Outbox & Simulated Crash Recovery Verifier (`cmd/verifyoutbox`)
+
+The `verifyoutbox` CLI is the dedicated diagnostic tool developed for **Phase 2 Day 18 (Transactional Outbox)**. It executes an end-to-end 5-stage automated audit proving that events are atomically enlisted within database transactions, safely polled by background relays using `FOR UPDATE SKIP LOCKED`, and that **zero events are dropped or duplicated** even when a worker process suffers a catastrophic mid-flight crash.
+
+### Key Capabilities:
+* **Infrastructure Health Check:** Validates live PostgreSQL and Kafka reachability, with automatic fallback to deterministic memory simulation (`-offline`).
+* **Atomic Dual-Write Isolation:** Proves that an aborted transaction rolls back both ledger mutations and outbox records simultaneously.
+* **Relay Sweep Verification:** Verifies background polling, Murmur2 partition key alignment, and `status = 'PUBLISHED'` transitions.
+* **Simulated Crash Fault Injection (Day 18 Outcome):** Injects a mid-flight crash hook between Kafka publish and database status commit, asserting that a replacement worker recovers and completes the stream with **zero lost events**.
+* **Downstream Deduplication Audit:** Confirms that re-transmitted messages are recognized and safely deduplicated by downstream idempotent consumers.
+
+### Supported CLI Flags:
+| Flag | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `-brokers` | `string` | `localhost:9092` | Comma-separated list of target Kafka brokers. |
+| `-topic` | `string` | `novaris.tx.initiated` | Target event topic for verification. |
+| `-count` | `int` | `5` | Number of transactions to test. |
+| `-offline` | `bool` | `true` | Runs hermetic in-memory simulation without external infrastructure. |
+| `-json` | `bool` | `false` | Emits full audit findings as machine-readable JSON for CI/CD pipelines. |
+
+### Usage Examples:
+```bash
+# Run 5-stage automated crash recovery diagnostic
+go run cmd/verifyoutbox/main.go -offline -count=5
+
+# Emit machine-readable JSON report
+go run cmd/verifyoutbox/main.go -offline -json
 ```
 
 ---

@@ -64,6 +64,13 @@ services/gateway/internal/
 │   ├── consumer_test.go  # Unit tests for ConsumerConfig, MockConsumer & error handling
 │   ├── streaming_test.go # Comprehensive tests for hashing, distribution & integration
 │   └── README.md         # Streaming core architecture, Murmur2 math & cluster guide
+├── outbox/               # Transactional Outbox engine & zero-loss crash recovery (Phase 2, Day 18)
+│   ├── model.go          # Outbox domain models, invariants & JSON envelopes
+│   ├── repository.go     # Repository interface, SQL SKIP LOCKED & Mock implementations
+│   ├── relay.go          # Background OutboxRelay daemon with crash fault injection
+│   ├── adapter.go        # Adapter bridging Kafka producer to Outbox event publisher
+│   ├── outbox_test.go    # Unit tests for outbox lifecycle, retries & crash recovery
+│   └── README.md         # Outbox architecture, dual-write elimination & operational guide
 └── README.md             # This documentation
 ```
 
@@ -123,6 +130,7 @@ flowchart TD
 * 👉 **[internal/openapi/ README](./openapi/README.md):** In-depth documentation covering embedded OpenAPI 3.0.3 specification, `//go:embed` hermetic packaging, and interactive Swagger UI dashboard.
 * 👉 **[internal/ratelimit/ README](./ratelimit/README.md):** In-depth documentation covering token-bucket algorithm, zero-goroutine lazy mathematical refill, thread safety, and HTTP 429 Retry-After specifications.
 * 👉 **[internal/streaming/ README](./streaming/README.md):** In-depth documentation covering Apache Kafka KRaft cluster architecture, deterministic Murmur2 partition routing, topic provisioning, and pure-Go administration.
+* 👉 **[internal/outbox/ README](./outbox/README.md):** In-depth documentation covering the Transactional Outbox pattern, single-transaction dual-write elimination, non-blocking `FOR UPDATE SKIP LOCKED` polling, and simulated crash recovery.
 
 ---
 

@@ -43,6 +43,7 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 15. **Apache Kafka Streaming Core & KRaft Topology (Day 15):** Pure-Go cluster admin client (`internal/streaming/admin.go`), dynamic cluster metadata inspection, automated topic provisioning (`novaris.tx.initiated`), and diagnostic CLI (`cmd/verifykafka`).
 16. **High-Performance Resilient Go Producer (Day 16):** Strong-typed Go Kafka Producer (`internal/streaming/producer.go`) with async batching, deterministic Murmur2 partition routing by `merchant_id` UUID, and verification CLI (`cmd/verifyproducer`).
 17. **Kafka Consumer Groups & Manual Offset Commits (Day 17):** Production `ConsumerGroup` engine (`internal/streaming/consumer.go`), manual offset commit control (`CommitMessages`), cooperative sticky assignor rebalancing, and 4-stage verification CLI (`cmd/verifyconsumer`).
+18. **Transactional Outbox Pattern & Zero-Loss Crash Recovery (Day 18):** Atomic dual-write elimination (`internal/outbox/`), single database transaction outbox enlistment (`SettleTransactionWithOutbox`, `SettleWithOCCRetryAndOutbox`), background polling relay daemon using non-blocking `FOR UPDATE SKIP LOCKED`, and 5-stage simulated crash recovery diagnostic CLI (`cmd/verifyoutbox`).
 
 ---
 
@@ -176,6 +177,15 @@ go run cmd/verifyproducer/main.go -brokers="localhost:9092" -topic="novaris.tx.i
 ```bash
 # Run 4-stage diagnostic: broker reachability, sequential publish, FIFO consume & offset commit audit
 go run cmd/verifyconsumer/main.go -brokers="localhost:9092" -topic="novaris.tx.initiated" -group="novaris-settlement-verification" -count=5
+```
+
+### 7. Transactional Outbox & Simulated Crash Recovery Verifier (`cmd/verifyoutbox`) (Day 18)
+```bash
+# Run 5-stage automated crash recovery diagnostic (Offline in-memory simulation)
+go run cmd/verifyoutbox/main.go -offline -count=5
+
+# Export machine-readable JSON report for CI/CD gates
+go run cmd/verifyoutbox/main.go -offline -json
 ```
 
 ### 7. Automated Unit & Integration Test Suites

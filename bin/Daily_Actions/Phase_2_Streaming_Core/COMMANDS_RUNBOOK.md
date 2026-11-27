@@ -354,14 +354,54 @@ docker exec -it novaris-kafka /opt/kafka/bin/kafka-consumer-groups.sh `
 
 ---
 
-## 4. Day 18: Transactional Outbox Pattern & CDC Relay Runbook (Preview)
+## 4. Day 18: Transactional Outbox Pattern & Zero-Loss Crash Recovery Runbook
 
-*Day 18 implements the Transactional Outbox pattern defeating the Dual-Write dilemma.*
+*Day 18 defeats the Dual-Write dilemma by committing outgoing events into an `outbox` table within the same ACID database transaction as ledger writes, published by a non-blocking `SKIP LOCKED` relay daemon.*
 
+### 4.1 Run Outbox Subsystem Unit Tests
 ```powershell
-# Upcoming Day 18 test command:
-cd services\gateway
-go test -v -run TestDay18TransactionalOutbox .
+Set-Location "services/gateway"
+go test -v ./internal/outbox/...
+```
+
+### 4.2 Run Settlement & OCC with Outbox Unit Tests
+```powershell
+Set-Location "services/gateway"
+go test -v -run "TestSettleTransactionWithOutbox|TestOCC_SettleWithOutbox" .
+```
+
+### 4.3 Run Master Day 18 Outbox Integration Test Suite
+```powershell
+Set-Location "services/gateway"
+go test -v -run "TestDay18_OutboxMasterSuite" .
+```
+
+### 4.4 Run Day 18 Outbox & Crash Recovery Diagnostic CLI (`cmd/verifyoutbox`)
+```powershell
+# Interactive 5-Stage Verification (Rollback safety, atomic enlistment, sweep, crash simulation, deduplication)
+Set-Location "services/gateway"
+go run ./cmd/verifyoutbox -offline -count=5
+
+# Machine-Readable JSON Output for CI/CD Pipeline Gates
+go run ./cmd/verifyoutbox -offline -json
+
+# Live Cluster Sweep (Requires Docker PostgreSQL & Kafka active)
+go run ./cmd/verifyoutbox -count=10
+```
+
+### 4.5 Inspect Outbox Table & Partial Index in PostgreSQL
+```powershell
+# Connect to PostgreSQL via Docker Compose
+docker exec -it novaris-postgres psql -U novaris_admin -d novaris_db
+
+# Inspect outbox table schema
+\d outbox;
+
+# Inspect pending records partial index
+\d idx_outbox_pending;
+
+# Check pending vs published outbox records
+SELECT status, count(*) FROM outbox GROUP BY status;
 ```
 
 ---

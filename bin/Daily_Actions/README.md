@@ -67,6 +67,7 @@ bin/Daily_Actions/
 │   ├── Day_15_Action_Log.md                    # Day 15: Apache Kafka Fundamentals, Topics, Partitions, Brokers & KRaft
 │   ├── Day_16_Action_Log.md                    # Day 16: Go Kafka Producer, tx.initiated Event Publishing & Topic Visibility
 │   ├── Day_17_Action_Log.md                    # Day 17: Resilient Consumer Groups, Offsets & Decoupled Settlement Worker
+│   ├── Day_18_Action_Log.md                    # Day 18: Transactional Outbox Pattern, Atomicity & Zero-Loss Crash Recovery
 │   └── README.md                               # Phase 2 master index, Kafka/Redis architecture & roadmap
 ├── Phase_3_Fraud_Engine/                       # 🧠 Phase 3: Weeks 5-6 (Days 29–42) — [UPCOMING]
 ├── Phase_4_High_Throughput/                    # ⚡ Phase 4: Weeks 7-8 (Days 43–56) — [UPCOMING]
@@ -97,7 +98,8 @@ bin/Daily_Actions/
 | **Phase 2** | **Day 15** | **Apache Kafka Fundamentals & Topic Topology** | [Day_15_Action_Log.md](./Phase_2_Streaming_Core/Day_15_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 2** | **Day 16** | **High-Performance Strongly-Typed Go Producer** | [Day_16_Action_Log.md](./Phase_2_Streaming_Core/Day_16_Action_Log.md) | ✅ *COMPLETED* |
 | **Phase 2** | **Day 17** | **Resilient Consumer Groups & Manual Offsets** | [Day_17_Action_Log.md](./Phase_2_Streaming_Core/Day_17_Action_Log.md) | ✅ *COMPLETED* |
-| **Phase 2** | **Day 18** | **Transactional Outbox Pattern & CDC Relay** | [Phase_2_Streaming_Core/README.md](./Phase_2_Streaming_Core/README.md) | ⏳ *Up Next* |
+| **Phase 2** | **Day 18** | **Transactional Outbox Pattern & CDC Relay** | [Day_18_Action_Log.md](./Phase_2_Streaming_Core/Day_18_Action_Log.md) | ✅ *COMPLETED* |
+| **Phase 2** | **Day 19** | **Dead-Letter Queues (DLQ) & Poison-Pill Isolation** | [Phase_2_Streaming_Core/README.md](./Phase_2_Streaming_Core/README.md) | ⏳ *Up Next* |
 | ... | ... | *(Continuously updated across the 12-week roadmap)* | ... | ... |
 
 ---
