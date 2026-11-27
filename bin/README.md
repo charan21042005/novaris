@@ -87,6 +87,11 @@ Curated day-by-day kickoff guides authored to guide hands-on engineering from ze
   * `Day 10`: Idempotent API design, IETF-compliant header validation, payload fingerprinting, and response caching.
   * `Day 11`: Full-stack integration wiring, multi-layer pipeline assembly, Postman API contract test suites, and live E2E probe verification.
   * `Day 12`: Documentation discipline: OpenAPI 3.0.3 specification, embedded Swagger UI dashboard, validator CLI, and Architecture Decision Records (ADR-0001 & ADR-0002).
+  * `Day 13`: Concurrency load scripting (k6) and hot-wallet contention analysis.
+  * `Day 14`: Phase 1 Capstone milestone review, end-to-end audit, and production verification.
+  * `Day 15`: Apache Kafka fundamentals, KRaft metadata mode, topic provisioning, and `verifykafka` CLI.
+  * `Day 16`: High-performance Go Kafka Producer, deterministic Murmur2 partition routing, and `verifyproducer` CLI.
+  * `Day 17`: Resilient Consumer Groups, manual offset commits (`CommitMessages`), decoupled settlement worker daemon, and `verifyconsumer` CLI.
 
 ---
 

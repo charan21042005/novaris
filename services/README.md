@@ -53,7 +53,7 @@ flowchart TD
 | Service Directory | Core Runtime | Architectural Responsibilities | Roadmap Phase |
 | :--- | :---: | :--- | :---: |
 | **[`gateway/`](./gateway/)** | **Go 1.22+** | Public edge ingress, RFC 7519 JWT auth, RFC 2104 HMAC-SHA256 signature verification, Token-Bucket rate limiting, IETF idempotency deduplication (`idempotency_keys`), and health probing. | **Phase 1** *(Active)* |
-| **[`settlement/`](./settlement/)** | **Go 1.22+** | High-density double-entry ledger settlement, transactional outbox event relaying, Redlock distributed locking, and multi-partition Kafka consumer groups. | **Phase 2** *(Weeks 3–6)* |
+| **[`settlement/`](./settlement/)** | **Go 1.22+** | High-density double-entry ledger settlement, transactional outbox event relaying, Redlock distributed locking, and multi-partition Kafka consumer groups. | **Phase 2 (Day 17 - Active Verified)** |
 | **[`fraud-ml/`](./fraud-ml/)** | **Python 3.11+** | Real-time adaptive machine learning scoring (<15ms SLA), dynamic XGBoost/LightGBM inference, streaming feature extraction, and human-review triage. | **Phase 3** *(Weeks 7–8)* |
 
 ---

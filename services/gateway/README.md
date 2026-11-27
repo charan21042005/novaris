@@ -40,6 +40,9 @@ The **API Gateway** is the single ingress point for all external merchants, paym
 12. **Idempotent Request Engine (Day 10):** Stripe-compliant request deduplication middleware (`idempotency.go`) enforcing exact-once execution semantics on mutating payment routes (`POST /v1/payments`). Computes SHA-256 payload fingerprints, enforces database-level primary key uniqueness, captures and buffers HTTP response streams, and replays cached results with header `Idempotent-Replayed: true` on network retries.
 13. **Integration Wiring & End-to-End API Contracts (Day 11):** Connects the entire five-layer stack (`SetupServerMux`) into one unbroken pipeline: `JWTMiddleware` -> `RateLimitMiddleware` -> `HMACMiddleware` -> `IdempotencyMiddleware` -> `paymentsHandler` with OCC consensus. Verified by 10-scenario Postman collection (`deployments/postman/`), `e2eprobe` CLI suite (`cmd/e2eprobe`), and `integration_test.go` proving 100% contract compliance under high-density concurrency!
 14. **OpenAPI 3.0 Documentation & Embedded Swagger UI (Day 12):** Serves machine-readable OpenAPI 3.0.3 specification (`GET /openapi.json`) and interactive browser Swagger UI (`GET /docs`) embedded via Go `//go:embed` without external filesystem dependencies. Formally documented by Architecture Decision Records: [ADR-0001](../../docs/adr/0001-optimistic-concurrency-control-for-payment-settlement.md) (OCC vs Pessimistic Locking) and [ADR-0002](../../docs/adr/0002-five-layer-defense-in-depth-gateway-pipeline.md) (Five-Layer Pipeline Ordering). Tested via `openapi_test.go` and verified via CLI `cmd/verifyopenapi`.
+15. **Apache Kafka Streaming Core & KRaft Topology (Day 15):** Pure-Go cluster admin client (`internal/streaming/admin.go`), dynamic cluster metadata inspection, automated topic provisioning (`novaris.tx.initiated`), and diagnostic CLI (`cmd/verifykafka`).
+16. **High-Performance Resilient Go Producer (Day 16):** Strong-typed Go Kafka Producer (`internal/streaming/producer.go`) with async batching, deterministic Murmur2 partition routing by `merchant_id` UUID, and verification CLI (`cmd/verifyproducer`).
+17. **Kafka Consumer Groups & Manual Offset Commits (Day 17):** Production `ConsumerGroup` engine (`internal/streaming/consumer.go`), manual offset commit control (`CommitMessages`), cooperative sticky assignor rebalancing, and 4-stage verification CLI (`cmd/verifyconsumer`).
 
 ---
 
@@ -157,9 +160,32 @@ go run cmd/verifyschema/main.go -offline
 go run cmd/verifyschema/main.go
 ```
 
-### 4. Automated Unit Test Suite
+### 4. Kafka Cluster Reachability & Metadata Probe (`cmd/verifykafka`) (Day 15)
 ```bash
+# Probe Kafka KRaft cluster and discover topic metadata
+go run cmd/verifykafka/main.go -brokers="localhost:9092"
+```
+
+### 5. Kafka Producer Verification Diagnostic CLI (`cmd/verifyproducer`) (Day 16)
+```bash
+# Publish test event batch with Murmur2 deterministic partition routing
+go run cmd/verifyproducer/main.go -brokers="localhost:9092" -topic="novaris.tx.initiated" -count=5
+```
+
+### 6. Kafka Consumer Group & FIFO Ordering Diagnostic CLI (`cmd/verifyconsumer`) (Day 17)
+```bash
+# Run 4-stage diagnostic: broker reachability, sequential publish, FIFO consume & offset commit audit
+go run cmd/verifyconsumer/main.go -brokers="localhost:9092" -topic="novaris.tx.initiated" -group="novaris-settlement-verification" -count=5
+```
+
+### 7. Automated Unit & Integration Test Suites
+```bash
+# Run all unit tests
 go test -v ./...
+
+# Run streaming and consumer tests
+go test -v ./internal/streaming/...
+go test -v ./cmd/verifyconsumer/...
 ```
 
 ---
@@ -174,10 +200,13 @@ go test -v ./...
 * 👉 **[`idempotency.go`](./idempotency.go):** Idempotent request engine implementing SHA-256 payload hashing, database-enforced deduplication, in-flight race protection (HTTP 409), payload tampering defense (HTTP 422), and cached response streaming.
 * 👉 **[`idempotency_test.go`](./idempotency_test.go):** Idempotency test suite (7 suites) including a 50-concurrent-worker race test proving the underlying settlement handler is executed exactly once across 50 simultaneous identical requests.
 * 👉 **[`integration_test.go`](./integration_test.go):** End-to-end integration test suite (9 contract scenarios) verifying full-stack payment settlement, idempotent replay, payload mismatch 422, rate limit 429, cryptographic tamper rejection 401, and 25-goroutine multi-merchant concurrent stress.
-* 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken`, `signrequest`, `verifyschema`, and `e2eprobe`) for local token minting, signature testing, and contract probing.
+* 👉 **[`kafka_day16_test.go`](./kafka_day16_test.go):** Live Kafka cluster producer integration test suite covering end-to-end publish flow, batch draining, and partition distribution uniformity.
+* 👉 **[`kafka_day17_test.go`](./kafka_day17_test.go):** Master Kafka consumer group integration test suite covering constructor lifecycle, single group manual commit, strict FIFO ordering, multi-consumer group fan-out, and full Gateway-to-Settlement pipeline.
+* 👉 **[`cmd/` CLI Documentation](./cmd/README.md):** Developer CLI suite (`gentoken`, `signrequest`, `verifyschema`, `e2eprobe`, `verifykafka`, `verifyproducer`, and `verifyconsumer`).
 * 👉 **[`internal/` Engine Documentation](./internal/README.md):** Go compiler-enforced private package boundary.
 * 👉 **[`internal/auth/` Cryptographic Specs](./internal/auth/README.md):** Cryptographic JWT & HMAC-SHA256 engine specifications and test matrices.
 * 👉 **[`internal/ratelimit/` Rate Limiter Specs](./internal/ratelimit/README.md):** Token-bucket rate limiter mathematical model, concurrency architecture, and test suites.
+* 👉 **[`internal/streaming/` Kafka Specs](./internal/streaming/README.md):** Apache Kafka KRaft cluster architecture, Go producer, consumer group engine, manual offset commit control, and Murmur2 partition routing.
 
 ---
 
