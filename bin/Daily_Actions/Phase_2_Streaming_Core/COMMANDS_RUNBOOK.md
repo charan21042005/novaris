@@ -297,14 +297,59 @@ docker exec -it novaris-kafka /bin/kafka-console-consumer `
 
 ---
 
-## 3. Day 17: Kafka Consumer Groups & Manual Offset Commits Runbook (Preview)
+## 3. Day 17: Kafka Consumer Groups & In-Order Settlement Runbook
 
-*Day 17 introduces cooperative sticky consumer groups with manual `CommitMessages()` control.*
+*Day 17 introduces cooperative consumer groups (`novaris-settlement-workers`), manual offset commit control via `CommitMessages()`, and the decoupled settlement worker service.*
 
+### 3.1 Run Settlement Service Unit Tests
 ```powershell
-# Upcoming Day 17 test command:
-cd services\settlement
-go test -v -run TestDay17KafkaConsumer .
+Set-Location "services/settlement"
+go test -v ./...
+```
+
+### 3.2 Run Streaming Consumer Subsystem Unit Tests
+```powershell
+Set-Location "services/gateway"
+go test -v -run "TestConsumer|TestMockConsumer" ./internal/streaming
+```
+
+### 3.3 Run Day 17 Consumer Verification CLI Tool (`cmd/verifyconsumer`)
+```powershell
+# Interactive ANSI Terminal Audit (Proves in-order FIFO consumption & offset commits)
+Set-Location "services/gateway"
+go run ./cmd/verifyconsumer
+
+# Machine-Readable JSON Output for CI/CD Pipeline Gates
+go run ./cmd/verifyconsumer -json
+
+# Custom Event Stream Volume (e.g. 20 Sequential Events)
+go run ./cmd/verifyconsumer -events 20 -payer "c0000000-0000-0000-0000-000000000088"
+```
+
+### 3.4 Run Master Day 17 Live Cluster Integration Suite
+```powershell
+Set-Location "services/gateway"
+go test -v -run "TestDay17"
+```
+
+### 3.5 Launch Settlement Consumer Daemon
+```powershell
+Set-Location "services/settlement"
+go run . -brokers "localhost:9092" -group "novaris-settlement-workers"
+```
+
+### 3.6 Inspect Consumer Groups & Consumer Lag Using Docker CLI
+```powershell
+# List all active consumer groups on the cluster:
+docker exec -it novaris-kafka /opt/kafka/bin/kafka-consumer-groups.sh `
+    --bootstrap-server localhost:9092 `
+    --list
+
+# Describe consumer group offset progress and partition lag:
+docker exec -it novaris-kafka /opt/kafka/bin/kafka-consumer-groups.sh `
+    --bootstrap-server localhost:9092 `
+    --describe `
+    --group novaris-settlement-workers
 ```
 
 ---
