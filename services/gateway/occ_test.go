@@ -17,6 +17,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
+	"github.com/charan21042005/novaris/services/gateway/internal/outbox"
 )
 
 // TestOCC_SingleThreadedSuccessfulUpdate verifies that standard version check-and-increment
@@ -513,5 +514,69 @@ func TestOCC_DefensiveValidation(t *testing.T) {
 	_, err = SettleTransactionOCC(ctx, db, sender, recipient)
 	if err == nil {
 		t.Error("expected error on self-transfer")
+	}
+}
+
+// TestOCC_SettleWithOutbox_Success verifies OCC settlement atomically enlists an OutboxRecord.
+func TestOCC_SettleWithOutbox_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to initialize sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	senderID := "c0000000-0000-0000-0000-000000000001"
+	recipientID := "c0000000-0000-0000-0000-000000000002"
+	amountCents := int64(10000)
+
+	mock.ExpectBegin()
+	// Debit leg
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE accounts SET balance_cents = balance_cents - $1, version = version + 1")).
+		WithArgs(amountCents, senderID, 1).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	// Credit leg
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE accounts SET balance_cents = balance_cents + $1, version = version + 1")).
+		WithArgs(amountCents, recipientID, 2).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	// Transaction record
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO transactions")).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), senderID, recipientID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	// Debit journal entry
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO journal_entries")).
+		WithArgs(sqlmock.AnyArg(), senderID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	// Credit journal entry
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO journal_entries")).
+		WithArgs(sqlmock.AnyArg(), recipientID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	outboxRepo := outbox.NewMockRepository(5)
+	sender := OCCDebitParams{AccountID: senderID, ExpectedVersion: 1, AmountCents: amountCents}
+	recipient := OCCCreditParams{AccountID: recipientID, ExpectedVersion: 2, AmountCents: amountCents}
+
+	res, outboxRec, err := SettleTransactionOCCWithOutbox(ctx, db, outboxRepo, sender, recipient, map[string]interface{}{
+		"amount_cents": amountCents,
+		"payer_id":     senderID,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error in OCC outbox settlement: %v", err)
+	}
+	if res == nil || outboxRec == nil {
+		t.Fatalf("expected non-nil result and outboxRec")
+	}
+	if outboxRec.AggregateID != senderID {
+		t.Errorf("expected outbox partition key %s, got %s", senderID, outboxRec.AggregateID)
+	}
+
+	pending, _ := outboxRepo.CountPending(ctx)
+	if pending != 1 {
+		t.Errorf("expected 1 pending outbox record, got %d", pending)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled sql expectations: %v", err)
 	}
 }

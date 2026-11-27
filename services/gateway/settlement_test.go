@@ -9,6 +9,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -19,6 +20,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+	"github.com/charan21042005/novaris/services/gateway/internal/outbox"
 )
 
 // TestSettleTransaction_Success verifies the happy path of settleTransaction:
@@ -536,5 +538,115 @@ func BenchmarkSettleTransaction_Mock(b *testing.B) {
 		b.StopTimer()
 		db.Close()
 		b.StartTimer()
+	}
+}
+
+// TestSettleTransactionWithOutbox_Success verifies atomic dual-write enlistment of OutboxRecord (Day 18).
+func TestSettleTransactionWithOutbox_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to initialize sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	senderID := "c0000000-0000-0000-0000-000000000001"
+	recipientID := "c0000000-0000-0000-0000-000000000002"
+	amountCents := int64(7500)
+
+	setupMockHappyPath(mock, senderID, recipientID, amountCents)
+	outboxRepo := outbox.NewMockRepository(5)
+
+	eventData := map[string]interface{}{
+		"amount_cents": amountCents,
+		"currency":     "USD",
+		"payer_id":     senderID,
+	}
+
+	txID, rec, err := SettleTransactionWithOutbox(
+		context.Background(),
+		db,
+		outboxRepo,
+		senderID,
+		recipientID,
+		amountCents,
+		eventData,
+	)
+	if err != nil {
+		t.Fatalf("expected successful outbox settlement, got: %v", err)
+	}
+
+	if txID == "" {
+		t.Errorf("expected non-empty transaction ID")
+	}
+	if rec == nil {
+		t.Fatalf("expected non-nil OutboxRecord")
+	}
+	if rec.AggregateType != outbox.AggregateTransaction {
+		t.Errorf("expected aggregate type TRANSACTION, got %s", rec.AggregateType)
+	}
+	if rec.AggregateID != senderID {
+		t.Errorf("expected partition key %s, got %s", senderID, rec.AggregateID)
+	}
+	if rec.Status != outbox.StatusPending {
+		t.Errorf("expected status PENDING, got %s", rec.Status)
+	}
+
+	// Verify outbox repo has 1 pending record
+	pending, _ := outboxRepo.CountPending(context.Background())
+	if pending != 1 {
+		t.Errorf("expected 1 pending record in outbox repo, got %d", pending)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled sql expectations: %v", err)
+	}
+}
+
+// TestSettleTransactionWithOutbox_RollbackOnOutboxFailure asserts that if outbox insertion
+// fails, the entire database transaction rolls back, guaranteeing zero partial/phantom state!
+func TestSettleTransactionWithOutbox_RollbackOnOutboxFailure(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to initialize sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	senderID := "c0000000-0000-0000-0000-000000000001"
+	recipientID := "c0000000-0000-0000-0000-000000000002"
+	amountCents := int64(5000)
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO transactions")).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), senderID, recipientID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO journal_entries")).
+		WithArgs(sqlmock.AnyArg(), senderID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO journal_entries")).
+		WithArgs(sqlmock.AnyArg(), recipientID, amountCents).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectRollback()
+
+	outboxRepo := outbox.NewMockRepository(5)
+	outboxRepo.InsertError = errors.New("simulated outbox disk error")
+
+	txID, rec, err := SettleTransactionWithOutbox(
+		context.Background(),
+		db,
+		outboxRepo,
+		senderID,
+		recipientID,
+		amountCents,
+		map[string]interface{}{"amount": 5000},
+	)
+	if err == nil {
+		t.Fatalf("expected error when outbox insert fails, got nil")
+	}
+	if txID != "" || rec != nil {
+		t.Errorf("expected empty txID and nil rec on failure")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled sql expectations: %v", err)
 	}
 }

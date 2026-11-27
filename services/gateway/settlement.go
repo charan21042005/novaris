@@ -22,11 +22,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/charan21042005/novaris/services/gateway/internal/outbox"
 )
 
 // settleTransaction inserts one transaction row and two balanced journal entries
@@ -147,4 +149,104 @@ func settleTransaction(db *sql.DB, senderID, recipientID string, amountCents int
 	}
 
 	return transactionID, nil
+}
+
+// SettleTransactionWithOutbox executes atomic financial settlement and enlists
+// an outbox event in the EXACT SAME database transaction (Day 18 Transactional Outbox).
+//
+// Dual-Write Invariant:
+// Either all financial entries AND the outbox event commit together, or NONE do.
+// If the database transaction aborts, no phantom outbox event is ever persisted.
+// If it commits, the OutboxRelay is guaranteed to find it and publish to Kafka.
+func SettleTransactionWithOutbox(
+	ctx context.Context,
+	db *sql.DB,
+	outboxRepo outbox.Repository,
+	senderID, recipientID string,
+	amountCents int64,
+	eventData interface{},
+) (string, *outbox.OutboxRecord, error) {
+	if db == nil {
+		return "", nil, fmt.Errorf("SettleTransactionWithOutbox: database connection pool is nil")
+	}
+	if outboxRepo == nil {
+		return "", nil, fmt.Errorf("SettleTransactionWithOutbox: outbox repository is nil")
+	}
+
+	if amountCents <= 0 {
+		return "", nil, fmt.Errorf("SettleTransactionWithOutbox: invalid amount %d: must be strictly positive", amountCents)
+	}
+
+	trimmedSender := strings.TrimSpace(senderID)
+	trimmedRecipient := strings.TrimSpace(recipientID)
+	if trimmedSender == "" || trimmedRecipient == "" {
+		return "", nil, fmt.Errorf("SettleTransactionWithOutbox: account IDs cannot be empty")
+	}
+	if trimmedSender == trimmedRecipient {
+		return "", nil, fmt.Errorf("SettleTransactionWithOutbox: self-transfers disallowed (%s)", trimmedSender)
+	}
+
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return "", nil, fmt.Errorf("beginning outbox settlement transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	transactionID := uuid.New().String()
+	idempotencyKey := fmt.Sprintf("idemp_outbox_%s", transactionID)
+
+	// 1. Insert parent transaction record
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO transactions
+		 (id, idempotency_key, sender_account_id, recipient_account_id, amount_cents, status)
+		 VALUES ($1, $2, $3, $4, $5, 'SETTLED')`,
+		transactionID, idempotencyKey, trimmedSender, trimmedRecipient, amountCents,
+	)
+	if err != nil {
+		return "", nil, fmt.Errorf("inserting transaction: %w", err)
+	}
+
+	// 2. Insert debit journal entry
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO journal_entries
+		 (transaction_id, account_id, entry_type, amount_cents)
+		 VALUES ($1, $2, 'DEBIT', $3)`,
+		transactionID, trimmedSender, amountCents,
+	)
+	if err != nil {
+		return "", nil, fmt.Errorf("inserting debit journal entry: %w", err)
+	}
+
+	// 3. Insert credit journal entry
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO journal_entries
+		 (transaction_id, account_id, entry_type, amount_cents)
+		 VALUES ($1, $2, 'CREDIT', $3)`,
+		transactionID, trimmedRecipient, amountCents,
+	)
+	if err != nil {
+		return "", nil, fmt.Errorf("inserting credit journal entry: %w", err)
+	}
+
+	// 4. Enlist Outbox Event inside the SAME database transaction
+	outboxRec, err := outbox.NewOutboxRecord(
+		outbox.AggregateTransaction,
+		trimmedSender, // Partition Key: sender UUID guarantees strict per-account FIFO!
+		"novaris.tx.initiated",
+		eventData,
+	)
+	if err != nil {
+		return "", nil, fmt.Errorf("constructing outbox record: %w", err)
+	}
+
+	if err := outboxRepo.InsertTx(ctx, tx, outboxRec); err != nil {
+		return "", nil, fmt.Errorf("inserting outbox record in transaction: %w", err)
+	}
+
+	// 5. Commit atomic transaction (ACID guarantees all 4 mutations commit simultaneously)
+	if err := tx.Commit(); err != nil {
+		return "", nil, fmt.Errorf("committing outbox settlement transaction: %w", err)
+	}
+
+	return transactionID, outboxRec, nil
 }

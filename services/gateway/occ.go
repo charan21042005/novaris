@@ -48,6 +48,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/charan21042005/novaris/services/gateway/internal/outbox"
 )
 
 // Sentinel errors for deterministic error triage across the API gateway and client tiers.
@@ -402,6 +403,182 @@ func SettleWithOCCRetry(
 	}
 
 	return nil, attempts, ErrMaxRetriesExceeded
+}
+
+// SettleTransactionOCCWithOutbox executes conditional OCC debit, credit, transaction insertion,
+// journal entries, AND outbox event enlistment inside a single ACID database transaction.
+func SettleTransactionOCCWithOutbox(
+	ctx context.Context,
+	db *sql.DB,
+	outboxRepo outbox.Repository,
+	sender OCCDebitParams,
+	recipient OCCCreditParams,
+	eventData interface{},
+) (*OCCSettlementResult, *outbox.OutboxRecord, error) {
+	if sender.AmountCents <= 0 || recipient.AmountCents <= 0 {
+		return nil, nil, fmt.Errorf("SettleTransactionOCCWithOutbox: transfer amounts must be strictly positive")
+	}
+	if sender.AmountCents != recipient.AmountCents {
+		return nil, nil, fmt.Errorf("SettleTransactionOCCWithOutbox: double-entry invariant violated: sender (%d) != recipient (%d)",
+			sender.AmountCents, recipient.AmountCents)
+	}
+
+	senderID := strings.TrimSpace(sender.AccountID)
+	recipientID := strings.TrimSpace(recipient.AccountID)
+	if senderID == "" || recipientID == "" {
+		return nil, nil, fmt.Errorf("SettleTransactionOCCWithOutbox: account IDs cannot be empty")
+	}
+	if senderID == recipientID {
+		return nil, nil, fmt.Errorf("SettleTransactionOCCWithOutbox: self-transfers disallowed between identical account %s", senderID)
+	}
+
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return nil, nil, fmt.Errorf("beginning OCC outbox settlement transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Conditional OCC debit on sender
+	newSenderVer, err := DebitAccountOCCInTx(ctx, tx, senderID, sender.ExpectedVersion, sender.AmountCents)
+	if err != nil {
+		return nil, nil, fmt.Errorf("debit leg: %w", err)
+	}
+
+	// 2. Conditional OCC credit on recipient
+	newRecipientVer, err := CreditAccountOCCInTx(ctx, tx, recipientID, recipient.ExpectedVersion, recipient.AmountCents)
+	if err != nil {
+		return nil, nil, fmt.Errorf("credit leg: %w", err)
+	}
+
+	// 3. Parent transaction record
+	transactionID := uuid.New().String()
+	idempotencyKey := fmt.Sprintf("idemp_occ_outbox_%s", transactionID)
+
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO transactions
+		 (id, idempotency_key, sender_account_id, recipient_account_id, amount_cents, status)
+		 VALUES ($1, $2, $3, $4, $5, 'SETTLED');
+	`, transactionID, idempotencyKey, senderID, recipientID, sender.AmountCents)
+	if err != nil {
+		return nil, nil, fmt.Errorf("inserting transaction audit record: %w", err)
+	}
+
+	// 4. Balanced journal entries
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO journal_entries
+		 (transaction_id, account_id, entry_type, amount_cents)
+		 VALUES ($1, $2, 'DEBIT', $3);
+	`, transactionID, senderID, sender.AmountCents)
+	if err != nil {
+		return nil, nil, fmt.Errorf("inserting debit journal entry: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO journal_entries
+		 (transaction_id, account_id, entry_type, amount_cents)
+		 VALUES ($1, $2, 'CREDIT', $3);
+	`, transactionID, recipientID, recipient.AmountCents)
+	if err != nil {
+		return nil, nil, fmt.Errorf("inserting credit journal entry: %w", err)
+	}
+
+	// 5. Enlist Outbox Event inside the SAME ACID transaction (Dual-Write Elimination)
+	var outboxRec *outbox.OutboxRecord
+	if outboxRepo != nil && eventData != nil {
+		outboxRec, err = outbox.NewOutboxRecord(
+			outbox.AggregateTransaction,
+			senderID, // Kafka Partition Key (strict per-account FIFO)
+			"novaris.tx.initiated",
+			eventData,
+		)
+		if err != nil {
+			return nil, nil, fmt.Errorf("creating outbox record: %w", err)
+		}
+
+		if err := outboxRepo.InsertTx(ctx, tx, outboxRec); err != nil {
+			return nil, nil, fmt.Errorf("inserting outbox record: %w", err)
+		}
+	}
+
+	// 6. Commit atomic transaction
+	if err := tx.Commit(); err != nil {
+		return nil, nil, fmt.Errorf("committing OCC outbox settlement transaction: %w", err)
+	}
+
+	return &OCCSettlementResult{
+		TransactionID:       transactionID,
+		SenderID:            senderID,
+		RecipientID:         recipientID,
+		AmountCents:         sender.AmountCents,
+		SenderNewVersion:    newSenderVer,
+		RecipientNewVersion: newRecipientVer,
+		SettledAt:           time.Now().UTC(),
+	}, outboxRec, nil
+}
+
+// SettleWithOCCRetryAndOutbox executes SettleTransactionOCCWithOutbox with automated retry backoff.
+func SettleWithOCCRetryAndOutbox(
+	ctx context.Context,
+	db *sql.DB,
+	outboxRepo outbox.Repository,
+	fetchVersions VersionFetcher,
+	senderID, recipientID string,
+	amountCents int64,
+	maxRetries int,
+	baseBackoff time.Duration,
+	eventData interface{},
+) (*OCCSettlementResult, *outbox.OutboxRecord, int, error) {
+	if maxRetries <= 0 {
+		maxRetries = 3
+	}
+	if baseBackoff <= 0 {
+		baseBackoff = 5 * time.Millisecond
+	}
+
+	attempts := 0
+	for attempts = 1; attempts <= maxRetries; attempts++ {
+		sVer, rVer, err := fetchVersions(ctx, senderID, recipientID)
+		if err != nil {
+			return nil, nil, attempts, fmt.Errorf("retry attempt %d: fetching account versions: %w", attempts, err)
+		}
+
+		senderParams := OCCDebitParams{
+			AccountID:       senderID,
+			ExpectedVersion: sVer,
+			AmountCents:     amountCents,
+		}
+		recipientParams := OCCCreditParams{
+			AccountID:       recipientID,
+			ExpectedVersion: rVer,
+			AmountCents:     amountCents,
+		}
+
+		result, outboxRec, err := SettleTransactionOCCWithOutbox(ctx, db, outboxRepo, senderParams, recipientParams, eventData)
+		if err == nil {
+			return result, outboxRec, attempts, nil
+		}
+
+		if errors.Is(err, ErrOptimisticLockConflict) {
+			if attempts == maxRetries {
+				return nil, nil, attempts, fmt.Errorf("%w: exhausted %d attempts due to contention: %v",
+					ErrMaxRetriesExceeded, maxRetries, err)
+			}
+
+			jitter := time.Duration(rand.Int63n(int64(baseBackoff)))
+			sleepDuration := (baseBackoff * time.Duration(1<<uint(attempts-1))) + jitter
+
+			select {
+			case <-ctx.Done():
+				return nil, nil, attempts, ctx.Err()
+			case <-time.After(sleepDuration):
+			}
+			continue
+		}
+
+		return nil, nil, attempts, err
+	}
+
+	return nil, nil, attempts, ErrMaxRetriesExceeded
 }
 
 // ------------------------------------------------------------------------------

@@ -51,6 +51,7 @@ import (
 
 	"github.com/charan21042005/novaris/services/gateway/internal/auth"
 	"github.com/charan21042005/novaris/services/gateway/internal/openapi"
+	"github.com/charan21042005/novaris/services/gateway/internal/outbox"
 	"github.com/charan21042005/novaris/services/gateway/internal/ratelimit"
 	"github.com/charan21042005/novaris/services/gateway/internal/streaming"
 )
@@ -61,7 +62,39 @@ var db *sql.DB
 var (
 	producerMu    sync.RWMutex
 	eventProducer streaming.EventProducer
+
+	outboxMu    sync.RWMutex
+	outboxRepo  outbox.Repository
+	outboxRelay *outbox.OutboxRelay
 )
+
+// SetOutboxRepository sets the active outbox repository.
+func SetOutboxRepository(r outbox.Repository) {
+	outboxMu.Lock()
+	defer outboxMu.Unlock()
+	outboxRepo = r
+}
+
+// GetOutboxRepository returns the active outbox repository (nil if unconfigured).
+func GetOutboxRepository() outbox.Repository {
+	outboxMu.RLock()
+	defer outboxMu.RUnlock()
+	return outboxRepo
+}
+
+// SetOutboxRelay sets the active outbox relay daemon.
+func SetOutboxRelay(r *outbox.OutboxRelay) {
+	outboxMu.Lock()
+	defer outboxMu.Unlock()
+	outboxRelay = r
+}
+
+// GetOutboxRelay returns the active outbox relay daemon (nil if unconfigured).
+func GetOutboxRelay() *outbox.OutboxRelay {
+	outboxMu.RLock()
+	defer outboxMu.RUnlock()
+	return outboxRelay
+}
 
 // SetEventProducer configures the active event producer for payment event publishing.
 func SetEventProducer(p streaming.EventProducer) {
@@ -121,6 +154,7 @@ type PaymentResponse struct {
 	TransactionID      string    `json:"transaction_id,omitempty"`
 	EventID            string    `json:"event_id,omitempty"`
 	EventPublished     bool      `json:"event_published,omitempty"`
+	OutboxEnlisted     bool      `json:"outbox_enlisted,omitempty"`
 	MerchantID         string    `json:"merchant_id"`
 	Role               string    `json:"role"`
 	AmountCents        int64     `json:"amount_cents,omitempty"`
@@ -260,6 +294,10 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var transactionID string
+	var eventID string
+	var eventPublished bool
+	var outboxEnlisted bool
+
 	if db != nil {
 		// Define version fetcher for live PostgreSQL ledger accounts
 		fetchVersions := func(ctx context.Context, sID, rID string) (int, int, error) {
@@ -275,88 +313,124 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 			return sVer, rVer, nil
 		}
 
-		// Execute atomic settlement with Optimistic Concurrency Control (OCC) and automatic backoff retry (Day 9)
-		result, _, err := SettleWithOCCRetry(r.Context(), db, fetchVersions, senderID, recipientID, amountCents, 3, 5*time.Millisecond)
-		if err != nil {
-			log.Printf("[SETTLEMENT_ERROR] Failed to settle transaction: %v", err)
-			w.Header().Set("Content-Type", "application/json")
+		if outboxRepo := GetOutboxRepository(); outboxRepo != nil {
+			// Phase 2 (Day 18): Transactional Outbox Pattern
+			// Eliminate the dual-write hazard! Enlist event in the exact same DB transaction!
+			eventEnvelope := map[string]interface{}{
+				"transaction_id":  "",
+				"payer_id":        senderID,
+				"payee_id":        recipientID,
+				"amount_cents":    amountCents,
+				"currency":       "USD",
+				"merchant_id":     claims.MerchantID,
+				"idempotency_key": r.Header.Get("Idempotency-Key"),
+				"status":         "INITIATED",
+			}
 
-			if errors.Is(err, ErrOptimisticLockConflict) || errors.Is(err, ErrMaxRetriesExceeded) {
-				w.WriteHeader(http.StatusConflict)
+			result, outboxRec, _, err := SettleWithOCCRetryAndOutbox(
+				r.Context(), db, outboxRepo, fetchVersions, senderID, recipientID, amountCents, 3, 5*time.Millisecond, eventEnvelope,
+			)
+			if err != nil {
+				log.Printf("[SETTLEMENT_ERROR] Failed to settle with outbox: %v", err)
+				w.Header().Set("Content-Type", "application/json")
+				if errors.Is(err, ErrOptimisticLockConflict) || errors.Is(err, ErrMaxRetriesExceeded) {
+					w.WriteHeader(http.StatusConflict)
+					_ = json.NewEncoder(w).Encode(map[string]string{
+						"error":   "concurrency_conflict",
+						"message": "transaction aborted due to high concurrency version contention; please retry with backoff",
+					})
+					return
+				}
+				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{
-					"error":   "concurrency_conflict",
-					"message": "transaction aborted due to high concurrency version contention; please retry with backoff",
+					"status":  "failed",
+					"error":   "settlement_failed",
+					"message": err.Error(),
 				})
 				return
 			}
 
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"status":  "failed",
-				"error":   "settlement_failed",
-				"message": err.Error(),
-			})
-			return
+			transactionID = result.TransactionID
+			if outboxRec != nil {
+				eventID = outboxRec.ID
+				outboxEnlisted = true
+				log.Printf("[OUTBOX] Enlisted tx.initiated in transactional outbox for tx %s (outbox_id: %s)",
+					transactionID, eventID)
+			}
+		} else {
+			// Execute atomic settlement with Optimistic Concurrency Control (OCC) and automatic backoff retry (Day 9)
+			result, _, err := SettleWithOCCRetry(r.Context(), db, fetchVersions, senderID, recipientID, amountCents, 3, 5*time.Millisecond)
+			if err != nil {
+				log.Printf("[SETTLEMENT_ERROR] Failed to settle transaction: %v", err)
+				w.Header().Set("Content-Type", "application/json")
+
+				if errors.Is(err, ErrOptimisticLockConflict) || errors.Is(err, ErrMaxRetriesExceeded) {
+					w.WriteHeader(http.StatusConflict)
+					_ = json.NewEncoder(w).Encode(map[string]string{
+						"error":   "concurrency_conflict",
+						"message": "transaction aborted due to high concurrency version contention; please retry with backoff",
+					})
+					return
+				}
+
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{
+					"status":  "failed",
+					"error":   "settlement_failed",
+					"message": err.Error(),
+				})
+				return
+			}
+			transactionID = result.TransactionID
 		}
-		transactionID = result.TransactionID
 	} else {
 		// Graceful fallback when operating in decoupled test mode without live DB
 		transactionID = uuid.New().String()
 	}
 
 	// --------------------------------------------------------------------------
-	// Phase 2 (Day 16): Publish tx.initiated Event to Apache Kafka
+	// Phase 2 (Day 16 / Day 18): Publish tx.initiated Event to Apache Kafka
 	// --------------------------------------------------------------------------
 	// 📚 WHAT HAPPENS HERE (BEGINNER'S GUIDE TO EVENT-DRIVEN ARCHITECTURE):
-	// 1. The payment has just been durably committed to the PostgreSQL ledger.
-	// 2. Instead of synchronously calling downstream services (fraud score, email,
-	//    accounting sync) over HTTP—which would make this endpoint slow and fragile—
-	//    we publish an immutable domain event: "novaris.tx.initiated".
-	// 3. We use `senderID` (the Payer Account UUID) as the Kafka Partition Key.
-	//    Why? Kafka runs Murmur2 hash on the key. All transactions for this sender
-	//    will ALWAYS route to the same partition, guaranteeing chronological First-In,
-	//    First-Out (FIFO) ordering!
-	// 4. We set a 3-second context timeout so a slow broker never blocks HTTP clients.
-	// 5. Downstream workers (e.g. Day 17 Settlement Consumer) will consume this event
-	//    asynchronously at their own pace.
-	var eventID string
-	var eventPublished bool
+	// 1. In Day 18, if outboxEnlisted is true, the background OutboxRelay daemon is
+	//    asynchronously responsible for polling and publishing to Kafka with zero loss.
+	// 2. If outbox is unconfigured (e.g. Day 16 direct test mode), we fall back to
+	//    direct synchronous publishing:
+	if !outboxEnlisted {
+		if prod := GetEventProducer(); prod != nil {
+			// Construct the canonical financial event envelope:
+			event := &streaming.TransactionInitiatedEvent{
+				EventID:        uuid.New().String(),
+				EventType:      streaming.EventTypeTxInitiated,
+				Version:        streaming.EventSchemaVersion1,
+				TransactionID:  transactionID,
+				PayerID:        senderID, // Kafka Partition Key (strict per-account FIFO invariant)
+				PayeeID:        recipientID,
+				AmountCents:    amountCents,
+				Currency:       "USD",
+				MerchantID:     claims.MerchantID,
+				IdempotencyKey: r.Header.Get("Idempotency-Key"),
+				Timestamp:      time.Now().UTC(),
+				Status:         "INITIATED",
+				Metadata: map[string]string{
+					"role":        claims.Role,
+					"remote_addr": r.RemoteAddr,
+				},
+			}
 
-	if prod := GetEventProducer(); prod != nil {
-		// Construct the canonical financial event envelope:
-		event := &streaming.TransactionInitiatedEvent{
-			EventID:        uuid.New().String(),
-			EventType:      streaming.EventTypeTxInitiated,
-			Version:        streaming.EventSchemaVersion1,
-			TransactionID:  transactionID,
-			PayerID:        senderID, // Kafka Partition Key (strict per-account FIFO invariant)
-			PayeeID:        recipientID,
-			AmountCents:    amountCents,
-			Currency:       "USD",
-			MerchantID:     claims.MerchantID,
-			IdempotencyKey: r.Header.Get("Idempotency-Key"),
-			Timestamp:      time.Now().UTC(),
-			Status:         "INITIATED",
-			Metadata: map[string]string{
-				"role":        claims.Role,
-				"remote_addr": r.RemoteAddr,
-			},
-		}
+			// Use a bounded context timeout (3 seconds) to prevent hanging on network partitions:
+			ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+			res, err := prod.PublishTxInitiated(ctx, event)
+			cancel()
 
-		// Use a bounded context timeout (3 seconds) to prevent hanging on network partitions:
-		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-		res, err := prod.PublishTxInitiated(ctx, event)
-		cancel()
-
-		if err != nil {
-			// Log warning if event publication failed; in Day 18 we introduce the
-			// Transactional Outbox pattern to eliminate the dual-write hazard entirely!
-			log.Printf("[KAFKA_WARN] Failed to publish tx.initiated event for tx %s: %v", transactionID, err)
-		} else {
-			eventID = event.EventID
-			eventPublished = true
-			log.Printf("[KAFKA] Emitted novaris.tx.initiated for tx %s (key: %s, latency: %v)",
-				transactionID, senderID, res.Latency)
+			if err != nil {
+				log.Printf("[KAFKA_WARN] Failed to publish tx.initiated event for tx %s: %v", transactionID, err)
+			} else {
+				eventID = event.EventID
+				eventPublished = true
+				log.Printf("[KAFKA] Emitted novaris.tx.initiated for tx %s (key: %s, latency: %v)",
+					transactionID, senderID, res.Latency)
+			}
 		}
 	}
 
@@ -368,6 +442,7 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 		TransactionID:      transactionID,
 		EventID:            eventID,
 		EventPublished:     eventPublished,
+		OutboxEnlisted:     outboxEnlisted,
 		MerchantID:         claims.MerchantID,
 		Role:               claims.Role,
 		AmountCents:        amountCents,
@@ -484,6 +559,29 @@ func main() {
 		SetEventProducer(streaming.NewMockProducer())
 	}
 
+	// --------------------------------------------------------------------------
+	// Phase 2 (Day 18): Transactional Outbox Engine & Relay Daemon
+	// --------------------------------------------------------------------------
+	if db != nil {
+		sqlOutboxRepo := outbox.NewSQLRepository(db, 5)
+		SetOutboxRepository(sqlOutboxRepo)
+		log.Println(" Initialized PostgreSQL Transactional Outbox repository (table: outbox)")
+
+		if prod := GetEventProducer(); prod != nil {
+			if liveProducer, ok := prod.(*streaming.KafkaProducer); ok {
+				adapter, err := outbox.NewKafkaAdapter(liveProducer)
+				if err == nil {
+					relay, err := outbox.NewOutboxRelay(sqlOutboxRepo, adapter, outbox.DefaultRelayConfig())
+					if err == nil {
+						SetOutboxRelay(relay)
+						relay.Start(context.Background())
+						log.Println(" Started background OutboxRelay daemon (polling PostgreSQL outbox for Kafka publishing)")
+					}
+				}
+			}
+		}
+	}
+
 	// Build the HTTP router with full layered middleware pipeline
 	router := SetupServerMux(cfg, db, bucketStore, idempStore)
 
@@ -531,6 +629,11 @@ func main() {
 	if db != nil {
 		_ = db.Close()
 		log.Println("[SHUTDOWN] Database connection pool closed.")
+	}
+
+	if relay := GetOutboxRelay(); relay != nil {
+		relay.Stop()
+		log.Println("[SHUTDOWN] Outbox relay daemon stopped.")
 	}
 
 	if prod := GetEventProducer(); prod != nil {
