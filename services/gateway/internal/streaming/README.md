@@ -97,6 +97,28 @@ Manages broker endpoints, client identifiers, dial timeouts, and defines the off
 Kafka guarantees strict event ordering **only within an individual partition**. If transactions for the same merchant account land on different partitions, concurrent consumer workers would process them out of order, leading to negative balance races!
 
 `partitioner.go` implements deterministic key routing:
+* **Murmur2 Hashing:** Evaluates 32-bit Murmur2 on the Payer Account UUID byte slice ($P = |\text{Murmur2}(\text{PayerID})| \pmod N$), maintaining strict binary compatibility with the official Apache Kafka Java client.
+* **FIFO Invariant:** All payments, adjustments, and refunds for a single account sequence into the same partition, guaranteeing chronological First-In, First-Out execution across parallel consumers.
+
+---
+
+### 3. `producer.go` — High-Performance Strongly-Typed Go Producer (Day 16)
+
+The `producer.go` engine wraps `segmentio/kafka-go.Writer` to transform API Gateway requests into durable streaming events:
+* **Canonical Event Model (`TransactionInitiatedEvent`):** Strict schema enforcing positive integer amounts, valid UUIDs, and ISO 4217 currency.
+* **Leader Durability (`RequiredAcks = RequireOne`):** Ensures sub-15ms write latency while providing durability against broker network blips.
+* **Micro-Batching (`BatchSize: 100`, `BatchTimeout: 10ms`):** Optimizes TCP socket write throughput without introducing queue lag.
+* **In-Memory Mock (`MockProducer`):** Full hermetic mock implementation for offline unit testing.
+
+---
+
+### 4. `consumer.go` — Resilient Consumer Groups & Offset Management (Day 17)
+
+The `consumer.go` engine wraps `segmentio/kafka-go.Reader` to provide enterprise-grade consumer group coordination:
+* **Consumer Group Protocol (`ConsumerGroup`):** Automatically joins consumer groups, coordinates partition assignments via the Kafka Group Coordinator, and handles dynamic partition rebalances.
+* **At-Least-Once Delivery with Manual Offsets:** Fetches messages (`FetchMessage`), executes business handlers, and commits offsets (`CommitMessages`) ONLY upon handler success.
+* **Poison-Pill Defense:** Invalid JSON or failing invariants abort the commit, preventing unhandled data corruption.
+* **In-Memory Mock (`MockConsumer`):** Enables unit tests to enqueue simulated messages, test handler callbacks, and inspect committed offsets.
 
 $$\text{PartitionIndex} = \Big(\text{Hash}(\text{RoutingKey}) \;\&\; \text{0x7FFFFFFFFFFFFFFF}\Big) \pmod{\text{NumPartitions}}$$
 
